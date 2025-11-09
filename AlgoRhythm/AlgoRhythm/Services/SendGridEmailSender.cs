@@ -23,7 +23,9 @@ public class SendGridEmailSender : IEmailSender
         var from = new EmailAddress(_fromEmail, _fromName);
         var to = new EmailAddress(toEmail);
         var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+
         var response = await client.SendEmailAsync(msg);
+
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Body.ReadAsStringAsync();
