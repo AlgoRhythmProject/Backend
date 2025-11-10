@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using AlgoRhythm.Models.Common;
 using AlgoRhythm.Models.Courses;
+using AlgoRhythm.Models.Submissions;
 
 namespace AlgoRhythm.Models.Tasks;
 

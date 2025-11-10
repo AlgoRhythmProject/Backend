@@ -70,6 +70,17 @@ public class AuthService : IAuthService
         user.EmailVerificationCode = code;
         user.EmailVerificationExpiryUtc = DateTime.UtcNow.AddHours(1);
 
+        // Dodaj domyślną rolę "User"
+        var defaultRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+        if (defaultRole != null)
+        {
+            user.Roles.Add(defaultRole);
+        }
+        else
+        {
+            _logger.LogWarning("Default role 'User' not found in database");
+        }
+
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
@@ -137,7 +148,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _db.Users
+            .Include(u => u.Roles) // Załaduj role użytkownika
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        
         if (user == null)
         {
             _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
@@ -170,9 +184,10 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
 
-        if (!string.IsNullOrEmpty(user.Role))
+        // Dodaj wszystkie role użytkownika jako claim'y
+        foreach (var role in user.Roles)
         {
-            claims.Add(new Claim(ClaimTypes.Role, user.Role));
+            claims.Add(new Claim(ClaimTypes.Role, role.Name));
         }
 
         var keyBytes = Encoding.UTF8.GetBytes(key);

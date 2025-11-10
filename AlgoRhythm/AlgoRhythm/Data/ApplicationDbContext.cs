@@ -86,7 +86,7 @@ public class ApplicationDbContext : DbContext
             .HasIndex(t => t.Name)
             .IsUnique();
 
-        // Many-to-many relationships (EF Core 5+ automatically creates junction tables)
+        // Many-to-many relationships
         modelBuilder.Entity<User>()
             .HasMany(u => u.Roles)
             .WithMany(r => r.Users);
@@ -106,5 +106,31 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Course>()
             .HasMany(c => c.TaskItems)
             .WithMany(t => t.Courses);
+
+        // FIX: Wyłącz cascade delete dla konfliktujących relacji
+        
+        // TestResult -> TestCase (konflikt z Submission -> TaskItem -> TestCase)
+        modelBuilder.Entity<TestResult>()
+            .HasOne(tr => tr.TestCase)
+            .WithMany(tc => tc.TestResults)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // UserRequirementProgress -> Requirement (konflikt z UserAchievement -> Achievement -> Requirement)
+        modelBuilder.Entity<UserRequirementProgress>()
+            .HasOne(urp => urp.Requirement)
+            .WithMany(r => r.UserRequirementProgresses)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // UserRequirementProgress -> UserAchievement (drugi konflikt w tym samym cyklu)
+        modelBuilder.Entity<UserRequirementProgress>()
+            .HasOne(urp => urp.UserAchievement)
+            .WithMany(ua => ua.RequirementProgresses)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Seed default roles
+        modelBuilder.Entity<Role>().HasData(
+            new Role { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "User", Description = "Default user role" },
+            new Role { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Admin", Description = "Administrator role" }
+        );
     }
 }
