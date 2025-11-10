@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Services;
+﻿namespace AlgoRhythm.Interfaces;
 
 public interface IEmailSender
 {

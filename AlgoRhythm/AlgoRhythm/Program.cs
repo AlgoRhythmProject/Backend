@@ -1,4 +1,5 @@
 using AlgoRhythm.Data;
+using AlgoRhythm.Interfaces;
 using AlgoRhythm.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Data;
 using AlgoRhythm.Dtos;
+using AlgoRhythm.Interfaces;
 using AlgoRhythm.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

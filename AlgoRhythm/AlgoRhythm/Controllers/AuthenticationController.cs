@@ -1,5 +1,5 @@
 ﻿using AlgoRhythm.Dtos;
-using AlgoRhythm.Services;
+using AlgoRhythm.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
