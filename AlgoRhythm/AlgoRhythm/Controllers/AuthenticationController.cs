@@ -84,7 +84,17 @@ public class AuthenticationController : ControllerBase
         try
         {
             var tokenResponse = await _auth.LoginAsync(req);
-            return Ok(tokenResponse);
+
+            // Ustaw JWT w HTTP-only cookie
+            Response.Cookies.Append("JWT", tokenResponse.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Tylko HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = tokenResponse.ExpiresUtc
+            });
+
+            return Ok(new { message = "Logged in successfully", expiresUtc = tokenResponse.ExpiresUtc });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -98,6 +108,8 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    //TODO: można zrobić Blacklist tokenów po stronie serwera. Podobno jest lepsze ale jest trudniejsze
+
     /// <summary>
     /// Wylogowanie (stateless JWT — klient musi usunąć token).
     /// </summary>
@@ -106,11 +118,10 @@ public class AuthenticationController : ControllerBase
     [ProducesResponseType(200)]
     public IActionResult Logout()
     {
-        // W przypadku stateless JWT serwer nie może "zniszczyć" tokena.
-        // Klient musi usunąć token ze swojego storage (localStorage, cookies).
-        // Jeśli chcesz server-side revocation, zaimplementuj refresh token store.
+        // Usuń cookie JWT
+        Response.Cookies.Delete("JWT");
 
-        _logger.LogInformation("Logout called (stateless JWT)");
-        return Ok(new { message = "Logged out successfully. Please delete the token client-side." });
+        _logger.LogInformation("User logged out (JWT cookie deleted)");
+        return Ok(new { message = "Logged out successfully." });
     }
 }

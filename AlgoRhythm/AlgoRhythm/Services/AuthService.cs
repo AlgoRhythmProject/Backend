@@ -73,11 +73,15 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User registered successfully: {Email}", user.Email);
 
+        // Dane do emaila
+        var expiryTime = user.EmailVerificationExpiryUtc.Value;
+        var expiryTimeLocal = expiryTime.ToLocalTime();
+
         // Wyślij email z kodem weryfikacyjnym
         var subject = "AlgoRhythm — Email verification";
         var plain = $"Your verification code: {code}";
         var html = $"<p>Your verification code: <strong>{code}</strong></p>" +
-                   $"<p>It will expire in 1 hour.</p>";
+                   $"<p>This code will expire at: {expiryTimeLocal:yyyy-MM-dd HH:mm:ss}</p>";
 
         try
         {

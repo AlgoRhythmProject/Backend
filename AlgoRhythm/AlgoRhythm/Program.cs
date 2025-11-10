@@ -30,6 +30,21 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = true;
     options.SaveToken = true;
+    
+    // Odczytuj token z cookie zamiast z headera Authorization
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // Spróbuj wzi¹æ token z cookie jeœli nie ma w header
+            if (string.IsNullOrEmpty(context.Token))
+            {
+                context.Token = context.Request.Cookies["JWT"];
+            }
+            return Task.CompletedTask;
+        }
+    };
+    
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
