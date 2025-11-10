@@ -1,7 +1,7 @@
 ﻿using AlgoRhythm.Data;
 using AlgoRhythm.Dtos;
 using AlgoRhythm.Interfaces;
-using AlgoRhythm.Models;
+using AlgoRhythm.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,17 +35,18 @@ public class AuthService : IAuthService
 
     public async Task RegisterAsync(RegisterRequest request)
     {
-        // Walidacja email
+        // Walidacja
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
-        {
             throw new ArgumentException("Invalid email format.");
-        }
 
-        // Walidacja hasła (min 6 znaków, możesz dostosować)
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-        {
             throw new ArgumentException("Password must be at least 6 characters long.");
-        }
+
+        if (string.IsNullOrWhiteSpace(request.FirstName))
+            throw new ArgumentException("First name is required.");
+
+        if (string.IsNullOrWhiteSpace(request.LastName))
+            throw new ArgumentException("Last name is required.");
 
         var exists = await _db.Users.AnyAsync(u => u.Email == request.Email);
         if (exists)
@@ -58,11 +59,12 @@ public class AuthService : IAuthService
         {
             Email = request.Email,
             PasswordHash = _passwordHasher.HashPassword(null!, request.Password),
-            IsEmailConfirmed = false,
-            Role = "User" // domyślna rola
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            IsEmailConfirmed = false
         };
 
-        // Generuj 6-cyfrowy kod weryfikacyjny
+        // Generuj kod weryfikacyjny
         var rng = Random.Shared;
         var code = rng.Next(100000, 999999).ToString();
         user.EmailVerificationCode = code;
