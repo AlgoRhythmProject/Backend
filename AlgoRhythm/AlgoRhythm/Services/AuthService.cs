@@ -205,6 +205,15 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User logged in successfully: {Email}", user.Email);
 
-        return new AuthResponse(tokenString, expires);
+        // Utwórz DTO użytkownika
+        var userDto = new UserDto(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.CreatedAt
+        );
+
+        return new AuthResponse(tokenString, expires, userDto);
     }
 }

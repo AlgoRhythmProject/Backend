@@ -4,4 +4,8 @@ public record RegisterRequest(string Email, string Password, string FirstName, s
 public record VerifyEmailRequest(string Email, string Code);
 public record LoginRequest(string Email, string Password);
 
-public record AuthResponse(string Token, DateTime ExpiresUtc);
+public record AuthResponse(
+    string Token,
+    DateTime ExpiresUtc,
+    UserDto User
+);

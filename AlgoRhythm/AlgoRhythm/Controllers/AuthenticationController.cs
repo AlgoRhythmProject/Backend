@@ -74,27 +74,28 @@ public class AuthenticationController : ControllerBase
     }
 
     /// <summary>
-    /// Logowanie użytkownika. Zwraca JWT token.
+    /// Logowanie użytkownika. Zwraca JWT token oraz dane użytkownika.
     /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(AuthResponse), 200)]
     [ProducesResponseType(401)]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         try
         {
-            var tokenResponse = await _auth.LoginAsync(req);
+            var authResponse = await _auth.LoginAsync(req);
 
             // Ustaw JWT w HTTP-only cookie
-            Response.Cookies.Append("JWT", tokenResponse.Token, new CookieOptions
+            Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true, // Tylko HTTPS
                 SameSite = SameSiteMode.Strict,
-                Expires = tokenResponse.ExpiresUtc
+                Expires = authResponse.ExpiresUtc
             });
 
-            return Ok(new { message = "Logged in successfully", expiresUtc = tokenResponse.ExpiresUtc });
+            // Zwróć pełną odpowiedź z tokenem i danymi użytkownika
+            return Ok(authResponse);
         }
         catch (UnauthorizedAccessException ex)
         {
