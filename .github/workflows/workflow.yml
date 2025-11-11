@@ -98,4 +98,4 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Scan NuGet packages for vulnerabilities
-        run: dotnet list package --vulnerable
+        run: dotnet list ../algorhythm package --vulnerable
