@@ -14,10 +14,10 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
@@ -37,13 +37,13 @@ jobs:
             --collect:"XPlat Code Coverage"
 
       - name: Upload Unit Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
             name: UnitTestResults
             path: '**/UnitTestResults/*.trx'
 
       - name: Upload Unit Test Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
             name: UnitTestCoverage
             path: '**/UnitTestResults/**/coverage.cobertura.xml'
@@ -59,13 +59,13 @@ jobs:
             --collect:"XPlat Code Coverage"
 
       - name: Upload Integration Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestResults
             path: '**/IntegrationTestResults/*.trx'
 
       - name: Upload Integration Test Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestCoverage
             path: '**/IntegrationTestResults/**/coverage.cobertura.xml'
@@ -76,10 +76,10 @@ jobs:
     needs: build-and-test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Scan NuGet packages for vulnerabilities
         run: dotnet list ../algorhythm package --vulnerable
