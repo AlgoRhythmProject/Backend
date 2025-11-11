@@ -86,5 +86,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-            -Dsonar.organization=AlgoRhythmProject
-            -Dsonar.projectKey=Backend
+            args:
+                -Dsonar.organization=AlgoRhythmProject
+                -Dsonar.projectKey=Backend
