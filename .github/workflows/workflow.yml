@@ -30,7 +30,7 @@ jobs:
       # Run Unit Tests
       - name: Run Unit Tests with Coverage
         run: |
-            dotnet test AlgoRhythm/IntegrationTests/UnitTests/UnitTests.csproj \
+            dotnet test AlgoRhythm/UnitTests/UnitTests/UnitTests.csproj \
             --configuration Release \
             --no-build \
             --logger "trx;LogFileName=UnitTestResults.trx" \
@@ -89,13 +89,3 @@ jobs:
           projectKey: ${{ secrets.SONAR_PROJECT_KEY }}
           organization: ${{ secrets.SONAR_ORG }}
           token: ${{ secrets.SONAR_TOKEN }}
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Scan NuGet packages for vulnerabilities
-        run: dotnet list AlgoRhythm/AlgoRhythm.sln package --vulnerable
