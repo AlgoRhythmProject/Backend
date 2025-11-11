@@ -91,10 +91,42 @@ public class AuthService : IAuthService
         var expiryTimeLocal = expiryTime.ToLocalTime();
 
         // Wyślij email z kodem weryfikacyjnym
-        var subject = "AlgoRhythm — Email verification";
-        var plain = $"Your verification code: {code}";
-        var html = $"<p>Your verification code: <strong>{code}</strong></p>" +
-                   $"<p>This code will expire at: {expiryTimeLocal:yyyy-MM-dd HH:mm:ss}</p>";
+        var subject = "Potwierdź swój adres email w AlgoRhythm";
+
+        var plain = $@"Cześć {user.FirstName}!
+
+            Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.
+
+            Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:
+
+            {code}
+
+            Kod jest ważny przez 1 godzinę (do {expiryTimeLocal:HH:mm, dd.MM.yyyy}).
+
+            Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.
+
+            Pozdrawiamy,
+            Zespół AlgoRhythm
+
+            ---
+            To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.";
+
+                    var html = $@"<p>Cześć <strong>{user.FirstName}</strong>!</p>
+
+            <p>Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.</p>
+
+            <p>Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:</p>
+
+            <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+
+            <p>Kod jest ważny do {expiryTimeLocal:HH:mm, dd.MM.yyyy}.</p>
+
+            <p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
+
+            <p>Pozdrawiamy,<br>Zespół AlgoRhythm</p>
+
+            <hr>
+            <p style='font-size: 12px; color: #666;'>To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.</p>";
 
         try
         {
@@ -109,9 +141,12 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<AuthResponse> VerifyEmailAsync(VerifyEmailRequest request)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _db.Users
+            .Include(u => u.Roles) // Załaduj role dla tokena
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        
         if (user == null)
         {
             _logger.LogWarning("Email verification attempt for non-existent user: {Email}", request.Email);
@@ -121,7 +156,9 @@ public class AuthService : IAuthService
         if (user.IsEmailConfirmed)
         {
             _logger.LogInformation("Email already verified for user: {Email}", user.Email);
-            return; // Email już zweryfikowany
+            
+            // Email już zweryfikowany - zaloguj użytknika
+            return await GenerateAuthResponseAsync(user);
         }
 
         if (user.EmailVerificationCode == null ||
@@ -144,31 +181,18 @@ public class AuthService : IAuthService
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
+
+        // Automatyczne logowanie po weryfikacji
+        return await GenerateAuthResponseAsync(user);
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    // Nowa metoda pomocnicza do generowania AuthResponse
+    private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
     {
-        var user = await _db.Users
-            .Include(u => u.Roles) // Załaduj role użytkownika
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
-        
-        if (user == null)
+        // Upewnij się że role są załadowane
+        if (!user.Roles.Any())
         {
-            _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
-        }
-
-        var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        if (verify == PasswordVerificationResult.Failed)
-        {
-            _logger.LogWarning("Login attempt with invalid password for user: {Email}", user.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
-        }
-
-        if (!user.IsEmailConfirmed)
-        {
-            _logger.LogWarning("Login attempt with unverified email: {Email}", user.Email);
-            throw new UnauthorizedAccessException("Email not verified. Please verify your email first.");
+            await _db.Entry(user).Collection(u => u.Roles).LoadAsync();
         }
 
         // Tworzenie JWT
@@ -203,8 +227,6 @@ public class AuthService : IAuthService
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        _logger.LogInformation("User logged in successfully: {Email}", user.Email);
-
         // Utwórz DTO użytkownika
         var userDto = new UserDto(
             user.Id,
@@ -215,5 +237,35 @@ public class AuthService : IAuthService
         );
 
         return new AuthResponse(tokenString, expires, userDto);
+    }
+
+    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    {
+        var user = await _db.Users
+            .Include(u => u.Roles) // Załaduj role użytkownika
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        
+        if (user == null)
+        {
+            _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        if (verify == PasswordVerificationResult.Failed)
+        {
+            _logger.LogWarning("Login attempt with invalid password for user: {Email}", user.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        if (!user.IsEmailConfirmed)
+        {
+            _logger.LogWarning("Login attempt with unverified email: {Email}", user.Email);
+            throw new UnauthorizedAccessException("Email not verified. Please verify your email first.");
+        }
+
+        _logger.LogInformation("User logged in successfully: {Email}", user.Email);
+
+        return await GenerateAuthResponseAsync(user);
     }
 }

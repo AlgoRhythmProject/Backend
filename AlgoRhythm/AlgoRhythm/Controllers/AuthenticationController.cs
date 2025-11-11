@@ -50,16 +50,28 @@ public class AuthenticationController : ControllerBase
 
     /// <summary>
     /// Weryfikacja adresu email za pomocą kodu wysłanego na email.
+    /// Po pomyślnej weryfikacji użytkownik jest automatycznie zalogowany.
     /// </summary>
     [HttpPost("verify-email")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(AuthResponse), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest req)
     {
         try
         {
-            await _auth.VerifyEmailAsync(req);
-            return Ok(new { message = "Email verified successfully. You can now log in." });
+            var authResponse = await _auth.VerifyEmailAsync(req);
+            
+            // Ustaw JWT w HTTP-only cookie (automatyczne logowanie)
+            Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Tylko HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = authResponse.ExpiresUtc
+            });
+
+            // Zwróć pełną odpowiedź z tokenem i danymi użytkownika
+            return Ok(authResponse);
         }
         catch (InvalidOperationException ex)
         {
