@@ -22,7 +22,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore ../Algorhythm
+        run: dotnet restore 
 
       - name: Build solution
         run: dotnet build ../Algorhythm --configuration Release --no-restore
