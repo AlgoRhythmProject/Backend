@@ -22,10 +22,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ../Algorhythm
 
       - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ../Algorhythm --configuration Release --no-restore
 
       # Run Unit Tests
       - name: Run Unit Tests with Coverage
