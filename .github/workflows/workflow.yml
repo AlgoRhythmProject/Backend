@@ -29,11 +29,11 @@ jobs:
 
       # Run Unit Tests
       - name: Run Unit Tests with Coverage
-        run: |
-            dotnet test AlgoRhythm/UnitTests/UnitTests.csproj \
-            --configuration Release \
-            --no-build \
-            --logger "trx;LogFileName=UnitTestResults.trx" \
+        run: >
+            dotnet test AlgoRhythm/UnitTests/UnitTests.csproj 
+            --configuration Release 
+            --no-build 
+            --logger "trx;LogFileName=UnitTestResults.trx" 
             --collect:"XPlat Code Coverage"
 
       - name: Upload Unit Test Results
@@ -51,11 +51,11 @@ jobs:
 
     # Run Integration Tests
       - name: Run Integration Tests with Coverage
-        run: |
-            dotnet test AlgoRhythm/IntegrationTests/IntegrationTests.csproj \
-            --configuration Release \
-            --no-build \
-            --logger "trx;LogFileName=IntegrationTestResults.trx" \
+        run: >
+            dotnet test AlgoRhythm/IntegrationTests/IntegrationTests.csproj 
+            --configuration Release 
+            --no-build 
+            --logger "trx;LogFileName=IntegrationTestResults.trx" 
             --collect:"XPlat Code Coverage"
 
       - name: Upload Integration Test Results
