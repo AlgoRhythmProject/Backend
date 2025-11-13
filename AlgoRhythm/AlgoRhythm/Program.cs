@@ -1,7 +1,9 @@
 using AlgoRhythm.Data;
 using AlgoRhythm.Interfaces;
 using AlgoRhythm.Services;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -13,6 +15,25 @@ var builder = WebApplication.CreateBuilder(args);
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ASP.NET Core Identity
+builder.Services.AddIdentity<User, Role>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+
+    // Email settings
+    options.SignIn.RequireConfirmedEmail = true;
+
+    // User settings
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 // DI - Email sender
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
@@ -30,21 +51,21 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = true;
     options.SaveToken = true;
-    
-    // Odczytuj token z cookie zamiast z headera Authorization
+
+    // Read token from cookie instead of Authorization header
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            // Spróbuj wzi¹æ token z cookie jeœli nie ma w header
+            // Try to get token from cookie if not in header
             if (string.IsNullOrEmpty(context.Token))
             {
                 context.Token = context.Request.Cookies["JWT"];
             }
-            return Task.CompletedTask;
+            return System.Threading.Tasks.Task.CompletedTask;
         }
     };
-    
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -59,7 +80,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger z JWT Authorization (bez RoutePrefix)
+// Swagger with JWT Authorization
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -69,7 +90,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
     });
 
-    // Dodaj JWT Authorization do Swaggera
+    // Add JWT Authorization to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -95,7 +116,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // Opcjonalnie: dodaj XML komentarze (tylko jeœli plik istnieje)
+    // Optional: add XML comments (only if file exists)
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -106,7 +127,31 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Swagger UI (domyœlna œcie¿ka /swagger)
+// Seed default roles
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+
+    if (!await roleManager.RoleExistsAsync("User"))
+    {
+        await roleManager.CreateAsync(new Role
+        {
+            Name = "User",
+            Description = "Default user role"
+        });
+    }
+
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new Role
+        {
+            Name = "Admin",
+            Description = "Administrator with full access"
+        });
+    }
+}
+
+// Swagger UI (default path /swagger)
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -117,4 +162,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

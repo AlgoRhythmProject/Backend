@@ -1,23 +1,22 @@
-﻿using AlgoRhythm.Models.Users;
-using AlgoRhythm.Models.Courses;
-using AlgoRhythm.Models.Tasks;
-using AlgoRhythm.Models.Achievements;
-using AlgoRhythm.Models.Submissions;
-using AlgoRhythm.Models.Common;
+﻿using AlgoRhythm.Shared.Models.Users;
+using AlgoRhythm.Shared.Models.Courses;
+using AlgoRhythm.Shared.Models.Tasks;
+using AlgoRhythm.Shared.Models.Achievements;
+using AlgoRhythm.Shared.Models.Submissions;
+using AlgoRhythm.Shared.Models.Common;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlgoRhythm.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> opts) : base(opts) { }
 
-    // Users & Auth
-    public DbSet<User> Users { get; set; } = null!;
+    // Custom tables
     public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
-    public DbSet<Role> Roles { get; set; } = null!;
-    public DbSet<Permission> Permissions { get; set; } = null!;
-
+    
     // Achievements
     public DbSet<Achievement> Achievements { get; set; } = null!;
     public DbSet<Requirement> Requirements { get; set; } = null!;
@@ -48,89 +47,73 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProgrammingSubmission> ProgrammingSubmissions { get; set; } = null!;
     public DbSet<TestResult> TestResults { get; set; } = null!;
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(builder);
+
+        // Rename tables
+        builder.Entity<User>().ToTable("Users");
+        builder.Entity<Role>().ToTable("Roles"); // Teraz używa twojej klasy Role
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
 
         // TPH (Table-Per-Hierarchy) dla LectureContent
-        modelBuilder.Entity<LectureContent>()
+        builder.Entity<LectureContent>()
             .HasDiscriminator<ContentType>(nameof(LectureContent.Type))
             .HasValue<LectureText>(ContentType.Text)
             .HasValue<LecturePhoto>(ContentType.Photo);
 
         // TPH dla TaskItem
-        modelBuilder.Entity<TaskItem>()
+        builder.Entity<TaskItem>()
             .HasDiscriminator<string>("TaskType")
             .HasValue<ProgrammingTaskItem>("Programming")
             .HasValue<InteractiveTaskItem>("Interactive");
 
         // TPH dla Submission
-        modelBuilder.Entity<Submission>()
+        builder.Entity<Submission>()
             .HasDiscriminator<string>("SubmissionType")
             .HasValue<ProgrammingSubmission>("Programming");
 
         // Unique constraints
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
-
-        modelBuilder.Entity<Role>()
-            .HasIndex(r => r.Name)
-            .IsUnique();
-
-        modelBuilder.Entity<Permission>()
-            .HasIndex(p => p.Code)
-            .IsUnique();
-
-        modelBuilder.Entity<Tag>()
+        builder.Entity<Tag>()
             .HasIndex(t => t.Name)
             .IsUnique();
 
         // Many-to-many relationships
-        modelBuilder.Entity<User>()
-            .HasMany(u => u.Roles)
-            .WithMany(r => r.Users);
-
-        modelBuilder.Entity<Role>()
-            .HasMany(r => r.Permissions)
-            .WithMany(p => p.Roles);
-
-        modelBuilder.Entity<TaskItem>()
+        builder.Entity<TaskItem>()
             .HasMany(t => t.Tags)
             .WithMany(tag => tag.TaskItems);
 
-        modelBuilder.Entity<Lecture>()
+        builder.Entity<Lecture>()
             .HasMany(l => l.Tags)
             .WithMany(tag => tag.Lectures);
 
-        modelBuilder.Entity<Course>()
+        builder.Entity<Course>()
             .HasMany(c => c.TaskItems)
             .WithMany(t => t.Courses);
 
-        // FIX: Wyłącz cascade delete dla konfliktujących relacji
-        
-        // TestResult -> TestCase (konflikt z Submission -> TaskItem -> TestCase)
-        modelBuilder.Entity<TestResult>()
+        // FIX: Disable cascade delete for conflicting relationships
+        builder.Entity<TestResult>()
             .HasOne(tr => tr.TestCase)
             .WithMany(tc => tc.TestResults)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // UserRequirementProgress -> Requirement (konflikt z UserAchievement -> Achievement -> Requirement)
-        modelBuilder.Entity<UserRequirementProgress>()
+        builder.Entity<UserRequirementProgress>()
             .HasOne(urp => urp.Requirement)
             .WithMany(r => r.UserRequirementProgresses)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // UserRequirementProgress -> UserAchievement (drugi konflikt w tym samym cyklu)
-        modelBuilder.Entity<UserRequirementProgress>()
+        builder.Entity<UserRequirementProgress>()
             .HasOne(urp => urp.UserAchievement)
             .WithMany(ua => ua.RequirementProgresses)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // Seed default roles
-        modelBuilder.Entity<Role>().HasData(
-            new Role { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "User", Description = "Default user role" },
-            new Role { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Admin", Description = "Administrator role" }
-        );
+        // Configure Role -> Permissions many-to-many
+        builder.Entity<Role>()
+            .HasMany(r => r.Permissions)
+            .WithMany(p => p.Roles);
     }
 }

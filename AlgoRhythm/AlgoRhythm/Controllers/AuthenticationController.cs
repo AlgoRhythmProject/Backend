@@ -1,4 +1,4 @@
-﻿using AlgoRhythm.Dtos;
+﻿using AlgoRhythm.Shared.Dtos;
 using AlgoRhythm.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +19,10 @@ public class AuthenticationController : ControllerBase
     }
 
     /// <summary>
-    /// Rejestracja nowego użytkownika. Wysyła kod weryfikacyjny na email.
+    /// Registers a new user and sends a verification code to the provided email address.
     /// </summary>
     [HttpPost("register")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(object), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
@@ -49,8 +49,8 @@ public class AuthenticationController : ControllerBase
     }
 
     /// <summary>
-    /// Weryfikacja adresu email za pomocą kodu wysłanego na email.
-    /// Po pomyślnej weryfikacji użytkownik jest automatycznie zalogowany.
+    /// Email verification using a code sent to the user's email.
+    /// After successful verification, user is automatically logged in.
     /// </summary>
     [HttpPost("verify-email")]
     [ProducesResponseType(typeof(AuthResponse), 200)]
@@ -61,16 +61,16 @@ public class AuthenticationController : ControllerBase
         {
             var authResponse = await _auth.VerifyEmailAsync(req);
             
-            // Ustaw JWT w HTTP-only cookie (automatyczne logowanie)
+            // Set JWT in HTTP-only cookie (automatic login)
             Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // Tylko HTTPS
+                Secure = true, // HTTPS only
                 SameSite = SameSiteMode.Strict,
                 Expires = authResponse.ExpiresUtc
             });
 
-            // Zwróć pełną odpowiedź z tokenem i danymi użytkownika
+            // Return full response with token and user data
             return Ok(authResponse);
         }
         catch (InvalidOperationException ex)
@@ -86,7 +86,7 @@ public class AuthenticationController : ControllerBase
     }
 
     /// <summary>
-    /// Logowanie użytkownika. Zwraca JWT token oraz dane użytkownika.
+    /// User login. Returns JWT token and user data.
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), 200)]
@@ -97,16 +97,16 @@ public class AuthenticationController : ControllerBase
         {
             var authResponse = await _auth.LoginAsync(req);
 
-            // Ustaw JWT w HTTP-only cookie
+            // Set JWT in HTTP-only cookie
             Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // Tylko HTTPS
+                Secure = true, // HTTPS only
                 SameSite = SameSiteMode.Strict,
                 Expires = authResponse.ExpiresUtc
             });
 
-            // Zwróć pełną odpowiedź z tokenem i danymi użytkownika
+            // Return full response with token and user data
             return Ok(authResponse);
         }
         catch (UnauthorizedAccessException ex)
@@ -121,17 +121,15 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    //TODO: można zrobić Blacklist tokenów po stronie serwera. Podobno jest lepsze ale jest trudniejsze
-
     /// <summary>
-    /// Wylogowanie (stateless JWT — klient musi usunąć token).
+    /// User logout (stateless JWT — client must delete the token).
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(object), 200)]
     public IActionResult Logout()
     {
-        // Usuń cookie JWT
+        // Delete JWT cookie
         Response.Cookies.Delete("JWT");
 
         _logger.LogInformation("User logged out (JWT cookie deleted)");
