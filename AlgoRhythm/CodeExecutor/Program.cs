@@ -1,5 +1,5 @@
-
 using CodeExecutor.Config;
+using CodeExecutor.DockerPool;
 using CodeExecutor.Services;
 using Docker.DotNet;
 
@@ -28,6 +28,22 @@ namespace CodeExecutor
                         : "unix:///var/run/docker.sock")    // Linux/macOS
                 ).CreateClient();
             });
+
+            builder.Services.AddSingleton(sp =>
+            {
+                var dockerClient = sp.GetRequiredService<DockerClient>();
+                var pool = new ContainerPool(
+                    dockerClient,
+                    "csharp-executor:latest",
+                    poolSize: 10 // Adjust based on your needs
+                );
+
+                // Pre-warm the pool
+                pool.InitializeAsync().GetAwaiter().GetResult();
+
+                return pool;
+            });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

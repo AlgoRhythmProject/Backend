@@ -20,7 +20,7 @@ namespace CodeExecutor.Controllers
         [HttpPost]
         public async Task<ExecutionResult> Execute([FromBody] ExecuteCodeRequest request)
         {
-            var result = await _executionService.ExecuteCodeAsync(request.Code);
+            var result = await _executionService.ExecuteCodeOptimizedAsync(request.Code);
             return result;
         }
     }    

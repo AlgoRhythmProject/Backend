@@ -5,21 +5,25 @@ using Docker.DotNet.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
 using CodeExecutor.DTO;
+using CodeExecutor.DockerPool;
 
 namespace CodeExecutor.Services
 {
     public class CSharpExecutionService : ICodeExecutionService
     {
-        public readonly string DockerImageName = "mcr.microsoft.com/dotnet/sdk:8.0";
+        public readonly string DockerImageName = "csharp-executor:latest";
         private readonly DockerClient _dockerClient;
         private readonly CSharpCodeExecutionConfig _codeExecutionConfig;
+        private readonly ContainerPool _containerPool;
 
         public CSharpExecutionService(
             DockerClient dockerClient,
-            IOptions<CSharpCodeExecutionConfig> codeExecutionConfig) 
+            IOptions<CSharpCodeExecutionConfig> codeExecutionConfig,
+            ContainerPool containerPool) 
         {
             _dockerClient = dockerClient;
             _codeExecutionConfig = codeExecutionConfig.Value;
+            _containerPool = containerPool;
         }
 
         public async Task<ExecutionResult> ExecuteCodeAsync(string code)
@@ -46,6 +50,54 @@ namespace CodeExecutor.Services
             finally
             {
                 await CleanupContainerAsync(containerId);
+            }
+        }
+
+        public async Task<ExecutionResult> ExecuteCodeOptimizedAsync(string code)
+        {
+            var containerId = await _containerPool.AcquireAsync();
+
+            try
+            {
+                // Use unique folder per execution
+                string tempFolder = $"/tmp/code_{Guid.NewGuid():N}";
+
+                // Create folder and write code in ONE command
+                string base64Code = Convert.ToBase64String(Encoding.UTF8.GetBytes(code));
+
+                string setupCommand = string.Join(" && ", [
+                    $"mkdir -p {tempFolder}", 
+                    $"cd {tempFolder}",
+                    "dotnet new console -n TempApp --output . --force --no-restore", 
+                    $"echo '{base64Code}' | base64 -d > Program.cs",
+                ]);
+
+                ExecutionResult setupResult = await ExecuteInContainerAsync(containerId, setupCommand);
+                
+                if (!setupResult.Success)
+                {
+                    return new ExecutionResult
+                    {
+                        Success = false,
+                        Error = "Failed to setup project",
+                        Stderr = setupResult.Stderr
+                    };
+                }
+
+                // Build and run in one command
+                var runCommand = string.Join(" && ",
+                [
+                    $"cd {tempFolder}",
+                    "dotnet build -c Release --nologo -v quiet",
+                    "dotnet run -c Release --no-build --nologo"
+                ]);
+
+                var result = await ExecuteInContainerAsync(containerId, runCommand);
+                return result;
+            }
+            finally
+            {
+                await _containerPool.ReleaseAsync(containerId);
             }
         }
 
@@ -175,17 +227,14 @@ namespace CodeExecutor.Services
             return memoryStream;
         }
 
-
         private async Task<ExecutionResult> ExecuteInContainerAsync(
             string containerId,
-            string command,
-            string input = "")
+            string command)
         {
             var execConfig = new ContainerExecCreateParameters
             {
                 AttachStdout = true,
                 AttachStderr = true,
-                AttachStdin = !string.IsNullOrEmpty(input),
                 Cmd = new[] { "sh", "-c", command }
             };
 
@@ -194,7 +243,6 @@ namespace CodeExecutor.Services
 
             using var stdoutStream = new MemoryStream();
             using var stderrStream = new MemoryStream();
-
             using var cts = new CancellationTokenSource(
                 TimeSpan.FromSeconds(_codeExecutionConfig.Timeout)
             );
@@ -241,5 +289,4 @@ namespace CodeExecutor.Services
             }
         }
     }
-
 }
