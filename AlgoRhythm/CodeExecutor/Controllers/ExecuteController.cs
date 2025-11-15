@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CodeExecutor.Services;
+using CodeExecutor.DTO.Requests;
+using CodeExecutor.DTO;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace CodeExecutor.Controllers
 {
@@ -6,10 +10,18 @@ namespace CodeExecutor.Controllers
     [Route("code-executor/[controller]")]
     public class ExecuteController : ControllerBase
     {
-        [HttpPost]
-        public async Task Execute()
+        private readonly CSharpExecutionService _executionService;
+        public ExecuteController(
+            CSharpExecutionService executionService)
         {
-
+            _executionService = executionService;
         }
-    }
+
+        [HttpPost]
+        public async Task<ExecutionResult> Execute([FromBody] ExecuteCodeRequest request)
+        {
+            var result = await _executionService.ExecuteCodeAsync(request.Code);
+            return result;
+        }
+    }    
 }
