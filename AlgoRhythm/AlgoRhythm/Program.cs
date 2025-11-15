@@ -52,7 +52,10 @@ builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
+var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings
+    ?? Environment.GetEnvironmentVariable("JWT_KEY") // Fallback: Environment Variable
+    ?? throw new InvalidOperationException("JWT key is not configured. Set 'Jwt:Key' in User Secrets or 'JWT_KEY' environment variable.");
+
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 builder.Services.AddAuthentication(options =>
 {

@@ -1,9 +1,7 @@
-﻿using AlgoRhythm.Data;
-using AlgoRhythm.Shared.Dtos;
+﻿using AlgoRhythm.Shared.Dtos;
 using AlgoRhythm.Shared.Models.Users;
 using AlgoRhythm.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -15,20 +13,17 @@ namespace AlgoRhythm.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly ApplicationDbContext _db;
     private readonly UserManager<User> _userManager;
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
-        ApplicationDbContext db,
         UserManager<User> userManager,
         IEmailSender emailSender,
         IConfiguration config,
         ILogger<AuthService> logger)
     {
-        _db = db;
         _userManager = userManager;
         _emailSender = emailSender;
         _config = config;
@@ -96,38 +91,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Cześć {user.FirstName}!
 
-Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.
+            Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.
 
-Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:
+            Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:
 
-{code}
+            {code}
 
-Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).
+            Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).
 
-Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.
+            Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.
 
-Pozdrawiamy,
-Zespół AlgoRhythm
+            Pozdrawiamy,
+            Zespół AlgoRhythm
 
----
-To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.";
+            ---
+            To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.";
 
         var html = $@"<p>Cześć <strong>{user.FirstName}</strong>!</p>
 
-<p>Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.</p>
+            <p>Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.</p>
 
-<p>Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:</p>
+            <p>Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:</p>
 
-<p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+            <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-<p>Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+            <p>Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-<p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
+            <p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
 
-<p>Pozdrawiamy,<br>Zespół AlgoRhythm</p>
+            <p>Pozdrawiamy,<br>Zespół AlgoRhythm</p>
 
-<hr>
-<p style='font-size: 12px; color: #666;'>To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.</p>";
+            <hr>
+            <p style='font-size: 12px; color: #666;'>To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.</p>";
 
         try
         {
@@ -176,8 +171,11 @@ To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.";
     {
         var roles = await _userManager.GetRolesAsync(user);
 
-        // Create JWT
-        var key = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
+        // Create JWT - USE ENVIRONMENT VARIABLE
+        var key = _config["Jwt:Key"] 
+            ?? Environment.GetEnvironmentVariable("JWT_KEY") 
+            ?? throw new InvalidOperationException("JWT key is not configured.");
+        
         var issuer = _config["Jwt:Issuer"] ?? "AlgoRhythm.Api";
         var audience = _config["Jwt:Audience"] ?? "AlgoRhythm.Client";
         var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "60");
