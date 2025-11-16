@@ -12,8 +12,6 @@ public class SubmissionService : ISubmissionService
     private readonly ITaskRepository _tasksRepository;
     private readonly IUserRepository _userRepository;
     private readonly ICodeExecutor _judge;
-    private readonly ILogger<SubmissionService> _logger;
-    private readonly bool _evaluateSynchronously;
 
     private readonly IServiceScopeFactory _scopeFactory;
 
@@ -21,7 +19,6 @@ public class SubmissionService : ISubmissionService
         ISubmissionRepository submissions,
         ITaskRepository tasks,
         ICodeExecutor judge,
-        ILogger<SubmissionService> logger,
         IConfiguration config,
         IUserRepository userRepository,
         IServiceScopeFactory scopeFactory
@@ -30,13 +27,8 @@ public class SubmissionService : ISubmissionService
         _submissionRepository = submissions;
         _tasksRepository = tasks;
         _judge = judge;
-        _logger = logger;
         _userRepository = userRepository;
         _scopeFactory = scopeFactory;
-        _evaluateSynchronously = bool.TryParse(
-            config["Submissions:EvaluateSynchronously"],
-            out var v
-        ) ? v : true;
     }
 
 
@@ -118,7 +110,6 @@ public class SubmissionService : ISubmissionService
                     submissionRepo,
                     taskRepo,
                     judge,
-                    logger,
                     new ConfigurationBuilder().Build(),
                     scope.ServiceProvider.GetRequiredService<IUserRepository>(),
                     _scopeFactory
