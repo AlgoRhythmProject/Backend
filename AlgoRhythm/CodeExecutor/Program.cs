@@ -20,6 +20,7 @@ namespace CodeExecutor
             builder.Services.Configure<CSharpCodeExecutionConfig>(
                 builder.Configuration.GetSection(nameof(CSharpCodeExecutionConfig)));
             builder.Services.AddScoped<CSharpExecutionService>();
+            builder.Services.AddScoped<CSharpCompileService>();
             builder.Services.AddSingleton(_ =>
             {
                 return new DockerClientConfiguration(
