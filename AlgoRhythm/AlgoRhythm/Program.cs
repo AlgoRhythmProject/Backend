@@ -59,7 +59,7 @@ builder.Services.AddScoped<IUserRepository, EfUserRepository>();
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
-builder.Services.AddScoped<IJudgeClient, RandomJudgeClient>();
+builder.Services.AddScoped<ICodeExecutor, RandomCodeExecutor>();
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings
     ?? Environment.GetEnvironmentVariable("JWT_KEY") // Fallback: Environment Variable
@@ -102,32 +102,91 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddCors(options =>
+
+// Swagger with JWT Authorization
+builder.Services.AddSwaggerGen(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        Title = "AlgoRhythm API",
+        Version = "v1",
+        Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
     });
+
+    // Add JWT Authorization to Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token (without 'Bearer' prefix)"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    // Optional: add XML comments (only if file exists)
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseCors("AllowFrontend");
+// Swagger UI (domyœlna œcie¿ka /swagger)
+
+// Seed default roles
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+
+    if (!await roleManager.RoleExistsAsync("User"))
+    {
+        await roleManager.CreateAsync(new Role
+        {
+            Name = "User",
+            Description = "Default user role"
+        });
+    }
+
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new Role
+        {
+            Name = "Admin",
+            Description = "Administrator with full access"
+        });
+    }
 }
+
+// Swagger UI (default path /swagger)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-app.UseCors();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
