@@ -142,7 +142,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-
 app.UseCors("AllowFrontend");
 // Swagger UI (domyœlna œcie¿ka /swagger)
 
