@@ -1,26 +1,29 @@
 ﻿using AlgoRhythm.Api.Dtos;
 using AlgoRhythm.Api.Services.Interfaces;
 using AlgoRhythm.Repositories.Interfaces;
+using AlgoRhythm.Shared.Models.Tasks;
 
 public class RandomCodeExecutor : ICodeExecutor
 {
-    private readonly ITaskRepository _taskRepo;
+    private readonly ITaskRepository _taskRepository;
     private readonly Random _rnd = Random.Shared;
 
     public RandomCodeExecutor(ITaskRepository taskRepo)
     {
-        _taskRepo = taskRepo;
+        _taskRepository = taskRepo;
     }
 
     public async Task<IReadOnlyList<TestResultDto>> EvaluateAsync(
         Guid submissionId, Guid taskItemId, string code, CancellationToken ct = default)
     {
-        var task = await _taskRepo.GetProgrammingTaskAsync(taskItemId, ct)
-            ?? throw new InvalidOperationException("Task not found");
+        var task = await _taskRepository.GetByIdAsync(taskItemId, ct);
+        if (task is not ProgrammingTaskItem programmingTask)
+            throw new InvalidOperationException("Task is not a programming task");
+
         Thread.Sleep(10000);
         var results = new List<TestResultDto>();
 
-        foreach (var tc in task.TestCases)
+        foreach (var tc in programmingTask.TestCases)
         {
             var passed = _rnd.NextDouble() > 0.4;
 

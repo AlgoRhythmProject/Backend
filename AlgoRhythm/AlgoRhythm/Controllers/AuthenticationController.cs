@@ -1,7 +1,7 @@
 ﻿using AlgoRhythm.Shared.Dtos;
-using AlgoRhythm.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AlgoRhythm.Services.Interfaces;
 
 namespace AlgoRhythm.Controllers;
 

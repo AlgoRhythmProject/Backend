@@ -31,19 +31,17 @@ public class SubmissionService : ISubmissionService
         _scopeFactory = scopeFactory;
     }
 
-
     public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequest request, CancellationToken ct = default)
     {
         // Validate user & task exist
         var user = await _userRepository.GetUserAsync(userId, ct);
         if (user == null) throw new InvalidOperationException("User not found.");
 
-        var task = await _tasksRepository.GetProgrammingTaskAsync(
-            request.TaskId,
-            ct
-        );
+        var task = await _tasksRepository.GetByIdAsync(request.TaskId, ct);
 
-        if (task == null) throw new InvalidOperationException("Task not found.");
+        if (task is not ProgrammingTaskItem programmingTask)
+            throw new InvalidOperationException("Task is not a programming task");
+
 
         var submission = new ProgrammingSubmission
         {
@@ -99,9 +97,9 @@ public class SubmissionService : ISubmissionService
                 if (submission == null)
                     return;
 
-                var task = await taskRepo.GetProgrammingTaskAsync(submission.TaskItemId, CancellationToken.None);
-                if (task == null)
-                    return;
+                var task = await taskRepo.GetByIdAsync(submission.TaskItemId, CancellationToken.None);
+                if (task is not ProgrammingTaskItem programmingTask)
+                    throw new InvalidOperationException("Task is not a programming task");
 
                 submission.Status = SubmissionStatus.Pending;
                 await submissionRepo.UpdateSubmissionAsync(submission, CancellationToken.None);
@@ -115,7 +113,7 @@ public class SubmissionService : ISubmissionService
                     _scopeFactory
                 );
 
-                var results = await service.EvaluateAndSaveResultsAsync(submission, task, code);
+                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, code);
 
             }
             catch (Exception ex)
