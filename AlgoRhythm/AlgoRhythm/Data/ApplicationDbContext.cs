@@ -1,0 +1,119 @@
+﻿using AlgoRhythm.Shared.Models.Users;
+using AlgoRhythm.Shared.Models.Courses;
+using AlgoRhythm.Shared.Models.Tasks;
+using AlgoRhythm.Shared.Models.Achievements;
+using AlgoRhythm.Shared.Models.Submissions;
+using AlgoRhythm.Shared.Models.Common;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
+namespace AlgoRhythm.Data;
+
+public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> opts) : base(opts) { }
+
+    // Custom tables
+    public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
+    
+    // Achievements
+    public DbSet<Achievement> Achievements { get; set; } = null!;
+    public DbSet<Requirement> Requirements { get; set; } = null!;
+    public DbSet<UserAchievement> UserAchievements { get; set; } = null!;
+    public DbSet<UserRequirementProgress> UserRequirementProgresses { get; set; } = null!;
+
+    // Courses & Lectures
+    public DbSet<Course> Courses { get; set; } = null!;
+    public DbSet<Lecture> Lectures { get; set; } = null!;
+    public DbSet<LectureContent> LectureContents { get; set; } = null!;
+    public DbSet<LectureText> LectureTexts { get; set; } = null!;
+    public DbSet<LecturePhoto> LecturePhotos { get; set; } = null!;
+    public DbSet<CourseProgress> CourseProgresses { get; set; } = null!;
+
+    // Tasks
+    public DbSet<TaskItem> TaskItems { get; set; } = null!;
+    public DbSet<ProgrammingTaskItem> ProgrammingTaskItems { get; set; } = null!;
+    public DbSet<InteractiveTaskItem> InteractiveTaskItems { get; set; } = null!;
+    public DbSet<TestCase> TestCases { get; set; } = null!;
+    public DbSet<Hint> Hints { get; set; } = null!;
+
+    // Common
+    public DbSet<Tag> Tags { get; set; } = null!;
+    public DbSet<Comment> Comments { get; set; } = null!;
+
+    // Submissions
+    public DbSet<Submission> Submissions { get; set; } = null!;
+    public DbSet<ProgrammingSubmission> ProgrammingSubmissions { get; set; } = null!;
+    public DbSet<TestResult> TestResults { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Rename tables
+        builder.Entity<User>().ToTable("Users");
+        builder.Entity<Role>().ToTable("Roles"); // Teraz używa twojej klasy Role
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+
+        // TPH (Table-Per-Hierarchy) dla LectureContent
+        builder.Entity<LectureContent>()
+            .HasDiscriminator<ContentType>(nameof(LectureContent.Type))
+            .HasValue<LectureText>(ContentType.Text)
+            .HasValue<LecturePhoto>(ContentType.Photo);
+
+        // TPH dla TaskItem
+        builder.Entity<TaskItem>()
+            .HasDiscriminator<string>("TaskType")
+            .HasValue<ProgrammingTaskItem>("Programming")
+            .HasValue<InteractiveTaskItem>("Interactive");
+
+        // TPH dla Submission
+        builder.Entity<Submission>()
+            .HasDiscriminator<string>("SubmissionType")
+            .HasValue<ProgrammingSubmission>("Programming");
+
+        // Unique constraints
+        builder.Entity<Tag>()
+            .HasIndex(t => t.Name)
+            .IsUnique();
+
+        // Many-to-many relationships
+        builder.Entity<TaskItem>()
+            .HasMany(t => t.Tags)
+            .WithMany(tag => tag.TaskItems);
+
+        builder.Entity<Lecture>()
+            .HasMany(l => l.Tags)
+            .WithMany(tag => tag.Lectures);
+
+        builder.Entity<Course>()
+            .HasMany(c => c.TaskItems)
+            .WithMany(t => t.Courses);
+
+        // FIX: Disable cascade delete for conflicting relationships
+        builder.Entity<TestResult>()
+            .HasOne(tr => tr.TestCase)
+            .WithMany(tc => tc.TestResults)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<UserRequirementProgress>()
+            .HasOne(urp => urp.Requirement)
+            .WithMany(r => r.UserRequirementProgresses)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<UserRequirementProgress>()
+            .HasOne(urp => urp.UserAchievement)
+            .WithMany(ua => ua.RequirementProgresses)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Configure Role -> Permissions many-to-many
+        builder.Entity<Role>()
+            .HasMany(r => r.Permissions)
+            .WithMany(p => p.Roles);
+    }
+}
