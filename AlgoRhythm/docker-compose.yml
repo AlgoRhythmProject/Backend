@@ -11,10 +11,7 @@ services:
     - db_data:/var/opt/mssql # database lives as long as the image is not deleted
   backend:
     container_name: backend
-    build:
-      context: .
-      dockerfile: AlgoRhythm/Dockerfile
-      target: final
+    image: algorhythm-backend:latest
     ports:
     - "7062:8080"
     - "5289:8081"
