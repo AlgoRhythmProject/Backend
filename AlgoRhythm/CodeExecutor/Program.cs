@@ -1,5 +1,4 @@
-using CodeExecutor.Config;
-using CodeExecutor.DockerPool;
+using CodeExecutor.Helpers;
 using CodeExecutor.Services;
 using Docker.DotNet;
 
@@ -11,16 +10,11 @@ namespace CodeExecutor
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add configuration
-            builder.Configuration.AddJsonFile("./Config/codeexecutionconfig.json", optional: false, reloadOnChange: true);
-
             // Add services to the container.
-
-            builder.Services.AddControllers();
-            builder.Services.Configure<CSharpCodeExecutionConfig>(
-                builder.Configuration.GetSection(nameof(CSharpCodeExecutionConfig)));
-            builder.Services.AddScoped<CSharpExecutionService>();
-            builder.Services.AddScoped<CSharpCompileService>();
+            builder.Services.AddControllers();            
+            builder.Services.AddScoped<CSharpExecuteService>();
+            builder.Services.AddScoped<CSharpCodeFormatter>();
+            builder.Services.AddScoped<CSharpCompiler>();
             builder.Services.AddSingleton(_ =>
             {
                 return new DockerClientConfiguration(
@@ -28,21 +22,6 @@ namespace CodeExecutor
                         ? "npipe://./pipe/docker_engine"    // Windows
                         : "unix:///var/run/docker.sock")    // Linux/macOS
                 ).CreateClient();
-            });
-
-            builder.Services.AddSingleton(sp =>
-            {
-                var dockerClient = sp.GetRequiredService<DockerClient>();
-                var pool = new ContainerPool(
-                    dockerClient,
-                    "csharp-executor:latest",
-                    poolSize: 10 // Adjust based on your needs
-                );
-
-                // Pre-warm the pool
-                pool.InitializeAsync().GetAwaiter().GetResult();
-
-                return pool;
             });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -58,7 +37,10 @@ namespace CodeExecutor
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            if (app.Environment.IsProduction())
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseAuthorization();
 

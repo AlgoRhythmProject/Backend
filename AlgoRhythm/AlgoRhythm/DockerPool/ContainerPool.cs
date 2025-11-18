@@ -2,7 +2,7 @@
 using Docker.DotNet.Models;
 using System.Collections.Concurrent;
 
-namespace CodeExecutor.DockerPool
+namespace AlgoRhythm.DockerPool
 {
     public class ContainerPool
     {
@@ -139,5 +139,19 @@ namespace CodeExecutor.DockerPool
                 catch { }
             }
         }
+
+        public async Task<(string, string)> ExecuteInContainerAsync(string containerId, string base64Payload)
+        {
+            var exec = await _dockerClient.Exec.ExecCreateContainerAsync(containerId, new ContainerExecCreateParameters
+            {
+                AttachStdout = true,
+                AttachStderr = true,
+                Cmd = new[] { "dotnet", "CodeExecutor.dll", base64Payload }
+            });
+
+            var stream = await _dockerClient.Exec.StartAndAttachContainerExecAsync(exec.ID, false);
+            return await stream.ReadOutputToEndAsync(CancellationToken.None);
+        }
+
     }
 }

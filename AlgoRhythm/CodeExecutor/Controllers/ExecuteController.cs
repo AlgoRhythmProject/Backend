@@ -1,8 +1,6 @@
-﻿using CodeExecutor.Services;
-using CodeExecutor.DTO.Requests;
-using CodeExecutor.DTO;
-using CodeExecutor.Helpers;
-
+﻿using AlgoRhythm.Shared.Models.CodeExecution.Requests;
+using AlgoRhythm.Shared.Models.CodeExecution.Responses;
+using CodeExecutor.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeExecutor.Controllers
@@ -11,25 +9,23 @@ namespace CodeExecutor.Controllers
     [Route("code-executor/[controller]")]
     public class ExecuteController : ControllerBase
     {
-        private readonly CSharpExecutionService _executionService;
-        private readonly CSharpCompileService _compileService;
+        private readonly CSharpExecuteService _executeService;
         public ExecuteController(
-            CSharpExecutionService executionService, CSharpCompileService compileService)
+            CSharpExecuteService executeService)
         {
-            _executionService = executionService;
-            _compileService = compileService;
+            _executeService = executeService;
         }
 
         [HttpPost]
-        public async Task<ExecutionResult> Execute([FromBody] ExecuteCodeRequest request)
-        {
-            //var result = await _executionService.ExecuteCodeOptimizedAsync(request.Code);
-
-            return _compileService.Run(
-                request.ReturnType, 
-                request.Code,
-                request.Args
+        public async Task<ExecuteCodeResponse> Execute([FromBody] ExecuteCodeRequest request)
+        {            
+            return _executeService.Run(
+                request.Timeout,
+                request.Args,
+                request.ExecutionClass,
+                request.ExecutionMethod,
+                request.Code
             );
         }
-    }    
+    }
 }

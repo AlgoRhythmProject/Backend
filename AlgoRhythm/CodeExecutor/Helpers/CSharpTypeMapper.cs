@@ -1,7 +1,34 @@
 ﻿namespace CodeExecutor.Helpers
 {
+    /// <summary>
+    /// Provides mapping between C# type names (as strings) and <see cref="System.Type"/> instances,
+    /// and converts <see cref="System.Type"/> back to C# type syntax.
+    /// Supports primitive types, arrays, nullable types, and generic types.
+    /// </summary>
     public static class CSharpTypeMapper
     {
+        /// <summary>
+        /// Converts a C# type name string to a <see cref="System.Type"/> instance.
+        /// Returns <see cref="object"/> if the type name is unknown.
+        /// </summary>
+        /// <param name="typeName">The C# type name (e.g., "int", "string").</param>
+        /// <returns>The corresponding <see cref="System.Type"/> instance.</returns>
+        public static Type StringToType(string typeName)
+        {
+            return typeName switch
+            {
+                "int" => typeof(int),
+                "string" => typeof(string),
+                "double" => typeof(double),
+                "float" => typeof(float),
+                "bool" => typeof(bool),
+                "long" => typeof(long),
+                "short" => typeof(short),
+                "decimal" => typeof(decimal),
+                _ => Type.GetType(typeName) ?? typeof(object)
+            };
+        }
+
         private static readonly Dictionary<Type, string> PrimitiveMap = new()
         {
             { typeof(void), "void" },
@@ -22,6 +49,11 @@
             { typeof(object), "object" }
         };
 
+        /// <summary>
+        /// Converts a <see cref="System.Type"/> instance to a C# type syntax string.
+        /// </summary>
+        /// <param name="type">The <see cref="System.Type"/> to convert.</param>
+        /// <returns>A string representing the type in C# syntax.</returns>
         public static string ToCSharp(Type type)
         {
             // Primitive keyword?

@@ -5,8 +5,8 @@ services:
     ports:
     - "8002:1433" # default mssql server port
     environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
     volumes:
     - db_data:/var/opt/mssql # database lives as long as the image is not deleted
   backend:
@@ -19,18 +19,35 @@ services:
     - "7062:8080"
     - "5289:8081"
     environment:
-    - ASPNETCORE_URLS=http://+:8080
-    - ConnectionStrings__DefaultConnection=Server=database,1433;Database=MyDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};
+      SendGrid__ApiKey: ${SENDGRID_API_KEY}
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      JWT_KEY: ${JWT_KEY}
+      ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
     depends_on:
-    - database
+      - database
   frontend:
     container_name: frontend
-    build:
-        context: ../../frontend/AlgoRhythm
-        dockerfile:  Dockerfile
+    image: algorhythmfrontend:latest 
     ports:
     - "5173:80"
     depends_on: 
     - backend
+  executor:
+    container_name: code_executor
+    image: codeexecutor:latest
+    restart: always
+    cpus: 0.5            # CPU limit
+    mem_limit: 256M      # Memory limit
+    network_mode: bridge # limited network (other containers)
+    ports:
+    - "7070:8080"
+    pids_limit: 50
+    read_only: true
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    tmpfs:
+      - /tmp
 volumes:
   db_data:
+  
