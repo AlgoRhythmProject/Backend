@@ -41,7 +41,7 @@ public class TaskController : ControllerBase
     [HttpPut("programming/{id:guid}")]
     public async Task<IActionResult> UpdateProgramming(Guid id, [FromBody] ProgrammingTaskInputDto dto, CancellationToken ct)
     {
-        await _service.UpdateAsync(id, dto, ct);
+        await _service.UpdateProgrammingAsync(id, dto, ct);
         return NoContent();
     }
 

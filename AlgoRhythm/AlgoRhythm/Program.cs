@@ -60,6 +60,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICodeExecutor, RandomCodeExecutor>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
+
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings

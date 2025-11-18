@@ -14,6 +14,7 @@ public class SubmissionService : ISubmissionService
     private readonly ICodeExecutor _judge;
 
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ICodeParser _codeParser;
 
     public SubmissionService(
         ISubmissionRepository submissions,
@@ -21,7 +22,8 @@ public class SubmissionService : ISubmissionService
         ICodeExecutor judge,
         IConfiguration config,
         IUserRepository userRepository,
-        IServiceScopeFactory scopeFactory
+        IServiceScopeFactory scopeFactory,
+        ICodeParser codeParser
     )
     {
         _submissionRepository = submissions;
@@ -29,6 +31,7 @@ public class SubmissionService : ISubmissionService
         _judge = judge;
         _userRepository = userRepository;
         _scopeFactory = scopeFactory;
+        _codeParser = codeParser;
     }
 
     public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequest request, CancellationToken ct = default)
@@ -90,7 +93,7 @@ public class SubmissionService : ISubmissionService
             var taskRepo = scope.ServiceProvider.GetRequiredService<ITaskRepository>();
             var judge = scope.ServiceProvider.GetRequiredService<ICodeExecutor>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubmissionService>>();
-
+            var codeParser = scope.ServiceProvider.GetRequiredService<ICodeParser>();
             try
             {
                 var submission = await submissionRepo.GetSubmissionAsync(submissionId, CancellationToken.None);
@@ -110,10 +113,13 @@ public class SubmissionService : ISubmissionService
                     judge,
                     new ConfigurationBuilder().Build(),
                     scope.ServiceProvider.GetRequiredService<IUserRepository>(),
-                    _scopeFactory
+                    _scopeFactory,
+                    codeParser
                 );
 
-                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, code);
+                var parsedFunction = codeParser.Parse(code);
+
+                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, parsedFunction);
 
             }
             catch (Exception ex)
@@ -124,13 +130,14 @@ public class SubmissionService : ISubmissionService
         });
     }
 
-    public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, string code, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, ParsedFunction parsedFunction, CancellationToken ct = default)
     {
         submission.ExecuteStartedAt = submission.ExecuteStartedAt == default ? DateTime.UtcNow : submission.ExecuteStartedAt;
 
         await _submissionRepository.SaveChangesAsync(ct);
 
-        var judgeResults = (await _judge.EvaluateAsync(submission.Id, task.Id, code, ct)).ToList();
+
+        var judgeResults = (await _judge.EvaluateAsync(submission.Id, task.Id, parsedFunction, ct)).ToList();
 
         var orderedTestCases = task.TestCases.OrderBy(tc => tc.Id).ToList();
         var finalResults = new List<TestResultDto>();
