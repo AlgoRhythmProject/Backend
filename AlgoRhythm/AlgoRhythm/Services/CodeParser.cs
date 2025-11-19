@@ -4,18 +4,26 @@ public class CSharpCodeParser : ICodeParser
 {
     public ParsedFunction Parse(string code)
     {
-        // parsing: return type, name, args, body
+
         var match = Regex.Match(code,
-            @"(?<return>[^\s]+)\s+(?<name>\w+)\((?<args>[^\)]*)\)\s*\{(?<body>[\s\S]*)\}");
+            @"^(?<modifiers>(?:\w+\s+)*)          
+              (?<return>[^\s]+)\s+                
+              (?<name>\w+)\s*                    
+              \((?<args>[^)]*)\)\s*            
+              \{(?<body>[\s\S]*)\}\s*$",          
+            RegexOptions.IgnorePatternWhitespace);
 
         if (!match.Success)
             throw new InvalidOperationException("Invalid function code format.");
 
-        var args = match.Groups["args"].Value
+        var argsList = match.Groups["args"].Value
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(a =>
             {
-                var parts = a.Trim().Split(' ');
+                var parts = a.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 2)
+                    throw new InvalidOperationException($"Invalid argument format: '{a}'");
+
                 return new FunctionArgument
                 {
                     Type = parts[0],
@@ -27,7 +35,7 @@ public class CSharpCodeParser : ICodeParser
         {
             ReturnType = match.Groups["return"].Value,
             FunctionName = match.Groups["name"].Value,
-            Arguments = args,
+            Arguments = argsList,
             Body = match.Groups["body"].Value.Trim()
         };
     }
