@@ -19,7 +19,7 @@ namespace AlgoRhythm.Clients
             return (await response.Content.ReadFromJsonAsync<ExecuteCodeResponse?>())
                 ?? new ExecuteCodeResponse()
                 {
-                    Error = "Couldn't connect",
+                    Errors = [ new("Couldn't connect")],
                     Success = false,
                 };
         }
