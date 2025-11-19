@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using System.Reflection;
+using AlgoRhythm.Shared.Models.CodeExecution;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CodeExecutor.Helpers
 {
@@ -59,16 +61,16 @@ namespace CodeExecutor.Helpers
             // Handle compilation errors
             if (!result.Success)
             {
-                List<string> errors = [.. result.Diagnostics
+                List<CSharpExecutionError> errors = [.. result.Diagnostics
                     .Where(d => d.Severity == DiagnosticSeverity.Error)
-                    .Select(d => d.GetMessage())];
+                    .Select(d => new CSharpExecutionError(d)) ];
 
                 return new(false, null, errors);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
 
-            return new(true, ms, new List<string>(), ParseMethodArgs(methodName, tree, compilation));
+            return new(true, ms, []);
         }
 
         /// <summary>

@@ -3,7 +3,6 @@
     public class ExecuteCodeRequest
     {
         public string Code { get; set; } = string.Empty;
-        public string ReturnType { get; set; } = "void";
         public List<FunctionParameter> Args { get; set; } = new();
         public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
         public string ExecutionClass { get; set; } = "Solution";

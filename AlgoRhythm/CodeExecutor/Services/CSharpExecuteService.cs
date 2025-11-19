@@ -41,7 +41,7 @@ namespace CodeExecutor.Services
                 return new ExecuteCodeResponse
                 {
                     Success = false,
-                    Error = string.Join(Environment.NewLine, result.Errors),
+                    Errors =  result.Errors,
                     ExitCode = 1
                 };
             }
@@ -50,13 +50,12 @@ namespace CodeExecutor.Services
 
             try
             {
-                object?[] methodArgs = args.ConvertArgs(result.ParsedArgs);
                 CancellationTokenSource cts = new();
                 cts.CancelAfter(timeout);
 
                 var task = Task.Run(() =>
                     new AssemblyExecutor().Execute(
-                        result.AssemblyStream, executionClass, executionMethod, methodArgs), cts.Token);
+                        result.AssemblyStream, executionClass, executionMethod, args), cts.Token);
 
                 if (!task.Wait(timeout))
                 {
@@ -79,7 +78,7 @@ namespace CodeExecutor.Services
                 return new()
                 {
                     Success = false,
-                    Error = ex.Message,
+                    Errors = [new(ex.Message)],
                     Stderr = console.StdErr.ToString(),
                     Stdout = console.StdOut.ToString(),
                     ExitCode = 1,

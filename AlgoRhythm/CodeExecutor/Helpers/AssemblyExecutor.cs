@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using AlgoRhythm.Shared.Models.CodeExecution;
+using System.Reflection;
 
 namespace CodeExecutor.Helpers
 {
@@ -20,7 +21,7 @@ namespace CodeExecutor.Helpers
         /// The result returned by the invoked method, or <c>null</c> if the method is <c>void</c>.
         /// </returns>
         /// <exception cref="Exception">Thrown if the specified class or method cannot be found.</exception>
-        public object? Execute(MemoryStream assemblyStream, string className, string methodName, object?[] args)
+        public object? Execute(MemoryStream assemblyStream, string className, string methodName, List<FunctionParameter>? args)
         {
             Assembly assembly = Assembly.Load(assemblyStream.ToArray());
             Type? type = assembly.GetType(className);
@@ -31,10 +32,14 @@ namespace CodeExecutor.Helpers
             object? instance = isStatic ? null : Activator.CreateInstance(type);
 
             MethodInfo? method = type.GetMethod(methodName);
+
             if (method == null)
                 throw new Exception($"Method {methodName} not found in {className}.");
 
-            return method.Invoke(instance, args);
+            ParameterInfo[] parametersInfo = method.GetParameters();
+            object?[] parameters = args.ConvertArgs(parametersInfo);
+
+            return method.Invoke(instance, parameters);
         }
     }
 }

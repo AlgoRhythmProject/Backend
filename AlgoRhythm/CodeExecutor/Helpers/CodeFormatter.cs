@@ -1,10 +1,8 @@
 ﻿using AlgoRhythm.Shared.Models.CodeExecution;
 using CodeExecutor.Interfaces;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Text.Json;
+using System.Reflection;
+
 
 namespace CodeExecutor.Helpers
 {
@@ -30,23 +28,4 @@ namespace CodeExecutor.Helpers
 
     }
 
-    public static class ArgumentConverter
-    {
-        public static object?[] ConvertArgs(this List<FunctionParameter>? parameters, Dictionary<string, ITypeSymbol> parsedParams)
-        {
-            return parameters?
-                .Where(p => p is not null)
-                .Select(p =>
-            {
-                ITypeSymbol paramTypeSymbol = parsedParams[p.Name];
-
-                string typeName = paramTypeSymbol.ToString() ?? string.Empty;
-                Type? type = CSharpTypeMapper.StringToType(typeName);
-
-                return Convert.ChangeType(p.Value,  type);
-                
-                
-            }).ToArray() ?? [];
-        }
-    }
 }
