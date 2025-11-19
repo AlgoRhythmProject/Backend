@@ -36,15 +36,13 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequest request, CancellationToken ct = default)
     {
-        // Validate user & task exist
+        // 1. Validate user & task exist
         var user = await _userRepository.GetUserAsync(userId, ct);
         if (user == null) throw new InvalidOperationException("User not found.");
 
         var task = await _tasksRepository.GetByIdAsync(request.TaskId, ct);
-
         if (task is not ProgrammingTaskItem programmingTask)
             throw new InvalidOperationException("Task is not a programming task");
-
 
         var submission = new ProgrammingSubmission
         {
@@ -59,30 +57,32 @@ public class SubmissionService : ISubmissionService
 
         await _submissionRepository.AddSubmissionAsync(submission, ct);
 
-
-        StartBackgroundEvaluation(submission.Id, request.Code);
-        return MapToDto(submission, Array.Empty<TestResultDto>());
-
-    }
-
-    public async Task<SubmissionResponseDto?> GetSubmissionAsync(Guid submissionId, CancellationToken ct = default)
-    {
-        var submission = await _submissionRepository.GetSubmissionAsync(submissionId, ct);
-
-        if (submission == null) return null;
-
-        var dtos = submission.TestResults.Select(tr => new TestResultDto
+        // 2. Parse code & validate arguments against test cases
+        ParsedFunction parsedFunction;
+        try
         {
-            TestCaseId = tr.TestCaseId,
-            Passed = tr.Passed,
-            Points = tr.Points,
-            ExecutionTimeMs = tr.ExecutionTimeMs,
-            StdOut = tr.StdOut,
-            StdErr = tr.StdErr
-        }).ToList();
+            parsedFunction = _codeParser.Parse(request.Code);
+            _codeParser.ValidateArguments(parsedFunction, programmingTask.TestCases);
+        }
+        catch (Exception ex)
+        {
+            submission.Status = SubmissionStatus.Error;
+            submission.ExecuteFinishedAt = DateTime.UtcNow;
+            submission.Score = 0;
+            await _submissionRepository.UpdateSubmissionAsync(submission, ct);
 
-        return MapToDto(submission, dtos);
+            var dto = MapToDto(submission, Array.Empty<TestResultDto>());
+            dto.ErrorMessage = ex.Message;
+            return dto;
+
+        }
+
+        // 3. Start background evaluation (wykonanie testów)
+        StartBackgroundEvaluation(submission.Id, request.Code);
+
+        return MapToDto(submission, Array.Empty<TestResultDto>());
     }
+
     private void StartBackgroundEvaluation(Guid submissionId, string code)
     {
         _ = Task.Run(async () =>
@@ -93,7 +93,7 @@ public class SubmissionService : ISubmissionService
             var taskRepo = scope.ServiceProvider.GetRequiredService<ITaskRepository>();
             var judge = scope.ServiceProvider.GetRequiredService<ICodeExecutor>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubmissionService>>();
-            var codeParser = scope.ServiceProvider.GetRequiredService<ICodeParser>();
+
             try
             {
                 var submission = await submissionRepo.GetSubmissionAsync(submissionId, CancellationToken.None);
@@ -114,13 +114,11 @@ public class SubmissionService : ISubmissionService
                     new ConfigurationBuilder().Build(),
                     scope.ServiceProvider.GetRequiredService<IUserRepository>(),
                     _scopeFactory,
-                    codeParser
+                    scope.ServiceProvider.GetRequiredService<ICodeParser>()
                 );
 
-                var parsedFunction = codeParser.Parse(code);
-
+                var parsedFunction = scope.ServiceProvider.GetRequiredService<ICodeParser>().Parse(code);
                 var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, parsedFunction);
-
             }
             catch (Exception ex)
             {
@@ -129,6 +127,7 @@ public class SubmissionService : ISubmissionService
             }
         });
     }
+
 
     public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, ParsedFunction parsedFunction, CancellationToken ct = default)
     {
@@ -190,6 +189,25 @@ public class SubmissionService : ISubmissionService
         await _submissionRepository.SaveChangesAsync(ct);
 
         return finalResults;
+    }
+
+    public async Task<SubmissionResponseDto?> GetSubmissionAsync(Guid submissionId, CancellationToken ct = default)
+    {
+        var submission = await _submissionRepository.GetSubmissionAsync(submissionId, ct);
+
+        if (submission == null) return null;
+
+        var dtos = submission.TestResults.Select(tr => new TestResultDto
+        {
+            TestCaseId = tr.TestCaseId,
+            Passed = tr.Passed,
+            Points = tr.Points,
+            ExecutionTimeMs = tr.ExecutionTimeMs,
+            StdOut = tr.StdOut,
+            StdErr = tr.StdErr
+        }).ToList();
+
+        return MapToDto(submission, dtos);
     }
 
     private SubmissionResponseDto MapToDto(ProgrammingSubmission submission, IReadOnlyList<TestResultDto> results)

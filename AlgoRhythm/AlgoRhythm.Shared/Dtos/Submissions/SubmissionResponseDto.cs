@@ -10,4 +10,5 @@ public class SubmissionResponseDto
     public bool IsSolved { get; set; }
     public DateTime SubmittedAt { get; set; }
     public IReadOnlyList<TestResultDto> TestResults { get; set; } = Array.Empty<TestResultDto>();
+    public string? ErrorMessage { get; set; }
 }
