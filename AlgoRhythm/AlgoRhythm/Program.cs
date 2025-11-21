@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using AlgoRhythm.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,18 @@ builder.Services.AddCors(options =>
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 10,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorNumbersToAdd: null
+            );
+        }
+    )
+);
 
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
@@ -50,6 +62,13 @@ builder.Services.AddIdentity<User, Role>(options =>
 // DI - Email sender
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+
+// DI - clients
+builder.Services.AddHttpClient<CodeExecutorClient>(client =>
+{
+    client.BaseAddress = new Uri("http://codeexecutor:8080");
+});
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings
@@ -143,7 +162,26 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
-// Swagger UI (domyœlna œcie¿ka /swagger)
+
+// Ensure databAse is created
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Applying migrations...");
+        context.Database.Migrate(); // ensures Roles, Users, etc. exist
+        logger.LogInformation("Database ready!");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error applying migrations.");
+        throw;
+    }
+}
 
 // Seed default roles
 using (var scope = app.Services.CreateScope())
@@ -173,7 +211,10 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
