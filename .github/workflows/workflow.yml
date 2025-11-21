@@ -39,13 +39,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: UnitTestResults
-            path: '**/UnitTestResults/*.trx'
+            path: '**/UnitTests/TestResults/*.trx'
 
       - name: Upload Unit Test Coverage
         uses: actions/upload-artifact@v4
         with:
             name: UnitTestCoverage
-            path: '**/UnitTestResults/**/coverage.cobertura.xml'
+            path: '**/UnitTests/TestResults/**/coverage.cobertura.xml'
 
 
       # Run Integration Tests
@@ -55,16 +55,15 @@ jobs:
             --configuration Release 
             --logger "trx;LogFileName=IntegrationTestResults.trx" 
             --collect:"XPlat Code Coverage"
-
       - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestResults
-            path: '**/IntegrationTestResults/*.trx'
+            path: '**/IntegrationTests/TestResults/*.trx'
 
       - name: Upload Integration Test Coverage
         uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestCoverage
 
-            path: '**/IntegrationTestResults/**/coverage.cobertura.xml'
+            path: '**/IntegrationTests/TestResults/**/coverage.cobertura.xml'
