@@ -65,5 +65,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestCoverage
-
             path: '**/IntegrationTests/TestResults/**/coverage.cobertura.xml'
+      
