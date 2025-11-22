@@ -1,9 +1,8 @@
 ﻿using AlgoRhythm.Shared.Dtos;
-using AlgoRhythm.Shared.Models.Tasks;
 
-namespace AlgoRhythm.Services
-{
-    public interface ITaskService
+namespace AlgoRhythm.Services.Interfaces;
+
+public interface ITaskService
     {
         Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct);
         Task<TaskDto?> GetByIdAsync(Guid id, CancellationToken ct);
@@ -12,4 +11,4 @@ namespace AlgoRhythm.Services
 
         Task DeleteAsync(Guid id, CancellationToken ct);
     }
-}
+

@@ -1,4 +1,4 @@
-﻿using AlgoRhythm.Shared.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos;
 
 public class ProgrammingTaskInputDto : TaskInputDto
 {

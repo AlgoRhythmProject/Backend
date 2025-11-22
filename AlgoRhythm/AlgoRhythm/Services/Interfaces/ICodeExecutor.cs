@@ -1,8 +1,9 @@
-﻿using AlgoRhythm.Api.Dtos;
+﻿using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 
-namespace AlgoRhythm.Api.Services.Interfaces;
+namespace AlgoRhythm.Services.Interfaces;
 
 public interface ICodeExecutor
 {
-    Task<IReadOnlyList<TestResultDto>> EvaluateAsync(Guid submissionId, Guid taskItemId, ParsedFunction parsedFunction, CancellationToken ct = default);
+    Task<IReadOnlyList<TestResultDto>> EvaluateAsync(Guid submissionId, Guid taskItemId, List<ExecuteCodeRequest> executeCodeRequests, CancellationToken ct = default);
 }

@@ -1,8 +1,13 @@
-﻿using AlgoRhythm.Shared.Models.Tasks;
+﻿using AlgoRhythm.Shared.Models.CodeExecution.Requests;
+using AlgoRhythm.Shared.Models.Tasks;
+
+namespace AlgoRhythm.Services.Interfaces;
 
 public interface ICodeParser
 {
-    ParsedFunction Parse(string code);
+    public ExecuteCodeRequest ParseToExecuteRequest(string code, string? inputJson = null, TimeSpan? timeout = null);
 
-    void ValidateArguments(ParsedFunction parsedFunction, IEnumerable<TestCase> testCases);
+    public List<ExecuteCodeRequest> BuildRequestsForTestCases(string code, IEnumerable<TestCase> testCases, TimeSpan? timeout = null);
+
+    public void ValidateArguments(string code, IEnumerable<TestCase> testCases);
 }

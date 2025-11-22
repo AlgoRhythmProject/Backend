@@ -1,64 +1,131 @@
-﻿using AlgoRhythm.Shared.Models.Tasks;
+﻿using AlgoRhythm.Services.Interfaces;
+using AlgoRhythm.Shared.Models.CodeExecution;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
+using AlgoRhythm.Shared.Models.Tasks;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
+namespace AlgoRhythm.Services;
+
 public class CSharpCodeParser : ICodeParser
-{
-    public ParsedFunction Parse(string code)
+{ 
+    public ExecuteCodeRequest ParseToExecuteRequest(string code, string? inputJson = null, TimeSpan? timeout = null)
     {
         try
         {
-            var match = Regex.Match(code,
-                @"^(?<modifiers>(?:\w+\s+)*)          
-              (?<return>[^\s]+)\s+                
-              (?<name>\w+)\s*                    
-              \((?<args>[^)]*)\)\s*            
-              \{(?<body>[\s\S]*)\}\s*$",
-                RegexOptions.IgnorePatternWhitespace);
+            var classMatch = Regex.Match(code,
+                @"public\s+class\s+(?<classname>\w+)",
+                RegexOptions.Multiline);
 
-            if (!match.Success)
-                throw new FormatException(
-                    "Invalid function format. Expected something like: " +
-                    "'public int Add(int a, int b) { ... }'");
+            if (!classMatch.Success)
+                throw new FormatException("Cannot find class declaration in code.");
 
-            var argsList = match.Groups["args"].Value
+            var className = classMatch.Groups["classname"].Value;
+
+            var methodMatch = Regex.Match(code,
+                @"public\s+(?<return>[^\s]+)\s+(?<method>\w+)\s*\((?<args>[^)]*)\)",
+                RegexOptions.Multiline);
+
+            if (!methodMatch.Success)
+                throw new FormatException("Cannot find method declaration in code.");
+
+            var methodName = methodMatch.Groups["method"].Value;
+
+            var argsList = methodMatch.Groups["args"].Value
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(a =>
                 {
                     var parts = a.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length < 2)
-                        throw new FormatException(
-                            $"Invalid argument format: '{a}'. Expected 'Type Name'.");
-
-                    return new FunctionArgument
+                        throw new FormatException($"Invalid argument format: '{a}'. Expected 'Type Name'.");
+                    return new FunctionParameter
                     {
-                        Type = parts[0],
-                        Name = parts[1]
+                        Name = parts[1],
+                        Value = string.Empty
                     };
                 }).ToList();
 
-            return new ParsedFunction
+            if (!string.IsNullOrWhiteSpace(inputJson))
             {
-                ReturnType = match.Groups["return"].Value,
-                FunctionName = match.Groups["name"].Value,
-                Arguments = argsList,
-                Body = match.Groups["body"].Value.Trim()
+                var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(inputJson)
+                           ?? new Dictionary<string, JsonElement>();
+
+                foreach (var arg in argsList)
+                {
+                    if (dict.TryGetValue(arg.Name, out var value))
+                        arg.Value = value.ToString() ?? string.Empty;
+                }
+            }
+
+            return new ExecuteCodeRequest
+            {
+                Code = code,
+                Args = argsList,
+                Timeout = timeout ?? TimeSpan.FromSeconds(5),
+                ExecutionClass = className,
+                ExecutionMethod = methodName
             };
         }
         catch (FormatException ex)
         {
-            throw new InvalidOperationException($"Function parsing error: {ex.Message}");
+            throw new InvalidOperationException($"Code parsing error: {ex.Message}");
         }
     }
-    public void ValidateArguments(ParsedFunction parsedFunction, IEnumerable<TestCase> testCases)
+
+    public List<ExecuteCodeRequest> BuildRequestsForTestCases(string code, IEnumerable<TestCase> testCases, TimeSpan? timeout = null)
+    {
+        var templateRequest = ParseToExecuteRequest(code, null, timeout);
+
+        var requests = new List<ExecuteCodeRequest>();
+
+        foreach (var tc in testCases)
+        {
+            var argsForTest = templateRequest.Args
+                .Select(a => new FunctionParameter { Name = a.Name, Value = string.Empty })
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(tc.InputJson))
+            {
+                try
+                {
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(tc.InputJson)
+                               ?? [];
+
+                    foreach (var arg in argsForTest)
+                    {
+                        if (dict.TryGetValue(arg.Name, out var value))
+                            arg.Value = value.ToString() ?? string.Empty;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            requests.Add(new ExecuteCodeRequest
+            {
+                Code = templateRequest.Code,
+                ExecutionClass = templateRequest.ExecutionClass,
+                ExecutionMethod = templateRequest.ExecutionMethod,
+                Args = argsForTest,
+                Timeout = templateRequest.Timeout
+            });
+        }
+
+        return requests;
+    }
+
+    public void ValidateArguments(string code, IEnumerable<TestCase> testCases)
     {
         var errors = new HashSet<string>();
+
+        var requestTemplate = ParseToExecuteRequest(code);
 
         foreach (var tc in testCases)
         {
             if (string.IsNullOrWhiteSpace(tc.InputJson))
             {
-                errors.Add("No input provided.");
+                errors.Add($"TestCase {tc.Id}: No input provided.");
                 continue;
             }
 
@@ -71,19 +138,18 @@ public class CSharpCodeParser : ICodeParser
             }
             catch (JsonException)
             {
-                errors.Add("Failed to parse InputJson. Expected a JSON object like { \"a\": 1, \"b\": 2 }.");
+                errors.Add($"TestCase {tc.Id}: Failed to parse InputJson. Expected a JSON object like {{ \"a\": 1, \"b\": 2 }}.");
                 continue;
             }
 
-            foreach (var arg in parsedFunction.Arguments)
+            foreach (var arg in requestTemplate.Args)
             {
                 if (!inputDict.ContainsKey(arg.Name))
-                    errors.Add($"Missing argument '{arg.Name}' in InputJson.");
+                    errors.Add($"TestCase {tc.Id}: Missing argument '{arg.Name}' in InputJson.");
             }
         }
 
-        if (errors.Any())
+        if (errors.Count != 0)
             throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
     }
-
 }

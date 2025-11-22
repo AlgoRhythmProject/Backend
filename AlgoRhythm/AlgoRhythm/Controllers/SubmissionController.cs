@@ -1,28 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using AlgoRhythm.Api.Dtos;
 using AlgoRhythm.Api.Services.Interfaces;
 using System.Security.Claims;
+using AlgoRhythm.Shared.Dtos.Submissions;
 
 namespace AlgoRhythm.Controllers;
 
 
 [ApiController]
 [Route("api/[controller]")]
-public class SubmissionsController : ControllerBase
+public class SubmissionsController(ISubmissionService submissions, ILogger<SubmissionsController> logger) : ControllerBase
 {
-    private readonly ISubmissionService _submissions;
-    private readonly ILogger<SubmissionsController> _logger;
-
-    public SubmissionsController(ISubmissionService submissions, ILogger<SubmissionsController> logger)
-    {
-        _submissions = submissions;
-        _logger = logger;
-    }
+    private readonly ISubmissionService _submissions = submissions;
+    private readonly ILogger<SubmissionsController> _logger = logger;
 
     [HttpPost("programming")]
     [Authorize]
-    public async Task<IActionResult> SubmitProgramming([FromBody] SubmitProgrammingRequest req, CancellationToken ct)
+    public async Task<IActionResult> SubmitProgramming([FromBody] SubmitProgrammingRequestDto req, CancellationToken ct)
     {
         try
         {

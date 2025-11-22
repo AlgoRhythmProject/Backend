@@ -1,18 +1,21 @@
-﻿using AlgoRhythm.Api.Dtos;
-using AlgoRhythm.Api.Services.Interfaces;
+﻿using AlgoRhythm.Api.Services.Interfaces;
 using AlgoRhythm.Repositories.Interfaces;
+using AlgoRhythm.Services.Interfaces;
+using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using AlgoRhythm.Shared.Models.Submissions;
 using AlgoRhythm.Shared.Models.Tasks;
+using AlgoRhythm.Shared.Models.Users;
+using Microsoft.AspNetCore.Identity;
 
-namespace AlgoRhythm.Api.Services.Implementations;
+namespace AlgoRhythm.Services;
 
 public class SubmissionService : ISubmissionService
 {
     private readonly ISubmissionRepository _submissionRepository;
     private readonly ITaskRepository _tasksRepository;
-    private readonly IUserRepository _userRepository;
     private readonly ICodeExecutor _judge;
-
+    private readonly UserManager<User> _userManager;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ICodeParser _codeParser;
 
@@ -21,7 +24,7 @@ public class SubmissionService : ISubmissionService
         ITaskRepository tasks,
         ICodeExecutor judge,
         IConfiguration config,
-        IUserRepository userRepository,
+        UserManager<User> userManager,
         IServiceScopeFactory scopeFactory,
         ICodeParser codeParser
     )
@@ -29,15 +32,15 @@ public class SubmissionService : ISubmissionService
         _submissionRepository = submissions;
         _tasksRepository = tasks;
         _judge = judge;
-        _userRepository = userRepository;
+        _userManager = userManager;
         _scopeFactory = scopeFactory;
         _codeParser = codeParser;
     }
 
-    public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequest request, CancellationToken ct = default)
+    public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequestDto request, CancellationToken ct = default)
     {
         // 1. Validate user & task exist
-        var user = await _userRepository.GetUserAsync(userId, ct);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null) throw new InvalidOperationException("User not found.");
 
         var task = await _tasksRepository.GetByIdAsync(request.TaskId, ct);
@@ -58,11 +61,12 @@ public class SubmissionService : ISubmissionService
         await _submissionRepository.AddSubmissionAsync(submission, ct);
 
         // 2. Parse code & validate arguments against test cases
-        ParsedFunction parsedFunction;
+        List<ExecuteCodeRequest> executeRequests;
         try
         {
-            parsedFunction = _codeParser.Parse(request.Code);
-            _codeParser.ValidateArguments(parsedFunction, programmingTask.TestCases);
+            _codeParser.ValidateArguments(request.Code, programmingTask.TestCases);
+
+            executeRequests = _codeParser.BuildRequestsForTestCases(request.Code, programmingTask.TestCases);
         }
         catch (Exception ex)
         {
@@ -74,16 +78,16 @@ public class SubmissionService : ISubmissionService
             var dto = MapToDto(submission, Array.Empty<TestResultDto>());
             dto.ErrorMessage = ex.Message;
             return dto;
-
         }
 
-        // 3. Start background evaluation (wykonanie testów)
-        StartBackgroundEvaluation(submission.Id, request.Code);
+        // 3. Start background evaluation
+        StartBackgroundEvaluation(submission.Id, executeRequests);
 
         return MapToDto(submission, Array.Empty<TestResultDto>());
+
     }
 
-    private void StartBackgroundEvaluation(Guid submissionId, string code)
+    private void StartBackgroundEvaluation(Guid submissionId, List<ExecuteCodeRequest> executeCodeRequests)
     {
         _ = Task.Run(async () =>
         {
@@ -112,13 +116,12 @@ public class SubmissionService : ISubmissionService
                     taskRepo,
                     judge,
                     new ConfigurationBuilder().Build(),
-                    scope.ServiceProvider.GetRequiredService<IUserRepository>(),
+                    _userManager,
                     _scopeFactory,
                     scope.ServiceProvider.GetRequiredService<ICodeParser>()
                 );
 
-                var parsedFunction = scope.ServiceProvider.GetRequiredService<ICodeParser>().Parse(code);
-                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, parsedFunction);
+                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, executeCodeRequests);
             }
             catch (Exception ex)
             {
@@ -129,14 +132,14 @@ public class SubmissionService : ISubmissionService
     }
 
 
-    public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, ParsedFunction parsedFunction, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, List<ExecuteCodeRequest> executeCodeRequests, CancellationToken ct = default)
     {
         submission.ExecuteStartedAt = submission.ExecuteStartedAt == default ? DateTime.UtcNow : submission.ExecuteStartedAt;
 
         await _submissionRepository.SaveChangesAsync(ct);
 
 
-        var judgeResults = (await _judge.EvaluateAsync(submission.Id, task.Id, parsedFunction, ct)).ToList();
+        var judgeResults = (await _judge.EvaluateAsync(submission.Id, task.Id, executeCodeRequests, ct)).ToList();
 
         var orderedTestCases = task.TestCases.OrderBy(tc => tc.Id).ToList();
         var finalResults = new List<TestResultDto>();
@@ -205,12 +208,13 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr
-        }).ToList();
+        }).ToList() ?? [];
+
 
         return MapToDto(submission, dtos);
     }
 
-    private SubmissionResponseDto MapToDto(ProgrammingSubmission submission, IReadOnlyList<TestResultDto> results)
+    private static SubmissionResponseDto MapToDto(ProgrammingSubmission submission, IReadOnlyList<TestResultDto> results)
     {
         return new SubmissionResponseDto
         {

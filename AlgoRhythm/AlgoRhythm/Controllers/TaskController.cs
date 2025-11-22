@@ -1,18 +1,14 @@
-﻿using AlgoRhythm.Services;
+﻿using AlgoRhythm.Services.Interfaces;
+using AlgoRhythm.Shared.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AlgoRhythm.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TaskController : ControllerBase
+public class TaskController(ITaskService service) : ControllerBase
 {
-    private readonly ITaskService _service;
-
-    public TaskController(ITaskService service)
-    {
-        _service = service;
-    }
+    private readonly ITaskService _service = service;
 
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)

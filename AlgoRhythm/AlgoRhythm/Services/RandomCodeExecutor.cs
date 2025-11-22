@@ -1,10 +1,11 @@
-﻿using AlgoRhythm.Api.Dtos;
-using AlgoRhythm.Api.Services.Interfaces;
-using AlgoRhythm.Repositories.Interfaces;
+﻿using AlgoRhythm.Repositories.Interfaces;
+using AlgoRhythm.Services.Interfaces;
+using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using AlgoRhythm.Shared.Models.Tasks;
-using Microsoft.Extensions.Logging;
 using System.Text;
-using System.Text.Json;
+
+namespace AlgoRhythm.Services;
 
 public class RandomCodeExecutor : ICodeExecutor
 {
@@ -21,22 +22,21 @@ public class RandomCodeExecutor : ICodeExecutor
     public async Task<IReadOnlyList<TestResultDto>> EvaluateAsync(
         Guid submissionId,
         Guid taskItemId,
-        ParsedFunction parsedFunction,
+        List<ExecuteCodeRequest> executeCodeRequests,
         CancellationToken ct = default)
     {
-        LogParsedFunction(submissionId, parsedFunction);
-
         var task = await _taskRepository.GetByIdAsync(taskItemId, ct);
         if (task is not ProgrammingTaskItem programmingTask)
             throw new InvalidOperationException("Task is not a programming task");
 
-        Thread.Sleep(10000);
-
         var results = new List<TestResultDto>();
 
-        foreach (var tc in programmingTask.TestCases)
+        for (int i = 0; i < executeCodeRequests.Count; i++)
         {
-            LogTestCaseArguments(tc, parsedFunction);
+            var request = executeCodeRequests[i];
+            var tc = programmingTask.TestCases.ElementAt(i);
+
+            LogExecuteCodeRequest(submissionId, request, tc);
 
             var passed = _rnd.NextDouble() > 0.4;
 
@@ -54,66 +54,25 @@ public class RandomCodeExecutor : ICodeExecutor
         return results;
     }
 
-    private void LogParsedFunction(Guid submissionId, ParsedFunction function)
+    private void LogExecuteCodeRequest(Guid submissionId, ExecuteCodeRequest request, TestCase tc)
     {
         var sb = new StringBuilder();
-
-        sb.AppendLine("Received function for execution:");
         sb.AppendLine($"Submission ID: {submissionId}");
-        sb.AppendLine($"Return Type:   {function.ReturnType}");
-        sb.AppendLine($"Name:          {function.FunctionName}");
+        sb.AppendLine($"TestCase ID: {tc.Id}");
+        sb.AppendLine($"Execution Class: {request.ExecutionClass}");
+        sb.AppendLine($"Execution Method: {request.ExecutionMethod}");
+        sb.AppendLine("Code:");
+        sb.AppendLine(request.Code);
 
         sb.AppendLine("Arguments:");
-        if (function.Arguments.Any())
+        if (request.Args.Any())
         {
-            foreach (var arg in function.Arguments)
-                sb.AppendLine($"  - {arg.Type} {arg.Name}");
+            foreach (var arg in request.Args)
+                sb.AppendLine($"  {arg.Name} = {arg.Value}");
         }
         else
         {
             sb.AppendLine("  (none)");
-        }
-
-        sb.AppendLine("Body:");
-        sb.AppendLine(function.Body);
-
-        _logger.LogInformation(sb.ToString());
-    }
-
-    private void LogTestCaseArguments(TestCase tc, ParsedFunction function)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine($"TestCase {tc.Id}");
-        sb.AppendLine($"InputJson: {tc.InputJson}");
-
-        if (tc.InputJson == null)
-        {
-            sb.AppendLine("No InputJson provided.");
-            _logger.LogInformation(sb.ToString());
-            return;
-        }
-
-        try
-        {
-            var inputDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(tc.InputJson);
-
-            sb.AppendLine("Mapped arguments:");
-            foreach (var arg in function.Arguments)
-            {
-                if (inputDict!.TryGetValue(arg.Name, out var value))
-                {
-                    sb.AppendLine($"  {arg.Name} ({arg.Type}) = {value}");
-                }
-                else
-                {
-                    sb.AppendLine($"Missing argument '{arg.Name}' in InputJson");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            sb.AppendLine("Failed to parse InputJson:");
-            sb.AppendLine(ex.ToString());
         }
 
         _logger.LogInformation(sb.ToString());

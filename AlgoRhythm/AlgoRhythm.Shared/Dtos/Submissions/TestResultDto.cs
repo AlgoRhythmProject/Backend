@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Api.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos.Submissions;
 
 public class TestResultDto
 {

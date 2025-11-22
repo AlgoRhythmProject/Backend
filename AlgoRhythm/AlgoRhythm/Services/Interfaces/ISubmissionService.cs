@@ -1,5 +1,4 @@
-﻿using AlgoRhythm.Api.Dtos;
-using AlgoRhythm.Shared.Models.Submissions;
+﻿using AlgoRhythm.Shared.Dtos.Submissions;
 
 namespace AlgoRhythm.Api.Services.Interfaces;
 
@@ -9,7 +8,7 @@ public interface ISubmissionService
     /// Creates programming submission and either evaluates synchronously or enqueues for background processing.
     /// Returns the created submission id and optionally initial status/result.
     /// </summary>
-    Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequest request, CancellationToken ct = default);
+    Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequestDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Returns submission with test results.

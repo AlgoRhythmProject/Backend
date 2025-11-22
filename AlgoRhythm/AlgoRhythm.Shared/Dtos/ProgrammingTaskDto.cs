@@ -3,5 +3,5 @@
 public class ProgrammingTaskDto : TaskDto
 {
     public string? TemplateCode { get; set; }
-    public List<TestCaseDto> TestCases { get; set; } = new();
+    public List<TestCaseDto> TestCases { get; set; } = [];
 }

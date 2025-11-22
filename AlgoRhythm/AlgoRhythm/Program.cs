@@ -1,4 +1,3 @@
-using AlgoRhythm.Api.Services.Implementations;
 using AlgoRhythm.Api.Services.Interfaces;
 using AlgoRhythm.Data;
 using AlgoRhythm.Repositories;
@@ -53,7 +52,6 @@ builder.Services.AddIdentity<User, Role>(options =>
 
 builder.Services.AddScoped<ISubmissionRepository, EfSubmissionRepository>();
 builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
-builder.Services.AddScoped<IUserRepository, EfUserRepository>();
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();

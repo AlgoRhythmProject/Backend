@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Api.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos.Submissions;
 
 public class SubmissionResponseDto
 {
@@ -9,6 +9,6 @@ public class SubmissionResponseDto
     public double? Score { get; set; }
     public bool IsSolved { get; set; }
     public DateTime SubmittedAt { get; set; }
-    public IReadOnlyList<TestResultDto> TestResults { get; set; } = Array.Empty<TestResultDto>();
+    public IReadOnlyList<TestResultDto> TestResults { get; set; } = [];
     public string? ErrorMessage { get; set; }
 }
