@@ -31,18 +31,18 @@ public abstract class TaskItem
     public bool IsDeleted { get; set; } = false;
 
     // Navigation properties
-    public ICollection<Course> Courses { get; set; } = new List<Course>();
-    public ICollection<Hint> Hints { get; set; } = new List<Hint>();
-    public ICollection<Tag> Tags { get; set; } = new List<Tag>();
-    public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
-    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<Course> Courses { get; set; } = [];
+    public ICollection<Hint> Hints { get; set; } = [];
+    public ICollection<Tag> Tags { get; set; } = [];
+    public ICollection<Submission> Submissions { get; set; } = [];
+    public ICollection<Comment> Comments { get; set; } = [];
 }
 
 public class ProgrammingTaskItem : TaskItem
 {
     public string? TemplateCode { get; set; }
 
-    public ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
+    public ICollection<TestCase> TestCases { get; set; } = [];
 }
 
 public class InteractiveTaskItem : TaskItem

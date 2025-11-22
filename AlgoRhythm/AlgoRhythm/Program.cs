@@ -1,6 +1,9 @@
+using AlgoRhythm.Api.Services.Interfaces;
 using AlgoRhythm.Data;
-using AlgoRhythm.Interfaces;
+using AlgoRhythm.Repositories;
+using AlgoRhythm.Repositories.Interfaces;
 using AlgoRhythm.Services;
+using AlgoRhythm.Services.Interfaces;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -47,9 +50,16 @@ builder.Services.AddIdentity<User, Role>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// DI - Email sender
+builder.Services.AddScoped<ISubmissionRepository, EfSubmissionRepository>();
+builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
+
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+builder.Services.AddScoped<ICodeExecutor, RandomCodeExecutor>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
+
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings

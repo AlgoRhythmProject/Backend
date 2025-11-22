@@ -1,6 +1,6 @@
 ﻿using AlgoRhythm.Shared.Dtos;
 
-namespace AlgoRhythm.Interfaces;
+namespace AlgoRhythm.Services.Interfaces;
 
 public interface IAuthService
 {
