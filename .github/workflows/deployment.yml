@@ -27,7 +27,7 @@ jobs:
     
     # Build backend image
     - name: Build backend
-      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/algorhythm-backend:latest -f ./AlgoRhythm/AlgoRhythm/Dockerfile .
+      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/algorhythm-backend:latest -f ./AlgoRhythm/AlgoRhythm/Dockerfile ./AlgoRhythm
     
     # Push backend image
     - name: Push backend
