@@ -1,6 +1,8 @@
-﻿using AlgoRhythm.Shared.Models.CodeExecution;
-using AlgoRhythm.Shared.Models.CodeExecution.Responses;
+﻿using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using CodeExecutor.Helpers;
+using System.Diagnostics;
 
 namespace CodeExecutor.Services
 {
@@ -26,22 +28,23 @@ namespace CodeExecutor.Services
         /// <param name="executionClass">The fully qualified name of the class containing the method to invoke. Default is "Solution".</param>
         /// <param name="executionMethod">The name of the method to invoke. Default is "Solve".</param>
         /// <param name="code">The C# code to compile and execute. Default is a simple "Hello world" example.</param>
-        /// <returns>An <see cref="ExecuteCodeResponse"/> containing execution status, output, errors, and return value.</returns>
-        public ExecuteCodeResponse Run(
+        /// <returns>An <see cref="TestResultDto"/> containing execution status, output, errors, and return value.</returns>
+        public TestResultDto Run(
             TimeSpan timeout,
+            string expectedValue,
             List<FunctionParameter>? args = null,
             string executionClass = "Solution",
             string executionMethod = "Solve",
             string code = @"class Solution { public void Solve() { Console.WriteLine(""Hello world""); } }")
         {
             CSharpCompilationResult result = _codeCompiler.Compile(code, executionMethod);
-            
+
             if (!result.Success || result.AssemblyStream is null)
             {
-                return new ExecuteCodeResponse
+                return new TestResultDto
                 {
-                    Success = false,
-                    Errors =  result.Errors,
+                    Passed = false,
+                    Errors = result.Errors,
                     ExitCode = 1
                 };
             }
@@ -55,7 +58,7 @@ namespace CodeExecutor.Services
 
                 var task = Task.Run(() =>
                     new AssemblyExecutor().Execute(
-                        result.AssemblyStream, executionClass, executionMethod, args), cts.Token);
+                        result.AssemblyStream, executionClass, executionMethod, args, expectedValue), cts.Token);
 
                 if (!task.Wait(timeout))
                 {
@@ -63,28 +66,133 @@ namespace CodeExecutor.Services
                 }
 
                 object? returnValue = task.Result;
-                
+
                 return new()
                 {
-                    Success = true,
-                    Stdout = console.StdOut.ToString(),
-                    Stderr = console.StdErr.ToString(),
+                    Passed = true,
+                    StdOut = console.StdOut.ToString(),
+                    StdErr = console.StdErr.ToString(),
                     ExitCode = 0,
-                    ReturnedValue = task.Result ?? string.Empty,
+                    ReturnedValue = task.Result.returnedValue ?? string.Empty,
                 };
             }
             catch (Exception ex)
             {
                 return new()
                 {
-                    Success = false,
+                    Passed = false,
                     Errors = [new(ex.Message)],
-                    Stderr = console.StdErr.ToString(),
-                    Stdout = console.StdOut.ToString(),
+                    StdErr = console.StdErr.ToString(),
+                    StdOut = console.StdOut.ToString(),
                     ExitCode = 1,
                     ReturnedValue = string.Empty,
                 };
             }
+        }
+
+        public async Task<List<TestResultDto>> RunTests(
+            List<ExecuteCodeRequest> requests)
+        {
+            string code = requests[0].Code;
+            string executionMethod = requests[0].ExecutionMethod;
+
+            CSharpCompilationResult result = _codeCompiler.Compile(code, executionMethod);
+            int n = requests.Count;
+            
+            // Code didn't compile
+            if (!result.Success || result.AssemblyStream is null)
+            {
+
+                return [.. requests.Select(r => new TestResultDto()
+                {
+                    TestCaseId = r.TestCaseId,
+                    Passed = false,
+                    Errors = result.Errors,
+                    ExitCode = 1,
+                    Points = 0,
+                })];
+            }
+
+            List<TestResultDto> results = [];
+
+            foreach (var request in requests)
+            {
+                using var console = new ConsoleOrchestrator();
+                var stopwatch = Stopwatch.StartNew();
+
+                try
+                {
+                    using CancellationTokenSource cts = new();
+
+                    (bool? passed, object? returnValue) = await Task.Run(() =>
+                        new AssemblyExecutor().Execute(
+                            result.AssemblyStream,
+                            request.ExecutionClass,
+                            request.ExecutionMethod,
+                            request.Args,
+                            request.ExpectedValue), cts.Token)
+                        .WaitAsync(request.Timeout);
+
+                    stopwatch.Stop();
+
+                    results.Add(new TestResultDto()
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = passed.GetValueOrDefault(),
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        ReturnedValue = returnValue ?? string.Empty,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 0,
+                        Points = Grade(passed, stopwatch.ElapsedMilliseconds, request.Timeout.TotalMilliseconds, request.MaxPoints),
+                    });
+                }
+                catch (TimeoutException)
+                {
+                    stopwatch.Stop();
+                    results.Add(new TestResultDto()
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = false,
+                        Errors = [new("Execution timeout")],
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 1,
+                        Points = 0
+                    });
+                }
+                catch (Exception ex)
+                {
+                    stopwatch.Stop();
+                    results.Add(new TestResultDto()
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = false,
+                        Errors = [new(ex.Message)],
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 1,
+                        Points = 0
+                    });
+                }
+            }
+
+            return results;
+        }
+
+        private int Grade(bool? passed, double ellapsedMs, double expectedMs, int maxPoints = 10)
+        {
+            if (!passed.GetValueOrDefault()) return 0;
+
+            return (ellapsedMs / expectedMs) switch
+            {
+                < 0.25 => maxPoints,                // Full points if < 25% of timeout
+                < 0.50 => (int)(maxPoints * 0.8),   // 80% if < 50% of timeout
+                < 0.75 => (int)(maxPoints * 0.6),   // 60% if < 75% of timeout
+                _ => (int)(maxPoints * 0.4)         // 40% otherwise
+            };
         }
     }
 }

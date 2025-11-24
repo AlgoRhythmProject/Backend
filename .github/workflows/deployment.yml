@@ -1,0 +1,40 @@
+name: Build and Push Docker Images
+on:
+  push:
+    branches: [ "main", "develop" ]
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Log in to GitHub Container Registry
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    # Build backend image
+    - name: Build backend
+      run: docker build -t ${{ env.REGISTRY }}/${{ github.repository_owner }}/algorhythm-backend:latest ./backend
+    
+    # Push backend image
+    - name: Push backend
+      run: docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/algorhythm-backend:latest
+    
+    # Build code executor image
+    - name: Build code executor
+      run: docker build -t ${{ env.REGISTRY }}/${{ github.repository_owner }}/code-executor:latest ./codeexecutor
+    
+    # Push code executor image
+    - name: Push code executor
+      run: docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/code-executor:latest

@@ -1,4 +1,6 @@
 ﻿using AlgoRhythm.Shared.Models.CodeExecution;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 using System.Reflection;
 
 namespace CodeExecutor.Helpers
@@ -18,10 +20,10 @@ namespace CodeExecutor.Helpers
         /// <param name="methodName">The name of the method to invoke.</param>
         /// <param name="args">The arguments to pass to the method. Can be empty or null for parameterless methods.</param>
         /// <returns>
-        /// The result returned by the invoked method, or <c>null</c> if the method is <c>void</c>.
+        /// If result returned by the invoked method is the same as expected value (<c>null</c> if the method is <c>void</c>) + the value returned by method
         /// </returns>
         /// <exception cref="Exception">Thrown if the specified class or method cannot be found.</exception>
-        public object? Execute(MemoryStream assemblyStream, string className, string methodName, List<FunctionParameter>? args)
+        public (bool? passed, object? returnedValue) Execute(MemoryStream assemblyStream, string className, string methodName, List<FunctionParameter>? args, string expectedValue)
         {
             Assembly assembly = Assembly.Load(assemblyStream.ToArray());
             Type? type = assembly.GetType(className);
@@ -39,7 +41,16 @@ namespace CodeExecutor.Helpers
             ParameterInfo[] parametersInfo = method.GetParameters();
             object?[] parameters = args.ConvertArgs(parametersInfo);
 
-            return method.Invoke(instance, parameters);
+            object? returnedValue = method.Invoke(instance, parameters);
+            
+            if (method.ReturnType == typeof(void))
+            {
+                return (true, returnedValue);
+            }
+
+            var expectedValueConverted = JsonConvert.DeserializeObject(expectedValue, method.ReturnType);
+
+            return (Equals(expectedValueConverted, returnedValue), returnedValue);
         }
     }
 }

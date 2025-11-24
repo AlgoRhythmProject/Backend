@@ -1,5 +1,5 @@
-﻿using AlgoRhythm.Shared.Models.CodeExecution.Requests;
-using AlgoRhythm.Shared.Models.CodeExecution.Responses;
+﻿using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 
 namespace AlgoRhythm.Clients
 {
@@ -12,16 +12,18 @@ namespace AlgoRhythm.Clients
             _client = client;
         }
 
-        public async Task<ExecuteCodeResponse> ExecuteAsync(ExecuteCodeRequest req)
+        public async Task<List<TestResultDto>> ExecuteAsync(List<ExecuteCodeRequest> req)
         {
             HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
 
-            return (await response.Content.ReadFromJsonAsync<ExecuteCodeResponse?>())
-                ?? new ExecuteCodeResponse()
-                {
-                    Errors = [ new("Couldn't connect")],
-                    Success = false,
-                };
+            return (await response.Content.ReadFromJsonAsync<List<TestResultDto>>()) ??
+                [
+                    new()
+                    {
+                        Errors = [ new("Couldn't connect") ],
+                        Passed = false
+                    }
+                ];
         }
     }
 }

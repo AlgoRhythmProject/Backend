@@ -1,5 +1,5 @@
-﻿using AlgoRhythm.Shared.Models.CodeExecution.Requests;
-using AlgoRhythm.Shared.Models.CodeExecution.Responses;
+﻿using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using CodeExecutor.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,16 +16,13 @@ namespace CodeExecutor.Controllers
             _executeService = executeService;
         }
 
+        /// <summary>
+        /// Endpoint for executing in parallel test cases for the same code 
+        /// </summary>
         [HttpPost]
-        public async Task<ExecuteCodeResponse> Execute([FromBody] ExecuteCodeRequest request)
-        {            
-            return _executeService.Run(
-                request.Timeout,
-                request.Args,
-                request.ExecutionClass,
-                request.ExecutionMethod,
-                request.Code
-            );
+        public async Task<List<TestResultDto>> RunTests([FromBody] List<ExecuteCodeRequest> requests)
+        {
+            return await _executeService.RunTests(requests);
         }
     }
 }

@@ -48,5 +48,5 @@ public class ProgrammingSubmission : Submission
 
     public bool IsSolved { get; set; } = false;
 
-    public ICollection<TestResult> TestResults { get; set; } = new List<TestResult>();
+    public ICollection<TestResult> TestResults { get; set; } = [];
 }

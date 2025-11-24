@@ -7,6 +7,7 @@ using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace AlgoRhythm.Data;
 
@@ -77,6 +78,11 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasDiscriminator<string>("SubmissionType")
             .HasValue<ProgrammingSubmission>("Programming");
 
+        builder.Entity<ProgrammingTaskItem>()
+            .HasMany(p => p.TestCases)
+            .WithOne(tc => tc.ProgrammingTaskItem)
+            .HasForeignKey(tc => tc.ProgrammingTaskItemId)
+            .OnDelete(DeleteBehavior.Cascade);
         // Unique constraints
         builder.Entity<Tag>()
             .HasIndex(t => t.Name)

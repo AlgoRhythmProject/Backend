@@ -1,5 +1,4 @@
-﻿using AlgoRhythm.Interfaces;
-using Microsoft.Extensions.Configuration;
+﻿using AlgoRhythm.Services.Interfaces;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
