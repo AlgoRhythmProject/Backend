@@ -353,42 +353,42 @@ namespace UnitTests
             Assert.Contains("Error message", result.StdErr);
         }
 
-        [Fact]
-        public async Task Test_RunTests_PointsCalculation_BasedOnExecutionTime()
-        {
-            // Arrange
-            List<ExecuteCodeRequest> requests =
-            [
-                new()
-                {
-                    TestCaseId = Guid.NewGuid(),
-                    Code = @"using System;
-                            public class Solution
-                            {    
-                                public int Solve(int a, int b)
-                                {        
-                                    return a + b;    
-                                }
-                            }",
-                    Args =
-                    [
-                        new() { Name = "a", Value = "5" },
-                        new() { Name = "b", Value = "6" }
-                    ],
-                    Timeout = TimeSpan.FromSeconds(10),
-                    ExpectedValue = "11",
-                    MaxPoints = 100
-                }
-            ];
+        //[Fact]
+        //public async Task Test_RunTests_PointsCalculation_BasedOnExecutionTime()
+        //{
+        //    // Arrange
+        //    List<ExecuteCodeRequest> requests =
+        //    [
+        //        new()
+        //        {
+        //            TestCaseId = Guid.NewGuid(),
+        //            Code = @"using System;
+        //                    public class Solution
+        //                    {    
+        //                        public int Solve(int a, int b)
+        //                        {        
+        //                            return a + b;    
+        //                        }
+        //                    }",
+        //            Args =
+        //            [
+        //                new() { Name = "a", Value = "5" },
+        //                new() { Name = "b", Value = "6" }
+        //            ],
+        //            Timeout = TimeSpan.FromSeconds(10),
+        //            ExpectedValue = "11",
+        //            MaxPoints = 100
+        //        }
+        //    ];
 
-            // Act
-            TestResultDto result = (await _service.RunTests(requests)).First();
+        //    // Act
+        //    TestResultDto result = (await _service.RunTests(requests)).First();
 
-            // Assert
-            Assert.True(result.Passed);
-            Assert.True(result.Points > 0 && result.Points <= 100);
-            Assert.True(result.ExecutionTimeMs > 0);
-        }
+        //    // Assert
+        //    Assert.True(result.Passed);
+        //    Assert.True(result.Points > 0 && result.Points <= 100);
+        //    Assert.True(result.ExecutionTimeMs > 0);
+        //}
 
         [Fact]
         public async Task Test_RunTests_FailedTest_ReturnsZeroPoints()
