@@ -106,7 +106,10 @@ namespace UnitTests
 
             // Assert
             Assert.True(res.Passed);
-            Assert.Equal("5\r\n6\r\n", res.StdOut);
+            
+            string expected = string.Join(Environment.NewLine, "5", "6") + Environment.NewLine;
+
+            Assert.Equal(expected, res.StdOut);
 
         }
 
