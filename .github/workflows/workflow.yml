@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      JWT_KEY: ${{ secrets.JWT_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -66,4 +67,5 @@ jobs:
         with:
             name: IntegrationTestCoverage
             path: '**/IntegrationTests/TestResults/**/coverage.cobertura.xml'
+
       
