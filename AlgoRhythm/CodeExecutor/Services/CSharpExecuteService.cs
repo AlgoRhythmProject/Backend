@@ -95,7 +95,6 @@ namespace CodeExecutor.Services
             string executionMethod = requests[0].ExecutionMethod;
 
             CSharpCompilationResult result = _codeCompiler.Compile(code, executionMethod);
-            int n = requests.Count;
             
             // Code didn't compile
             if (!result.Success || result.AssemblyStream is null)
@@ -121,6 +120,7 @@ namespace CodeExecutor.Services
                 try
                 {
                     using CancellationTokenSource cts = new();
+                    result.AssemblyStream.Position = 0;
 
                     (bool? passed, object? returnValue) = await Task.Run(() =>
                         new AssemblyExecutor().Execute(
