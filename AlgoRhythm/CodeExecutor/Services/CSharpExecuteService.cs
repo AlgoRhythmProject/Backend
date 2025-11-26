@@ -65,8 +65,6 @@ namespace CodeExecutor.Services
                     throw new TimeoutException("User code execution exceeded time limit.");
                 }
 
-                object? returnValue = task.Result;
-
                 return new()
                 {
                     Passed = true,
@@ -182,11 +180,11 @@ namespace CodeExecutor.Services
             return results;
         }
 
-        private int Grade(bool? passed, double ellapsedMs, double expectedMs, int maxPoints = 10)
+        private int Grade(bool? passed, double elapsedMs, double expectedMs, int maxPoints = 10)
         {
             if (!passed.GetValueOrDefault()) return 0;
 
-            return (ellapsedMs / expectedMs) switch
+            return (elapsedMs / expectedMs) switch
             {
                 < 0.25 => maxPoints,                // Full points if < 25% of timeout
                 < 0.50 => (int)(maxPoints * 0.8),   // 80% if < 50% of timeout

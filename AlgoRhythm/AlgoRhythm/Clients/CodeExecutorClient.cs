@@ -12,18 +12,27 @@ namespace AlgoRhythm.Clients
             _client = client;
         }
 
-        public async Task<List<TestResultDto>> ExecuteAsync(List<ExecuteCodeRequest> req)
+        public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
         {
-            HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+            try
+            {
+                HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+                response.EnsureSuccessStatusCode();
 
-            return (await response.Content.ReadFromJsonAsync<List<TestResultDto>>()) ??
+                return await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
+                    
+            }
+            catch (Exception) 
+            {
+                return
                 [
                     new()
                     {
-                        Errors = [ new("Couldn't connect") ],
-                        Passed = false
+                        Errors = [new("Couldn't connect with external service")],
                     }
                 ];
+                
+            }
         }
     }
 }

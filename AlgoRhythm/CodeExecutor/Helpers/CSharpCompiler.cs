@@ -88,21 +88,5 @@ namespace CodeExecutor.Helpers
             yield return MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location);
         }
 
-        private Dictionary<string, ITypeSymbol> ParseMethodArgs(string methodName, SyntaxTree tree, CSharpCompilation compilation)
-        {
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            SyntaxNode root = tree.GetRoot();
-
-            MethodDeclarationSyntax methodNode = root.DescendantNodes()
-                .OfType<MethodDeclarationSyntax>()
-                .First(m => m.Identifier.Text == methodName);
-
-
-            return methodNode.ParameterList.Parameters
-                .ToDictionary(
-                    p => p.Identifier.Text,
-                    p => model.GetTypeInfo(p.Type!).Type!
-                );
-        }
     }
 }

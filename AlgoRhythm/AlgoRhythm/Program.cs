@@ -77,7 +77,7 @@ builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
 {
-    client.BaseAddress = new Uri("http://codeexecutor:8080");
+    client.BaseAddress = new Uri("http://code_executor:8080");
 });
 
 // JWT Authentication
@@ -173,7 +173,7 @@ var app = builder.Build();
 
 app.UseCors("AllowFrontend");
 
-// Ensure database is created
+// Applying migrations
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

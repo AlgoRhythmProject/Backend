@@ -38,6 +38,8 @@ namespace AlgoRhythm.Shared.Models.CodeExecution
         /// </summary>
         /// <param name="message"></param>
         public CSharpExecutionError(string message)
-        {  ErrorMessage = message; }
+        {
+            ErrorMessage = message;
+        }
     }
 }
