@@ -120,7 +120,6 @@ namespace CodeExecutor.Services
                 try
                 {
                     using CancellationTokenSource cts = new();
-                    result.AssemblyStream.Position = 0;
 
                     (bool? passed, object? returnValue) = await Task.Run(() =>
                         new AssemblyExecutor().Execute(
