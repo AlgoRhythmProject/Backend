@@ -33,7 +33,7 @@ jobs:
     
     # Build code executor image
     - name: Build code executor
-      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/code-executor:latest ./AlgoRhythm/CodeExecutor/Dockerfile ./AlgoRhythm
+      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/code-executor:latest -f ./AlgoRhythm/CodeExecutor/Dockerfile ./AlgoRhythm
     
     # Push code executor image
     - name: Push code executor
