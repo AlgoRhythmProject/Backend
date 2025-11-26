@@ -26,6 +26,9 @@ services:
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
     depends_on:
       - database
+    networks:
+    - default  
+    - internal_net
 
   frontend:
     container_name: frontend
