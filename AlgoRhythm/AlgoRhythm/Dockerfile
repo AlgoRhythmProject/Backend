@@ -10,10 +10,11 @@ EXPOSE 8080
 EXPOSE 8081
 
 # Stage 2: build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["AlgoRhythm/AlgoRhythm.csproj", "AlgoRhythm/"]
+COPY ["AlgoRhythm.Shared/AlgoRhythm.Shared.csproj", "AlgoRhythm.Shared/"]
 RUN dotnet restore "./AlgoRhythm/AlgoRhythm.csproj"
 COPY . .
 WORKDIR "/src/AlgoRhythm"
