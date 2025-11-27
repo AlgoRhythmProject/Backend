@@ -28,10 +28,28 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Database
+// Database - Build connection string from environment variables or appsettings
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Override with environment variables if present (for Docker)
+var dbServer = Environment.GetEnvironmentVariable("DB_SERVER");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+if (!string.IsNullOrEmpty(dbServer) && !string.IsNullOrEmpty(dbPassword))
+{
+    connectionString = $"Server={dbServer};Database={dbName ?? "master"};User Id={dbUser ?? "sa"};Password={dbPassword};TrustServerCertificate=True";
+}
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Database connection string is not configured.");
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        connectionString,
         sqlOptions =>
         {
             sqlOptions.EnableRetryOnFailure(
@@ -71,8 +89,6 @@ builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
-
-
 
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>

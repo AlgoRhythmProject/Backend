@@ -1,4 +1,4 @@
-﻿using AlgoRhythm.Shared.Dtos;
+﻿using AlgoRhythm.Shared.Dtos.Tasks;
 
 namespace AlgoRhythm.Services.Interfaces;
 

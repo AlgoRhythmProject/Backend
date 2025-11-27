@@ -1,5 +1,5 @@
 ﻿using AlgoRhythm.Services.Interfaces;
-using AlgoRhythm.Shared.Dtos;
+using AlgoRhythm.Shared.Dtos.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AlgoRhythm.Controllers;

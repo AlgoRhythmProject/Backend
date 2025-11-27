@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Shared.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos.Tasks;
 public class TaskDto
 {
     public Guid Id { get; set; }

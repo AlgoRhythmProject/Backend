@@ -1,5 +1,5 @@
 ﻿using AlgoRhythm.Services.Interfaces;
-using AlgoRhythm.Shared.Dtos;
+using AlgoRhythm.Shared.Dtos.Users;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;

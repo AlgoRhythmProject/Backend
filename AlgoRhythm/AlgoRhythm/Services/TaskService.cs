@@ -1,6 +1,6 @@
 ﻿using AlgoRhythm.Repositories.Interfaces;
 using AlgoRhythm.Services.Interfaces;
-using AlgoRhythm.Shared.Dtos;
+using AlgoRhythm.Shared.Dtos.Tasks;
 using AlgoRhythm.Shared.Models.Tasks;
 
 namespace AlgoRhythm.Services;

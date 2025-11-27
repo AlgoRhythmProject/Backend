@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Shared.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos.Users;
 
 public record RegisterRequest(string Email, string Password, string FirstName, string LastName);
 public record VerifyEmailRequest(string Email, string Code);

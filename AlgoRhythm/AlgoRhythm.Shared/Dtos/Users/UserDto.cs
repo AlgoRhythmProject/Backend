@@ -1,4 +1,4 @@
-﻿namespace AlgoRhythm.Shared.Dtos;
+﻿namespace AlgoRhythm.Shared.Dtos.Users;
 
 /// <summary>
 /// DTO zawierający dane użytkownika zwracane w odpowiedziach API.
