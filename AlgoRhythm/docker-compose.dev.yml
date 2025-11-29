@@ -73,6 +73,7 @@ services:
       - backend
     networks:
       - default  
+      - internal_net
 
   executor:
     container_name: code_executor
@@ -104,7 +105,7 @@ networks:
     internal: true
 
 volumes:
-  db_data:   
+  db_data:                  
   nuget-cache:  
     name: algorhythm_nuget_cache
   vite-cache:
