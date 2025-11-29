@@ -35,7 +35,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var dbServer = Environment.GetEnvironmentVariable("DB_SERVER");
 var dbName = Environment.GetEnvironmentVariable("DB_NAME");
 var dbUser = Environment.GetEnvironmentVariable("DB_USER");
-var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var dbPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 
 if (!string.IsNullOrEmpty(dbServer) && !string.IsNullOrEmpty(dbPassword))
 {
