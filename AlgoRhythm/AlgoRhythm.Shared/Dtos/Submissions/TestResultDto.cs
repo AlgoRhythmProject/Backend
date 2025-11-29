@@ -1,4 +1,6 @@
-﻿namespace AlgoRhythm.Shared.Dtos.Submissions;
+﻿using AlgoRhythm.Shared.Models.CodeExecution;
+
+namespace AlgoRhythm.Shared.Dtos.Submissions;
 
 public class TestResultDto
 {
@@ -8,4 +10,7 @@ public class TestResultDto
     public double ExecutionTimeMs { get; set; }
     public string? StdOut { get; set; }
     public string? StdErr { get; set; }
+    public List<CSharpExecutionError> Errors { get; set; } = [];
+    public long ExitCode { get; set; }
+    public object? ReturnedValue { get; set; }
 }

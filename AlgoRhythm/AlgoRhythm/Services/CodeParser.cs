@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace AlgoRhythm.Services;
 
 public class CSharpCodeParser : ICodeParser
-{ 
+{
     public ExecuteCodeRequest ParseToExecuteRequest(string code, string? inputJson = null, TimeSpan? timeout = null)
     {
         try
@@ -104,6 +104,7 @@ public class CSharpCodeParser : ICodeParser
 
             requests.Add(new ExecuteCodeRequest
             {
+                TestCaseId = tc.Id,
                 Code = templateRequest.Code,
                 ExecutionClass = templateRequest.ExecutionClass,
                 ExecutionMethod = templateRequest.ExecutionMethod,

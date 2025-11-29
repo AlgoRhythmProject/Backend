@@ -1,0 +1,71 @@
+services:
+  database:
+    container_name: database
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "8002:1433" # default mssql server port
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+    volumes:
+      - db_data:/var/opt/mssql # database lives as long as the volume is not deleted
+
+  backend:
+    container_name: backend
+    build:
+      context: .
+      dockerfile: AlgoRhythm/Dockerfile
+    ports:
+      - "7062:8080"
+      - "5289:8081"
+    environment:
+      SendGrid__ApiKey: ${SENDGRID_API_KEY}
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      JWT_KEY: ${JWT_KEY}
+      ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
+    depends_on:
+      - database
+    networks:
+    - default  
+    - internal_net
+
+  frontend:
+    container_name: frontend
+    build:
+        context: ../../frontend/AlgoRhythm
+        dockerfile:  Dockerfile
+    ports:
+      - "5173:80"
+    depends_on: 
+      - backend
+    networks:
+      - default  
+      - internal_net
+
+  executor:
+    container_name: code_executor
+    build: 
+      context: .
+      dockerfile: ./CodeExecutor/Dockerfile
+    restart: always
+    cpus: "0.5"              # CPU limit - needs to be a string
+    mem_limit: 256M          # Memory limit
+    networks:
+      - internal_net        
+    ports:
+      - "7070:8080"
+    pids_limit: 50
+    read_only: true
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+
+networks:
+  internal_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  db_data:                  

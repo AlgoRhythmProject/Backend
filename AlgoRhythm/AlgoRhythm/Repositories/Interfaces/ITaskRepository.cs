@@ -1,5 +1,4 @@
-﻿using AlgoRhythm.Data;
-using AlgoRhythm.Shared.Models.Tasks;
+﻿using AlgoRhythm.Shared.Models.Tasks;
 
 namespace AlgoRhythm.Repositories.Interfaces;
 

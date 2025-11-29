@@ -4,19 +4,22 @@ using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using AlgoRhythm.Shared.Models.Tasks;
 using System.Text;
+using AlgoRhythm.Clients;
 
 namespace AlgoRhythm.Services;
 
-public class RandomCodeExecutor : ICodeExecutor
+public class CodeExecutor : ICodeExecutor
 {
     private readonly ITaskRepository _taskRepository;
     private readonly Random _rnd = Random.Shared;
-    private readonly ILogger<RandomCodeExecutor> _logger;
+    private readonly ILogger<CodeExecutor> _logger;
+    private readonly CodeExecutorClient _codeExecutorClient;
 
-    public RandomCodeExecutor(ITaskRepository taskRepo, ILogger<RandomCodeExecutor> logger)
+    public CodeExecutor(ITaskRepository taskRepo, ILogger<CodeExecutor> logger, CodeExecutorClient client)
     {
         _taskRepository = taskRepo;
         _logger = logger;
+        _codeExecutorClient = client;
     }
 
     public async Task<IReadOnlyList<TestResultDto>> EvaluateAsync(
@@ -29,27 +32,7 @@ public class RandomCodeExecutor : ICodeExecutor
         if (task is not ProgrammingTaskItem programmingTask)
             throw new InvalidOperationException("Task is not a programming task");
 
-        var results = new List<TestResultDto>();
-
-        for (int i = 0; i < executeCodeRequests.Count; i++)
-        {
-            var request = executeCodeRequests[i];
-            var tc = programmingTask.TestCases.ElementAt(i);
-
-            LogExecuteCodeRequest(submissionId, request, tc);
-
-            var passed = _rnd.NextDouble() > 0.4;
-
-            results.Add(new TestResultDto
-            {
-                TestCaseId = tc.Id,
-                Passed = passed,
-                Points = passed ? tc.MaxPoints : 0,
-                ExecutionTimeMs = Math.Round(_rnd.NextDouble() * 200, 2),
-                StdOut = passed ? "OK" : null,
-                StdErr = passed ? null : "Random error"
-            });
-        }
+        var results = await _codeExecutorClient.ExecuteAsync(executeCodeRequests);
 
         return results;
     }

@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      JWT_KEY: ${{ secrets.JWT_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -39,13 +40,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: UnitTestResults
-            path: '**/UnitTestResults/*.trx'
+            path: '**/UnitTests/TestResults/*.trx'
 
       - name: Upload Unit Test Coverage
         uses: actions/upload-artifact@v4
         with:
             name: UnitTestCoverage
-            path: '**/UnitTestResults/**/coverage.cobertura.xml'
+            path: '**/UnitTests/TestResults/**/coverage.cobertura.xml'
 
 
       # Run Integration Tests
@@ -55,16 +56,16 @@ jobs:
             --configuration Release 
             --logger "trx;LogFileName=IntegrationTestResults.trx" 
             --collect:"XPlat Code Coverage"
-
       - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestResults
-            path: '**/IntegrationTestResults/*.trx'
+            path: '**/IntegrationTests/TestResults/*.trx'
 
       - name: Upload Integration Test Coverage
         uses: actions/upload-artifact@v4
         with:
             name: IntegrationTestCoverage
+            path: '**/IntegrationTests/TestResults/**/coverage.cobertura.xml'
 
-            path: '**/IntegrationTestResults/**/coverage.cobertura.xml'
+      
