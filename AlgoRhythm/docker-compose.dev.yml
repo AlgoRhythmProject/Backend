@@ -28,7 +28,7 @@ services:
       - database
     networks:
     - default  
-    - internal_net
+    #  - internal_net # uncomment for additional security options 
 
   frontend:
     container_name: frontend
@@ -41,7 +41,6 @@ services:
       - backend
     networks:
       - default  
-      - internal_net
 
   executor:
     container_name: code_executor
@@ -52,7 +51,8 @@ services:
     cpus: "0.5"              # CPU limit - needs to be a string
     mem_limit: 256M          # Memory limit
     networks:
-      - internal_net        
+      - default
+    #  - internal_net # uncomment for additional security options       
     ports:
       - "7070:8080"
     pids_limit: 50

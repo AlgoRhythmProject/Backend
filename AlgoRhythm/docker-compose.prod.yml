@@ -25,7 +25,6 @@ services:
       - database
     networks:
     - default  
-    - internal_net
   
   frontend:
     container_name: frontend
@@ -34,9 +33,6 @@ services:
     - "5173:80"
     depends_on: 
     - backend
-    networks:
-    - default  
-    - internal_net
     
   executor:
     container_name: code_executor
