@@ -21,6 +21,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       JWT_KEY: ${JWT_KEY}
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
+      restart: unless-stoped
     depends_on:
       - database
     networks:
