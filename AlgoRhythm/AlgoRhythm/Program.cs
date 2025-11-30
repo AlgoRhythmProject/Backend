@@ -82,13 +82,21 @@ builder.Services.AddIdentity<User, Role>(options =>
 
 builder.Services.AddScoped<ISubmissionRepository, EfSubmissionRepository>();
 builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
+builder.Services.AddScoped<ICourseRepository, EfCourseRepository>();
+builder.Services.AddScoped<ILectureRepository, EfLectureRepository>();
+builder.Services.AddScoped<ICourseProgressRepository, EfCourseProgressRepository>();
+
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ILectureService, LectureService>();
+builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
+
 
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
