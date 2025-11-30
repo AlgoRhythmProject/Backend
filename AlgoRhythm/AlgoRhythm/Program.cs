@@ -1,4 +1,25 @@
+using AlgoRhythm.Clients;
 using AlgoRhythm.Data;
+using AlgoRhythm.Repositories.Common;
+using AlgoRhythm.Repositories.Common.Interfaces;
+using AlgoRhythm.Repositories.Courses;
+using AlgoRhythm.Repositories.Courses.Interfaces;
+using AlgoRhythm.Repositories.Submissions;
+using AlgoRhythm.Repositories.Submissions.Interfaces;
+using AlgoRhythm.Repositories.Tasks;
+using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Services.CodeExecutor;
+using AlgoRhythm.Services.CodeExecutor.Interfaces;
+using AlgoRhythm.Services.Common;
+using AlgoRhythm.Services.Common.Interfaces;
+using AlgoRhythm.Services.Courses;
+using AlgoRhythm.Services.Courses.Interfaces;
+using AlgoRhythm.Services.Submissions;
+using AlgoRhythm.Services.Submissions.Interfaces;
+using AlgoRhythm.Services.Tasks;
+using AlgoRhythm.Services.Tasks.Interfaces;
+using AlgoRhythm.Services.Users;
+using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -7,23 +28,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
-using AlgoRhythm.Clients;
-using AlgoRhythm.Repositories.Courses;
-using AlgoRhythm.Repositories.Courses.Interfaces;
-using AlgoRhythm.Repositories.Submissions;
-using AlgoRhythm.Repositories.Submissions.Interfaces;
-using AlgoRhythm.Repositories.Tasks;
-using AlgoRhythm.Repositories.Tasks.Interfaces;
-using AlgoRhythm.Services.Courses;
-using AlgoRhythm.Services.Courses.Interfaces;
-using AlgoRhythm.Services.Submissions;
-using AlgoRhythm.Services.Submissions.Interfaces;
-using AlgoRhythm.Services.Users;
-using AlgoRhythm.Services.Users.Interfaces;
-using AlgoRhythm.Services.Tasks;
-using AlgoRhythm.Services.Tasks.Interfaces;
-using AlgoRhythm.Services.CodeExecutor;
-using AlgoRhythm.Services.CodeExecutor.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,6 +100,9 @@ builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
 builder.Services.AddScoped<ICourseRepository, EfCourseRepository>();
 builder.Services.AddScoped<ILectureRepository, EfLectureRepository>();
 builder.Services.AddScoped<ICourseProgressRepository, EfCourseProgressRepository>();
+builder.Services.AddScoped<ITagRepository, EfTagRepository>();
+builder.Services.AddScoped<ICommentRepository, EfCommentRepository>();
+builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
@@ -106,6 +113,9 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILectureService, LectureService>();
 builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 
 
