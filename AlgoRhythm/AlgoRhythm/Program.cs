@@ -13,6 +13,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using AlgoRhythm.Clients;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
+string blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"]
+    ?? throw new InvalidOperationException("Azure Blob Storage connection string is not configured.");
+
+builder.Services.AddSingleton(_ => new BlobServiceClient(blobConnectionString));
+
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
 {
@@ -71,13 +77,15 @@ builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
-
+builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
 
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
 {
-    client.BaseAddress = new Uri("http://code_executor:8080");
+    client.BaseAddress = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL") != null
+        ? new Uri(Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")!)
+        : new Uri(builder.Configuration["CodeExecutor:Url"]!);
 });
 
 // JWT Authentication

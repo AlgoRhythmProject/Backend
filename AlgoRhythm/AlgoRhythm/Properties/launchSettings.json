@@ -8,7 +8,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5156"
+      "applicationUrl": "http://localhost:7062"
     },
     "https": {
       "commandName": "Project",
@@ -18,7 +18,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7080;http://localhost:5156"
+      "applicationUrl": "https://localhost:8080;http://localhost:8080"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -38,6 +38,44 @@
       },
       "publishAllPorts": true,
       "useSSL": true
+    },
+    // Do wywołania jeśli:
+    // zmiana plik package.json, .csproj, dockerfile (ogólnie zależności)
+    // Najszybsza opcja do developmentu
+    "Docker Compose Dev": {
+      "commandName": "Executable",
+      "executablePath": "docker-compose",
+      "commandLineArgs": "-f docker-compose.dev.yml up --build",
+      "workingDirectory": "$(SolutionDir)\\",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
+      }
+    },
+
+    // Do weryfikacji obrazu z maina
+    "Docker Compose Prod": {
+      "commandName": "Executable",
+      "executablePath": "docker-compose",
+      "commandLineArgs": "-f docker-compose.prod.yml up --pull=always",
+      "workingDirectory": "$(SolutionDir)\\",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
+      }
+    },
+
+    // Profil do rozwiązywania problemów i czyszczenia 
+    // Znacznie wydłuża czas budowania (zmusza do ponownej instalacji wszystkich pakietów)
+    "Docker Compose Dev (Full Rebuild)": {
+      "commandName": "Executable",
+      "executablePath": "cmd.exe",
+      "commandLineArgs": "/C docker-compose -f docker-compose.dev.yml build --no-cache && docker-compose -f docker-compose.dev.yml up",
+      "workingDirectory": "$(SolutionDir)\\",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
+      }
     }
   },
   "$schema": "http://json.schemastore.org/launchsettings.json",

@@ -1,0 +1,23 @@
+# Visual Studio
+**/.vs/
+**/[Bb]in/
+**/[Oo]bj/
+
+# Test Projects
+**/test/
+**/*Tests/
+
+# Logs and Data
+**/logs/
+**/data/
+
+# Dependencies and build artifacts
+**/node_modules/
+**/bower_components/
+**/wwwroot/dist/
+
+# Configuration files that shouldn't be baked into the image
+*.user
+*.bak
+*.suo
+appsettings.*.json
