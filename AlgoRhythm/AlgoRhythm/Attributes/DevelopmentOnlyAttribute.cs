@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AlgoRhythm.Attributes
 {
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class DevelopmentOnlyAttribute : ActionFilterAttribute
     {
         public override void OnActionExecuting(ActionExecutingContext context)

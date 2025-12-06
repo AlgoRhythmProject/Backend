@@ -6,7 +6,7 @@ namespace AlgoRhythm.Services.Interfaces
     {
         Task<LectureVideo?> GetVideoInfoAsync(string identifier);
         Task<string> UploadFileAsync(string identifier, Stream content, string contentType);
-        Task<(Stream stream, string contentType)> GetFileAsync(string blobName);
-        Task<bool> DeleteFileAsync(string blobName);
+        Task<(Stream stream, string contentType)> GetFileAsync(string identifier);
+        Task<bool> DeleteFileAsync(string identifier);
     }
 }

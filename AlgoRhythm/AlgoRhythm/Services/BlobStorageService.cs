@@ -5,6 +5,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 
+namespace AlgoRhythm.Services;
 public class BlobStorageService : IFileStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
@@ -21,16 +22,16 @@ public class BlobStorageService : IFileStorageService
     /// <summary>
     /// Saveds file (stream) in blob
     /// </summary>
-    /// <param name="blobName">A name to save file with</param>
+    /// <param name="identifier">A name to save file with</param>
     /// <param name="content">File stream (eg. from IFormFile).</param>
     /// <param name="contentType">Type (eg. image/jpeg).</param>
-    public async Task<string> UploadFileAsync(string blobName, Stream content, string contentType)
+    public async Task<string> UploadFileAsync(string identifier, Stream content, string contentType)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
 
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
 
-        var blobClient = containerClient.GetBlobClient(blobName);
+        var blobClient = containerClient.GetBlobClient(identifier);
         
         var conditions = new BlobRequestConditions { IfNoneMatch = ETag.All };
         
@@ -50,12 +51,12 @@ public class BlobStorageService : IFileStorageService
     /// <summary>
     /// Retrieves video data from blob
     /// </summary>
-    public async Task<LectureVideo?> GetVideoInfoAsync(string blobName)
+    public async Task<LectureVideo?> GetVideoInfoAsync(string identifier)
     {
         try
         {
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-            var blobClient = containerClient.GetBlobClient(blobName);
+            var blobClient = containerClient.GetBlobClient(identifier);
 
             if (!await blobClient.ExistsAsync())
             {
@@ -64,11 +65,11 @@ public class BlobStorageService : IFileStorageService
 
             var properties = await blobClient.GetPropertiesAsync();
 
-            string streamUrl = GetStreamUrl(blobName);
+            string streamUrl = GetStreamUrl(identifier);
 
             return new LectureVideo
             {
-                FileName = blobName,
+                FileName = identifier,
                 StreamUrl = streamUrl,
                 FileSize = properties.Value.ContentLength,
                 LastModified = properties.Value.LastModified.DateTime
@@ -80,16 +81,16 @@ public class BlobStorageService : IFileStorageService
         }
     }
 
-    private string GetStreamUrl(string blobName)
+    private string GetStreamUrl(string identifier)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        var blobClient = containerClient.GetBlobClient(blobName);
+        var blobClient = containerClient.GetBlobClient(identifier);
 
         // SAS token for 1 hour access
         var sasBuilder = new BlobSasBuilder
         {
             BlobContainerName = _containerName,
-            BlobName = blobName,
+            BlobName = identifier,
             Resource = "b", // "b" = blob
             ExpiresOn = DateTimeOffset.UtcNow.AddHours(1)
         };
@@ -119,7 +120,7 @@ public class BlobStorageService : IFileStorageService
         string contentType = properties.Value.ContentType ?? "application/octet-stream";
 
         // Temp file for optimizations
-        string tempFilePath = Path.GetTempFileName();
+        string tempFilePath = Path.GetRandomFileName();
 
         await blobClient.DownloadToAsync(tempFilePath);
 
@@ -129,10 +130,10 @@ public class BlobStorageService : IFileStorageService
         return (fileStream, contentType);
     }
 
-    public async Task<bool> DeleteFileAsync(string blobName)
+    public async Task<bool> DeleteFileAsync(string identifier)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        var blobClient = containerClient.GetBlobClient(blobName);
+        var blobClient = containerClient.GetBlobClient(identifier);
 
         return (await blobClient.DeleteIfExistsAsync()).Value;
     }

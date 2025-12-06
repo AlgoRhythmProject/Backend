@@ -4,15 +4,16 @@ using AlgoRhythm.Attributes;
 using Microsoft.AspNetCore.Components.Web;
 using Azure;
 using AlgoRhythm.Services.Interfaces;
+using System.Text.Encodings.Web;
+using System.Web;
 
 namespace AlgoRhythm.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class FileController : Controller
+    public class FileController : ControllerBase
     {
         private readonly IFileStorageService _storageService;
-
         public FileController(IFileStorageService storageService)
         {
             _storageService = storageService;
@@ -106,15 +107,15 @@ namespace AlgoRhythm.Controllers
                 <body>
                     <div class='container'>
                         <h1>Video Preview</h1>
-                        <div class='info'>File: {System.Web.HttpUtility.HtmlEncode(path)}</div>
+                        <div class='info'>File: {HttpUtility.HtmlEncode(path)}</div>
                         <video controls preload='metadata'>
-                            <source src='{videoUrl}' type='video/mp4'>
+                            <source src='{HttpUtility.HtmlEncode(videoUrl)}' type='video/mp4'>
                             Your browser does not support the video tag.
                         </video>
                     </div>
                 </body>
                 </html>
-            ", "text/html");
+            ");
         }
 
         /// <summary>
