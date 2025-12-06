@@ -13,6 +13,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using AlgoRhythm.Clients;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
+string blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"]
+    ?? throw new InvalidOperationException("Azure Blob Storage connection string is not configured.");
+
+builder.Services.AddSingleton(_ => new BlobServiceClient(blobConnectionString));
+
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
 {
@@ -71,7 +77,7 @@ builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
-
+builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
 
 // DI - clients
