@@ -15,13 +15,13 @@ public static class DbSeeder
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
-        
+
         await context.Database.MigrateAsync();
         await SeedRolesAsync(roleManager);
 
         await SeedUsersAsync(userManager);
         await SeedContentAsync(context);
-        
+
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
@@ -169,7 +169,7 @@ public static class DbSeeder
             Title = "Sum of Two Numbers",
             Description = "Write a function that returns the sum of two integers.",
             Difficulty = Difficulty.Easy,
-            TemplateCode = "public int Sum(int a, int b) { return 0; }"
+            TemplateCode = "public class Solution { public int Sum(int a, int b) { return 0; } }"
         };
 
         var task2 = new ProgrammingTaskItem
@@ -177,7 +177,7 @@ public static class DbSeeder
             Title = "Find Maximum",
             Description = "Return the maximum of two numbers.",
             Difficulty = Difficulty.Easy,
-            TemplateCode = "public int Max(int a, int b) { return 0; }"
+            TemplateCode = "public class Solution { public int Max(int a, int b) { return 0; } }"
         };
 
         var task3 = new ProgrammingTaskItem
@@ -200,7 +200,7 @@ public static class DbSeeder
         var test1 = new TestCase
         {
             ProgrammingTaskItem = task1,
-            InputJson = "1 2",
+            InputJson = "{ \"a\": 1, \"b\": 2 }",
             ExpectedJson = "3",
             IsVisible = true
         };
@@ -208,7 +208,7 @@ public static class DbSeeder
         var test2 = new TestCase
         {
             ProgrammingTaskItem = task2,
-            InputJson = "5 3",
+            InputJson = "{ \"a\": 5, \"b\": 3 }",
             ExpectedJson = "5",
             IsVisible = true
         };
@@ -216,7 +216,7 @@ public static class DbSeeder
         var test3 = new TestCase
         {
             ProgrammingTaskItem = task3,
-            InputJson = "\"hello\"",
+            InputJson = "{ \"text\": \"hello\" }",
             ExpectedJson = "\"olleh\"",
             IsVisible = true
         };
