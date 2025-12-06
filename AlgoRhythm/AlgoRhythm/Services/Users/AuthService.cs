@@ -85,42 +85,42 @@ public class AuthService : IAuthService
     {
         var expiryTime = DateTime.UtcNow.AddHours(1).ToLocalTime();
 
-        var subject = "Potwierdź swój adres email w AlgoRhythm";
+        var subject = "Verify your email address at AlgoRhythm";
 
-        var plain = $@"Cześć {user.FirstName}!
+        var plain = $@"Hello {user.FirstName}!
 
-            Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.
+            Thank you for registering at AlgoRhythm - a programming learning platform.
 
-            Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:
+            To complete the registration process, please verify your email address by entering the verification code below:
 
             {code}
 
-            Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).
+            The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-            Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.
+            If you did not create this account, please ignore this message.
 
-            Pozdrawiamy,
-            Zespół AlgoRhythm
+            Best regards,
+            AlgoRhythm Team
 
             ---
-            To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.";
+            This is an automated message, please do not reply.";
 
-        var html = $@"<p>Cześć <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-            <p>Dziękujemy za rejestrację w AlgoRhythm - platformie do nauki programowania.</p>
+            <p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
 
-            <p>Aby dokończyć proces rejestracji, potwierdź swój adres email wpisując poniższy kod weryfikacyjny:</p>
+            <p>To complete the registration process, please verify your email address by entering the verification code below:</p>
 
             <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-            <p>Kod jest ważny przez 1 godzinę (do {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+            <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-            <p>Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p>
+            <p>If you did not create this account, please ignore this message.</p>
 
-            <p>Pozdrawiamy,<br>Zespół AlgoRhythm</p>
+            <p>Best regards,<br>AlgoRhythm Team</p>
 
             <hr>
-            <p style='font-size: 12px; color: #666;'>To jest wiadomość automatyczna, prosimy na nią nie odpowiadać.</p>";
+            <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
