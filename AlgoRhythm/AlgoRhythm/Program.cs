@@ -29,19 +29,23 @@ builder.Services.AddCors(options =>
 });
 
 // Database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 10,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorNumbersToAdd: null
-            );
-        }
-    )
-);
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 10,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null
+                );
+            }
+        )
+    );
+}
 
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
@@ -108,7 +112,7 @@ builder.Services.AddAuthentication(options =>
             {
                 context.Token = context.Request.Cookies["JWT"];
             }
-            return System.Threading.Tasks.Task.CompletedTask;
+            return Task.CompletedTask;
         }
     };
 
@@ -127,28 +131,30 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger with JWT Authorization
-builder.Services.AddSwaggerGen(options =>
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    builder.Services.AddSwaggerGen(options =>
     {
-        Title = "AlgoRhythm API",
-        Version = "v1",
-        Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
-    });
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "AlgoRhythm API",
+            Version = "v1",
+            Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
+        });
 
-    // Add JWT Authorization to Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter JWT token (without 'Bearer' prefix)"
-    });
+        // Add JWT Authorization to Swagger
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Enter JWT token (without 'Bearer' prefix)"
+        });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
         {
             new OpenApiSecurityScheme
             {
@@ -160,38 +166,43 @@ builder.Services.AddSwaggerGen(options =>
             },
             Array.Empty<string>()
         }
+        });
+
+        // Optional: add XML comments (only if file exists)
+        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
     });
-
-    // Optional: add XML comments (only if file exists)
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
-});
-
+}
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
 
-// Applying migrations
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
 
-    try
+
+    // Applying migrations
+    using (var scope = app.Services.CreateScope())
     {
-        logger.LogInformation("Applying migrations...");
-        context.Database.Migrate(); // ensures Roles, Users, etc. exist
-        logger.LogInformation("Database ready!");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error applying migrations.");
-        throw;
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
+        try
+        {
+            logger.LogInformation("Applying migrations...");
+            context.Database.Migrate(); // ensures Roles, Users, etc. exist
+            logger.LogInformation("Database ready!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error applying migrations.");
+            throw;
+        }
     }
 }
 
@@ -220,8 +231,11 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Swagger UI (default path /swagger)
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 if (app.Environment.IsProduction())
 {
