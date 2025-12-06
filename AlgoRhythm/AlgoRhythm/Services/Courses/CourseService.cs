@@ -123,11 +123,14 @@ public class CourseService : ICourseService
                 Title = l.Title,
                 IsPublished = l.IsPublished,
                 CreatedAt = l.CreatedAt,
-                Contents = l.Contents?.Select(c => new LectureContentDto
+                Contents = l.Contents?.OrderBy(c => c.Order).Select(c => new LectureContentDto
                 {
                     Id = c.Id,
+                    LectureId = c.LectureId,
                     Type = c.Type.ToString(),
-                    Text = c is LectureText lt ? lt.Text : null,
+                    Order = c.Order,
+                    CreatedAt = c.CreatedAt,
+                    HtmlContent = c is LectureText lt ? lt.HtmlContent : null,
                     Path = c is LecturePhoto lp ? lp.Path : null,
                     Alt = c is LecturePhoto lp2 ? lp2.Alt : null,
                     Title = c is LecturePhoto lp3 ? lp3.Title : null

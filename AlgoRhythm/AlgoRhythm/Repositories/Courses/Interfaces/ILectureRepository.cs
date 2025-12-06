@@ -13,4 +13,10 @@ public interface ILectureRepository
     Task DeleteAsync(Guid id, CancellationToken ct);
     Task AddTagToLectureAsync(Guid lectureId, Guid tagId, CancellationToken ct);
     Task RemoveTagFromLectureAsync(Guid lectureId, Guid tagId, CancellationToken ct);
+    Task<LectureContent> AddContentToLectureAsync(Guid lectureId, LectureContent content, CancellationToken ct);
+    Task UpdateContentAsync(Guid contentId, LectureContent content, CancellationToken ct);
+    Task RemoveContentFromLectureAsync(Guid lectureId, Guid contentId, CancellationToken ct);
+    Task<LectureContent?> GetContentByIdAsync(Guid contentId, CancellationToken ct);
+    Task<IEnumerable<LectureContent>> GetContentsByLectureIdAsync(Guid lectureId, CancellationToken ct);
+    Task SwapContentOrderAsync(Guid lectureId, Guid firstContentId, Guid secondContentId, CancellationToken ct);
 }
