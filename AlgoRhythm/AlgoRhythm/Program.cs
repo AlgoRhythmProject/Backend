@@ -43,28 +43,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Database - Build connection string from environment variables or appsettings
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// Override with environment variables if present (for Docker)
-var dbServer = Environment.GetEnvironmentVariable("DB_SERVER");
-var dbName = Environment.GetEnvironmentVariable("DB_NAME");
-var dbUser = Environment.GetEnvironmentVariable("DB_USER");
-var dbPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
-
-if (!string.IsNullOrEmpty(dbServer) && !string.IsNullOrEmpty(dbPassword))
-{
-    connectionString = $"Server={dbServer};Database={dbName ?? "master"};User Id={dbUser ?? "sa"};Password={dbPassword};TrustServerCertificate=True";
-}
-
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException("Database connection string is not configured.");
-}
-
+// Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
-        connectionString,
+        builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions =>
         {
             sqlOptions.EnableRetryOnFailure(
@@ -118,10 +100,13 @@ builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 
 
+
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
 {
-    client.BaseAddress = new Uri("http://code_executor:8080");
+    client.BaseAddress = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL") != null
+        ? new Uri(Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")!)
+        : new Uri(builder.Configuration["CodeExecutor:Url"]!);
 });
 
 // JWT Authentication
