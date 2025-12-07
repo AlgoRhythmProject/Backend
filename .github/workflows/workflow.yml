@@ -85,7 +85,6 @@ jobs:
             -reports:"**/TestResults/**/coverage.cobertura.xml" \
             -targetdir:CoverageReport \
             -reporttypes:Html \
-            -sourcedirs:"AlgoRhythm;AlgoRhythm.Shared;CodeExecutor"
 
       - name: Upload HTML Coverage Report
         uses: actions/upload-artifact@v4
