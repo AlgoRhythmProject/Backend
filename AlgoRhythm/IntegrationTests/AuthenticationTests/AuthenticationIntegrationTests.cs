@@ -139,7 +139,7 @@ namespace IntegrationTests.AuthenticationTests
         [Fact]
         public async Task POST_VerifyEmail_InvalidCredentials_Returns400_BadRequest()
         {
-            await AddUserToDb(TestConstants.TestUserEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp + " ");
+            await AddUserToDb(TestConstants.TestUserEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp + "x");
 
             VerifyEmailRequest req = new(TestConstants.TestUserEmail, TestConstants.TestUserSecurityStamp);
             HttpContent content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
