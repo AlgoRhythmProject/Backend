@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AlgoRhythm.Shared\AlgoRhythm.Shared.csproj" />
+    <ProjectReference Include="..\AlgoRhythm\AlgoRhythm.csproj" />
     <ProjectReference Include="..\CodeExecutor\CodeExecutor.csproj" />
   </ItemGroup>
 
