@@ -153,9 +153,9 @@ namespace IntegrationTests.AuthenticationTests
 
             User? user = await _userManager.FindByEmailAsync(TestConstants.TestUserEmail);
 
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
             Assert.NotNull(user);
             Assert.False(user.EmailConfirmed);
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
     }
