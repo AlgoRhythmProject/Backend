@@ -57,10 +57,10 @@ jobs:
             dotnet test AlgoRhythm/IntegrationTests/IntegrationTests.csproj 
             --configuration Release 
             --logger "trx;LogFileName=IntegrationTestResults.trx" 
-            --collect:"XPlat Code Coverage"
+            --collect:"XPlat Code Coverage" 
             /p:CoverletOutputFormat=cobertura 
             /p:Include="[AlgoRhythm.*]*" 
-            /p:Exclude="[*.Tests]*"
+            /p:Exclude="[*.Tests]*" 
 
       - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
@@ -80,12 +80,12 @@ jobs:
 
       - name: Merge Coverage and Generate HTML
         run: >
-          mkdir CoverageReport
+          mkdir CoverageReport 
           reportgenerator 
             -reports:"**/TestResults/**/coverage.cobertura.xml" 
             -targetdir:CoverageReport 
             -reporttypes:Html 
-            -sourcedirs:"AlgoRhythm;AlgoRhythm.Shared;CodeExecutor"
+            -sourcedirs:"AlgoRhythm;AlgoRhythm.Shared;CodeExecutor" 
 
       - name: Upload HTML Coverage Report
         uses: actions/upload-artifact@v4
