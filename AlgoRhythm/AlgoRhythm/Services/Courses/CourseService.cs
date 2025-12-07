@@ -14,16 +14,16 @@ public class CourseService : ICourseService
         _repo = repo;
     }
 
-    public async Task<IEnumerable<CourseDto>> GetAllAsync(CancellationToken ct)
+    public async Task<IEnumerable<CourseSummaryDto>> GetAllAsync(CancellationToken ct)
     {
         var courses = await _repo.GetAllAsync(ct);
-        return courses.Select(MapToDto);
+        return courses.Select(MapToSummaryDto);
     }
 
-    public async Task<IEnumerable<CourseDto>> GetPublishedAsync(CancellationToken ct)
+    public async Task<IEnumerable<CourseSummaryDto>> GetPublishedAsync(CancellationToken ct)
     {
         var courses = await _repo.GetPublishedAsync(ct);
-        return courses.Select(MapToDto);
+        return courses.Select(MapToSummaryDto);
     }
 
     public async Task<CourseDto?> GetByIdAsync(Guid id, CancellationToken ct)
@@ -83,14 +83,28 @@ public class CourseService : ICourseService
         await _repo.RemoveLectureFromCourseAsync(courseId, lectureId, ct);
     }
 
-    public async Task AddTagToCourseAsync(Guid courseId, Guid tagId, CancellationToken ct)
+    private static CourseSummaryDto MapToSummaryDto(Course course)
     {
-        await _repo.AddTagToCourseAsync(courseId, tagId, ct);
-    }
-
-    public async Task RemoveTagFromCourseAsync(Guid courseId, Guid tagId, CancellationToken ct)
-    {
-        await _repo.RemoveTagFromCourseAsync(courseId, tagId, ct);
+        return new CourseSummaryDto
+        {
+            Id = course.Id,
+            Name = course.Name,
+            Description = course.Description,
+            IsPublished = course.IsPublished,
+            CreatedAt = course.CreatedAt,
+            Lectures = course.Lectures?.OrderBy(l => l.CreatedAt).Select(l => new LectureSummaryDto
+            {
+                Id = l.Id,
+                Title = l.Title,
+                TagIds = l.Tags?.Select(t => t.Id).ToList() ?? []
+            }).ToList() ?? [],
+            Tasks = course.TaskItems?.OrderBy(t => t.CreatedAt).Select(t => new TaskSummaryDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                TagIds = t.Tags?.Select(tag => tag.Id).ToList() ?? []
+            }).ToList() ?? []
+        };
     }
 
     private static CourseDto MapToDto(Course course)
@@ -116,7 +130,7 @@ public class CourseService : ICourseService
             Description = course.Description,
             IsPublished = course.IsPublished,
             CreatedAt = course.CreatedAt,
-            Lectures = course.Lectures?.Select(l => new LectureDto
+            Lectures = course.Lectures?.OrderBy(l => l.CreatedAt).Select(l => new LectureDto
             {
                 Id = l.Id,
                 CourseId = l.CourseId,

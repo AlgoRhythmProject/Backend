@@ -15,6 +15,4 @@ public interface ICourseRepository
     Task RemoveTaskFromCourseAsync(Guid courseId, Guid taskId, CancellationToken ct);
     Task AddLectureToCourseAsync(Guid courseId, Guid lectureId, CancellationToken ct);
     Task RemoveLectureFromCourseAsync(Guid courseId, Guid lectureId, CancellationToken ct);
-    Task AddTagToCourseAsync(Guid courseId, Guid tagId, CancellationToken ct);
-    Task RemoveTagFromCourseAsync(Guid courseId, Guid tagId, CancellationToken ct);
 }
