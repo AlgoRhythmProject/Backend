@@ -7,6 +7,7 @@ using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using AlgoRhythm.Shared.Models.Submissions;
 using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
+using IntegrationTests.IntegrationTestSetup;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,17 +17,17 @@ using System.Net.Http.Json;
 
 namespace IntegrationTests.CodeExecutorTests
 {
-    public class CodeExecutorIntegrationTests : IClassFixture<CodeExecutorFixture>
+    public class CodeExecutorIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     {
         private readonly IServiceScope _scope;
-        private readonly CodeExecutorFixture _fixture;
+        private readonly AlgoRhythmTestFixture _fixture;
         private readonly ApplicationDbContext _dbContext;
         private readonly HttpClient _httpClient;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager; 
         private readonly IAuthService _authService;
 
-        public CodeExecutorIntegrationTests(CodeExecutorFixture fixture)
+        public CodeExecutorIntegrationTests(AlgoRhythmTestFixture fixture)
         {
             _fixture = fixture;
             _scope = fixture.ServerFactory.Services.CreateScope();

@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IntegrationTests.CodeExecutorTests
+namespace IntegrationTests.IntegrationTestSetup
 {
-    public class CodeExecutorFixture : IAsyncLifetime
+    public class AlgoRhythmTestFixture : IAsyncLifetime
     {
         internal WebApplicationFactory<CodeExecutor.Program> ExecutorFactory { get; private set; } = null!;
         internal AlgoRhythmWebApplicationFactory ServerFactory { get; private set; } = null!;

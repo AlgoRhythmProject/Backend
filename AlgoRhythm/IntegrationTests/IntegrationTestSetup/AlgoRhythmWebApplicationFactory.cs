@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace IntegrationTests;
+namespace IntegrationTests.IntegrationTestSetup;
 
 internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
 {
