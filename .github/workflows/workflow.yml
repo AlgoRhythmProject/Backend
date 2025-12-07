@@ -37,7 +37,7 @@ jobs:
             --collect:"XPlat Code Coverage" 
             /p:CoverletOutputFormat=cobertura 
             /p:Include="[AlgoRhythm.*]*"
-            /p:Exclude="[*.Tests]*"
+            /p:Exclude="[*Tests]*"
 
       - name: Upload Unit Test Results
         uses: actions/upload-artifact@v4
@@ -60,7 +60,7 @@ jobs:
             --collect:"XPlat Code Coverage" 
             /p:CoverletOutputFormat=cobertura 
             /p:Include="[AlgoRhythm.*]*" 
-            /p:Exclude="[*.Tests]*" 
+            /p:Exclude="[*Tests]*" 
 
       - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
@@ -79,13 +79,13 @@ jobs:
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
       - name: Merge Coverage and Generate HTML
-        run: >
-          mkdir CoverageReport 
-          reportgenerator 
-            -reports:"**/TestResults/**/coverage.cobertura.xml" 
-            -targetdir:CoverageReport 
-            -reporttypes:Html 
-            -sourcedirs:"AlgoRhythm;AlgoRhythm.Shared;CodeExecutor" 
+        run: |
+          mkdir -p CoverageReport
+          reportgenerator \
+            -reports:"**/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:CoverageReport \
+            -reporttypes:Html \
+            -sourcedirs:"AlgoRhythm;AlgoRhythm.Shared;CodeExecutor"
 
       - name: Upload HTML Coverage Report
         uses: actions/upload-artifact@v4
