@@ -17,7 +17,7 @@ namespace IntegrationTests.IntegrationTestSetup
             var services = ServerFactory.Services;
             using var scope = services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
+            
             await dbContext.Database.EnsureCreatedAsync();
         }
 

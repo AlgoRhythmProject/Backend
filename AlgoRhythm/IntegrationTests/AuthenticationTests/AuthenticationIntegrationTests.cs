@@ -117,9 +117,10 @@ namespace IntegrationTests.AuthenticationTests
         [Fact]
         public async Task POST_VerifyEmail_ValidCredentials_Returns200_Ok()
         {
-            await AddUserToDb(TestConstants.TestUserEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp);
+            string userEmail = Guid.NewGuid() + TestConstants.TestUserEmail;
+            await AddUserToDb(userEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp);
             
-            VerifyEmailRequest req = new(TestConstants.TestUserEmail, TestConstants.TestUserSecurityStamp);
+            VerifyEmailRequest req = new(userEmail, TestConstants.TestUserSecurityStamp);
             HttpContent content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(
@@ -130,7 +131,7 @@ namespace IntegrationTests.AuthenticationTests
             response.EnsureSuccessStatusCode();
             _dbContext.ChangeTracker.Clear();
 
-            User? user = await _userManager.FindByEmailAsync(TestConstants.TestUserEmail);
+            User? user = await _userManager.FindByEmailAsync(userEmail);
 
             Assert.NotNull(user);
             Assert.True(user.EmailConfirmed);
@@ -139,9 +140,10 @@ namespace IntegrationTests.AuthenticationTests
         [Fact]
         public async Task POST_VerifyEmail_InvalidCredentials_Returns400_BadRequest()
         {
-            await AddUserToDb(TestConstants.TestUserEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp + "x");
+            string userEmail = Guid.NewGuid() + TestConstants.TestUserEmail;
+            await AddUserToDb(userEmail, "User", TestConstants.TestUserPassword, false, TestConstants.TestUserSecurityStamp + "x");
 
-            VerifyEmailRequest req = new(TestConstants.TestUserEmail, TestConstants.TestUserSecurityStamp);
+            VerifyEmailRequest req = new(userEmail, TestConstants.TestUserSecurityStamp);
             HttpContent content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(
@@ -151,7 +153,7 @@ namespace IntegrationTests.AuthenticationTests
 
             _dbContext.ChangeTracker.Clear();
 
-            User? user = await _userManager.FindByEmailAsync(TestConstants.TestUserEmail);
+            User? user = await _userManager.FindByEmailAsync(userEmail);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
             Assert.NotNull(user);
