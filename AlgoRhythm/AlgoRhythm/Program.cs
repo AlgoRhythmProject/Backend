@@ -155,17 +155,17 @@ if (!builder.Environment.IsEnvironment("Testing"))
 
         options.AddSecurityRequirement(new OpenApiSecurityRequirement
         {
-        {
-            new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                []
+            }
         });
 
         // Optional: add XML comments (only if file exists)
@@ -184,23 +184,21 @@ app.UseCors("AllowFrontend");
 if (!app.Environment.IsEnvironment("Testing"))
 {
     // Applying migrations
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
-        try
-        {
-            logger.LogInformation("Applying migrations...");
-            context.Database.Migrate(); // ensures Roles, Users, etc. exist
-            logger.LogInformation("Database ready!");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error applying migrations.");
-            throw;
-        }
+    try
+    {
+        logger.LogInformation("Applying migrations...");
+        context.Database.Migrate(); // ensures Roles, Users, etc. exist
+        logger.LogInformation("Database ready!");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error applying migrations.");
+        throw;
     }
 }
 
