@@ -15,23 +15,25 @@ public class EfCourseRepository : ICourseRepository
     public async Task<IEnumerable<Course>> GetAllAsync(CancellationToken ct)
     {
         return await _db.Courses
-            .Include(c => c.Lectures.OrderBy(l => l.CreatedAt))
+            .Include(c => c.Lectures)
                 .ThenInclude(l => l.Tags)
-            .Include(c => c.TaskItems.OrderBy(t => t.CreatedAt))
+            .Include(c => c.TaskItems)
                 .ThenInclude(t => t.Tags)
             .OrderBy(c => c.CreatedAt)
+            .AsSplitQuery()
             .ToListAsync(ct);
     }
 
     public async Task<IEnumerable<Course>> GetPublishedAsync(CancellationToken ct)
     {
         return await _db.Courses
-            .Include(c => c.Lectures.Where(l => l.IsPublished).OrderBy(l => l.CreatedAt))
+            .Include(c => c.Lectures.Where(l => l.IsPublished))
                 .ThenInclude(l => l.Tags)
-            .Include(c => c.TaskItems.Where(t => !t.IsDeleted && t.IsPublished).OrderBy(t => t.CreatedAt))
+            .Include(c => c.TaskItems.Where(t => !t.IsDeleted && t.IsPublished))
                 .ThenInclude(t => t.Tags)
             .Where(c => c.IsPublished)
             .OrderBy(c => c.CreatedAt)
+            .AsSplitQuery()
             .ToListAsync(ct);
     }
 
@@ -44,11 +46,13 @@ public class EfCourseRepository : ICourseRepository
     public async Task<Course?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct)
     {
         return await _db.Courses
-            .Include(c => c.Lectures.OrderBy(l => l.CreatedAt))
-                .ThenInclude(l => l.Contents.OrderBy(content => content.Order))
+            .Include(c => c.Lectures)
+                .ThenInclude(l => l.Contents)
             .Include(c => c.Lectures)
                 .ThenInclude(l => l.Tags)
             .Include(c => c.TaskItems)
+                .ThenInclude(t => t.Tags)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id, ct);
     }
 
@@ -80,7 +84,7 @@ public class EfCourseRepository : ICourseRepository
             .Include(c => c.TaskItems)
             .FirstOrDefaultAsync(c => c.Id == courseId, ct);
 
-        var task = await _db.Set<TaskItem>().FirstOrDefaultAsync(t => t.Id == taskId, ct);
+        var task = await _db.Set<TaskItem>().FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
 
         if (course != null && task != null && !course.TaskItems.Contains(task))
         {
@@ -114,22 +118,19 @@ public class EfCourseRepository : ICourseRepository
 
         if (course != null && lecture != null && !course.Lectures.Contains(lecture))
         {
-            course.Lectures.Add(lecture);
+            lecture.CourseId = courseId;
             await _db.SaveChangesAsync(ct);
         }
     }
 
     public async Task RemoveLectureFromCourseAsync(Guid courseId, Guid lectureId, CancellationToken ct)
     {
-        var course = await _db.Courses
-            .Include(c => c.Lectures)
-            .FirstOrDefaultAsync(c => c.Id == courseId, ct);
+        var lecture = await _db.Lectures
+            .FirstOrDefaultAsync(l => l.Id == lectureId && l.CourseId == courseId, ct);
 
-        var lecture = course?.Lectures.FirstOrDefault(l => l.Id == lectureId);
-
-        if (course != null && lecture != null)
+        if (lecture != null)
         {
-            course.Lectures.Remove(lecture);
+            _db.Lectures.Remove(lecture);
             await _db.SaveChangesAsync(ct);
         }
     }

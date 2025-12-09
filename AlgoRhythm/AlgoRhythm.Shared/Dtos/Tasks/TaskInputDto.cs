@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using AlgoRhythm.Shared.Models.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace AlgoRhythm.Shared.Dtos.Tasks;
 
@@ -10,10 +11,10 @@ public class TaskInputDto
     public string? Description { get; set; }
     
     [Required]
-    public string Difficulty { get; set; } = null!; // "Easy", "Medium", "Hard"
+    public Difficulty Difficulty { get; set; } // "Easy", "Medium", "Hard"
     
     [Required]
-    public string TaskType { get; set; } = null!; // "Programming" or "Interactive"
+    public TaskType TaskType { get; set; } // "Programming" or "Interactive"
     
     public bool IsPublished { get; set; }
     

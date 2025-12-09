@@ -46,24 +46,24 @@ public class TaskService : ITaskService
     {
         TaskItem task;
 
-        if (dto.TaskType == "Programming")
+        if (dto.TaskType == TaskType.Programming)
         {
             task = new ProgrammingTaskItem
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                Difficulty = Enum.Parse<Difficulty>(dto.Difficulty),
+                Difficulty = dto.Difficulty,
                 IsPublished = dto.IsPublished,
                 TemplateCode = dto.TemplateCode
             };
         }
-        else if (dto.TaskType == "Interactive")
+        else if (dto.TaskType == TaskType.Interactive)
         {
             task = new InteractiveTaskItem
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                Difficulty = Enum.Parse<Difficulty>(dto.Difficulty),
+                Difficulty = dto.Difficulty,
                 IsPublished = dto.IsPublished,
                 OptionsJson = dto.OptionsJson,
                 CorrectAnswer = dto.CorrectAnswer
@@ -88,14 +88,14 @@ public class TaskService : ITaskService
 
         task.Title = dto.Title;
         task.Description = dto.Description;
-        task.Difficulty = Enum.Parse<Difficulty>(dto.Difficulty);
+        task.Difficulty = dto.Difficulty;
         task.IsPublished = dto.IsPublished;
 
-        if (task is ProgrammingTaskItem programmingTask && dto.TaskType == "Programming")
+        if (task is ProgrammingTaskItem programmingTask && dto.TaskType == TaskType.Programming)
         {
             programmingTask.TemplateCode = dto.TemplateCode;
         }
-        else if (task is InteractiveTaskItem interactiveTask && dto.TaskType == "Interactive")
+        else if (task is InteractiveTaskItem interactiveTask && dto.TaskType == TaskType.Interactive)
         {
             interactiveTask.OptionsJson = dto.OptionsJson;
             interactiveTask.CorrectAnswer = dto.CorrectAnswer;
@@ -139,14 +139,14 @@ public class TaskService : ITaskService
 
     private static TaskDto MapToDto(TaskItem task)
     {
-        var taskType = task is ProgrammingTaskItem ? "Programming" : "Interactive";
+        var taskType = task is ProgrammingTaskItem ? TaskType.Programming : TaskType.Interactive;
         
         return new TaskDto
         {
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty.ToString(),
+            Difficulty = task.Difficulty,
             TaskType = taskType,
             IsPublished = task.IsPublished,
             IsDeleted = task.IsDeleted,
@@ -161,14 +161,14 @@ public class TaskService : ITaskService
 
     private static TaskWithCoursesDto MapToWithCoursesDto(TaskItem task)
     {
-        var taskType = task is ProgrammingTaskItem ? "Programming" : "Interactive";
-        
+        var taskType = task is ProgrammingTaskItem ? TaskType.Programming : TaskType.Interactive;
+
         return new TaskWithCoursesDto
         {
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty.ToString(),
+            Difficulty = task.Difficulty,
             TaskType = taskType,
             IsPublished = task.IsPublished,
             CreatedAt = task.CreatedAt,
@@ -183,14 +183,14 @@ public class TaskService : ITaskService
 
     private static TaskDetailsDto MapToDetailsDto(TaskItem task)
     {
-        var taskType = task is ProgrammingTaskItem ? "Programming" : "Interactive";
-        
+        var taskType = task is ProgrammingTaskItem ? TaskType.Programming : TaskType.Interactive;
+
         return new TaskDetailsDto
         {
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty.ToString(),
+            Difficulty = task.Difficulty,
             TaskType = taskType,
             IsPublished = task.IsPublished,
             IsDeleted = task.IsDeleted,

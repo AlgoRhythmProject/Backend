@@ -1,3 +1,5 @@
+using AlgoRhythm.Shared.Models.Tasks;
+
 namespace AlgoRhythm.Shared.Dtos.Tasks;
 
 public class TaskDetailsDto
@@ -5,8 +7,8 @@ public class TaskDetailsDto
     public Guid Id { get; set; }
     public required string Title { get; set; }
     public string? Description { get; set; }
-    public required string Difficulty { get; set; }
-    public required string TaskType { get; set; } // "Programming" or "Interactive"
+    public required Difficulty Difficulty { get; set; }
+    public required TaskType TaskType { get; set; } // "Programming" or "Interactive"
     public bool IsPublished { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
