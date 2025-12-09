@@ -183,8 +183,6 @@ app.UseCors("AllowFrontend");
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
-
-
     // Applying migrations
     using (var scope = app.Services.CreateScope())
     {
