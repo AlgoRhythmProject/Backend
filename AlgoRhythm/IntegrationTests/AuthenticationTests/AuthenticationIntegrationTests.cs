@@ -3,15 +3,11 @@ using AlgoRhythm.Services.Interfaces;
 using AlgoRhythm.Shared.Dtos;
 using AlgoRhythm.Shared.Models.Users;
 using IntegrationTests.IntegrationTestSetup;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IntegrationTests.AuthenticationTests
 {

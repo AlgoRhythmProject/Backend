@@ -11,7 +11,6 @@ namespace AlgoRhythm.Services;
 public class CodeExecutor : ICodeExecutor
 {
     private readonly ITaskRepository _taskRepository;
-    private readonly Random _rnd = Random.Shared;
     private readonly ILogger<CodeExecutor> _logger;
     private readonly CodeExecutorClient _codeExecutorClient;
 
@@ -34,30 +33,6 @@ public class CodeExecutor : ICodeExecutor
 
         var results = await _codeExecutorClient.ExecuteAsync(executeCodeRequests);
 
-        return results;
-    }
-
-    private void LogExecuteCodeRequest(Guid submissionId, ExecuteCodeRequest request, TestCase tc)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine($"Submission ID: {submissionId}");
-        sb.AppendLine($"TestCase ID: {tc.Id}");
-        sb.AppendLine($"Execution Class: {request.ExecutionClass}");
-        sb.AppendLine($"Execution Method: {request.ExecutionMethod}");
-        sb.AppendLine("Code:");
-        sb.AppendLine(request.Code);
-
-        sb.AppendLine("Arguments:");
-        if (request.Args.Any())
-        {
-            foreach (var arg in request.Args)
-                sb.AppendLine($"  {arg.Name} = {arg.Value}");
-        }
-        else
-        {
-            sb.AppendLine("  (none)");
-        }
-
-        _logger.LogInformation(sb.ToString());
+        return results ?? [];
     }
 }

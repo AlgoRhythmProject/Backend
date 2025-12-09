@@ -38,52 +38,6 @@ namespace IntegrationTests.CodeExecutorTests
             _httpClient = fixture.ServerFactory.CreateClient();
         }
 
-        private async Task<string> SetupAuthenticatedUser(string email, string password)
-        {
-            // U¿yj _roleManager z pola klasy (z tego samego scope)
-            if (!await _roleManager.RoleExistsAsync("User"))
-            {
-                await _roleManager.CreateAsync(new Role
-                {
-                    Name = "User",
-                    NormalizedName = "USER",
-                    Description = "Default user role"
-                });
-            }
-
-            if (!await _roleManager.RoleExistsAsync("Admin"))
-            {
-                await _roleManager.CreateAsync(new Role
-                {
-                    Name = "Admin",
-                    NormalizedName = "ADMIN",
-                    Description = "Administrator with full access"
-                });
-            }
-
-            var user = new User
-            {
-                UserName = email,
-                Email = email,
-                FirstName = "Test",
-                LastName = "User",
-                EmailConfirmed = true
-            };
-
-            var result = await _userManager.CreateAsync(user, password);
-            if (!result.Succeeded)
-            {
-                throw new Exception($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
-
-            await _userManager.AddToRoleAsync(user, "User");
-
-            var loginRequest = new LoginRequest(email, password);
-            var authResponse = await _authService.LoginAsync(loginRequest);
-
-            return authResponse.Token;
-        }
-
 
         [Fact]
         public async Task Execute_Addition_Works_Through_Http()
@@ -117,7 +71,7 @@ namespace IntegrationTests.CodeExecutorTests
 
 
         [Fact]
-        public async Task Execute_Submission_Via_Controller()
+        public async Task Submission_Controller_CorrectCode_Returns_Accepted()
         {
             // Arrange
             var taskId = Guid.NewGuid();
@@ -143,7 +97,14 @@ namespace IntegrationTests.CodeExecutorTests
             _dbContext.ProgrammingTaskItems.Add(taskItem);
             await _dbContext.SaveChangesAsync();
 
-            var token = await SetupAuthenticatedUser("test.submission@test.com", "SecurePwd123!");
+            var token = await TestHelpers.SetupAuthenticatedUser(
+                TestConstants.TestUserEmail + Guid.NewGuid(), 
+                TestConstants.TestUserPassword + Guid.NewGuid(),
+                _roleManager,
+                _userManager,
+                _authService
+            );
+
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -159,8 +120,6 @@ namespace IntegrationTests.CodeExecutorTests
 
             // Debug
             var responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Status: {response.StatusCode}");
-            Console.WriteLine($"Response: {responseBody}");
 
             // Assert
             Assert.True(
@@ -177,6 +136,142 @@ namespace IntegrationTests.CodeExecutorTests
 
             Assert.NotNull(submission);
             Assert.Equal(SubmissionStatus.Accepted, submission.Status);
+        }
+
+        [Fact]
+        public async Task Submission_Controller_WrongCode_Returns_Rejected()
+        {
+            // Arrange
+            var taskId = Guid.NewGuid();
+            var taskItem = new ProgrammingTaskItem
+            {
+                Id = taskId,
+                Title = "Test Add Task",
+                TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
+                IsPublished = true,
+                Difficulty = Difficulty.Easy
+            };
+
+            var testCase = new TestCase
+            {
+                ProgrammingTaskItemId = taskId,
+                InputJson = "{\"a\": 10, \"b\": 2}",
+                ExpectedJson = "12",
+                MaxPoints = 10,
+                IsVisible = false
+            };
+
+            taskItem.TestCases.Add(testCase);
+            _dbContext.ProgrammingTaskItems.Add(taskItem);
+            await _dbContext.SaveChangesAsync();
+
+            var token = await TestHelpers.SetupAuthenticatedUser(
+                TestConstants.TestUserEmail + Guid.NewGuid(),
+                TestConstants.TestUserPassword + Guid.NewGuid(),
+                _roleManager,
+                _userManager,
+                _authService
+            );
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var submissionRequest = new SubmitProgrammingRequestDto
+            {
+                TaskId = taskId,
+                Code = "public class Solution { public int Solve(int a, int b) => a - b; }"
+            };
+
+            var content = JsonContent.Create(submissionRequest);
+            var response = await _httpClient.PostAsync("/api/submissions/programming", content);
+
+            // Debug
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(
+                response.IsSuccessStatusCode,
+                $"Expected success but got {response.StatusCode}. Response: {responseBody}"
+            );
+
+            // Wait for background processing
+            await Task.Delay(3000);
+            await _dbContext.SaveChangesAsync();
+
+            Submission? submission = await _dbContext.Submissions
+                .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
+
+            Assert.NotNull(submission);
+            Assert.Equal(SubmissionStatus.Rejected, submission.Status);
+        }
+
+        [Fact]
+        public async Task Submission_Controller_CompileError_Returns_Error()
+        {
+            // Arrange
+            var taskId = Guid.NewGuid();
+            var taskItem = new ProgrammingTaskItem
+            {
+                Id = taskId,
+                Title = "Test Add Task",
+                TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
+                IsPublished = true,
+                Difficulty = Difficulty.Easy
+            };
+
+            var testCase = new TestCase
+            {
+                ProgrammingTaskItemId = taskId,
+                InputJson = "{\"a\": 10, \"b\": 2}",
+                ExpectedJson = "12",
+                MaxPoints = 10,
+                IsVisible = false
+            };
+
+            taskItem.TestCases.Add(testCase);
+            _dbContext.ProgrammingTaskItems.Add(taskItem);
+            await _dbContext.SaveChangesAsync();
+
+            var token = await TestHelpers.SetupAuthenticatedUser(
+                TestConstants.TestUserEmail + Guid.NewGuid(),
+                TestConstants.TestUserPassword + Guid.NewGuid(),
+                _roleManager,
+                _userManager,
+                _authService
+            );
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var submissionRequest = new SubmitProgrammingRequestDto
+            {
+                TaskId = taskId,
+                Code = "public class Solution { public int Solve(int a, int b) => a - b "
+            };
+
+            var content = JsonContent.Create(submissionRequest);
+            var response = await _httpClient.PostAsync("/api/submissions/programming", content);
+
+            // Debug
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(
+                response.IsSuccessStatusCode,
+                $"Expected success but got {response.StatusCode}. Response: {responseBody}"
+            );
+
+            // Wait for background processing
+            await Task.Delay(2000);
+            await _dbContext.SaveChangesAsync();
+
+            Submission? submission = await _dbContext.Submissions
+                .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
+
+            Assert.NotNull(submission);
+            Assert.Equal(SubmissionStatus.Error, submission.Status);
         }
     }
 }

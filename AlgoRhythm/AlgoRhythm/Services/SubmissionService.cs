@@ -180,8 +180,11 @@ public class SubmissionService : ISubmissionService
             TestResultDto judgeDto;
 
             if (i < judgeResults.Count)
+            {
                 judgeDto = judgeResults[i];
+            }
             else
+            {
                 judgeDto = new TestResultDto
                 {
                     TestCaseId = tc.Id,
@@ -189,6 +192,7 @@ public class SubmissionService : ISubmissionService
                     Points = 0,
                     ExecutionTimeMs = 0
                 };
+            }
 
             var points = Math.Min(tc.MaxPoints, judgeDto.Points);
             var tr = new TestResult
@@ -199,20 +203,12 @@ public class SubmissionService : ISubmissionService
                 Points = points,
                 ExecutionTimeMs = judgeDto.ExecutionTimeMs,
                 StdOut = judgeDto.StdOut,
-                StdErr = judgeDto.StdErr
+                StdErr = judgeDto.StdErr,
             };
 
             await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
 
-            finalResults.Add(new TestResultDto
-            {
-                TestCaseId = tc.Id,
-                Passed = tr.Passed,
-                Points = tr.Points,
-                ExecutionTimeMs = tr.ExecutionTimeMs,
-                StdOut = tr.StdOut,
-                StdErr = tr.StdErr
-            });
+            finalResults.Add(judgeResults[i]);
         }
 
         submission.ExecuteFinishedAt = DateTime.UtcNow;
@@ -223,9 +219,7 @@ public class SubmissionService : ISubmissionService
 
         submission.Score = Math.Round(score, 2);
         submission.IsSolved = finalResults.All(r => r.Passed);
-        submission.Status = submission.IsSolved
-            ? SubmissionStatus.Accepted
-            : SubmissionStatus.Rejected;
+        submission.Status = finalResults.ToSubmissionStatus();
 
         await submissionRepo.SaveChangesAsync(CancellationToken.None);
     }
