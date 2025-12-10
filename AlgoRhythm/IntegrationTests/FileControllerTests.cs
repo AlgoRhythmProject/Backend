@@ -21,18 +21,15 @@ namespace IntegrationTests.FileTests
             _fixture = fixture;
             _mockStorageService = new Mock<IFileStorageService>();
 
-            // Create a custom client with mocked service
             _httpClient = fixture.ServerFactory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
                 {
-                    // Remove the real IFileStorageService
                     var descriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IFileStorageService));
                     if (descriptor != null)
                         services.Remove(descriptor);
 
-                    // Add mocked service
                     services.AddSingleton(_mockStorageService.Object);
                 });
             }).CreateClient();
