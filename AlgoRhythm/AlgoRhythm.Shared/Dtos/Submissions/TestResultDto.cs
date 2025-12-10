@@ -1,4 +1,5 @@
 ﻿using AlgoRhythm.Shared.Models.CodeExecution;
+using AlgoRhythm.Shared.Models.Submissions;
 
 namespace AlgoRhythm.Shared.Dtos.Submissions;
 
@@ -13,4 +14,17 @@ public class TestResultDto
     public List<CSharpExecutionError> Errors { get; set; } = [];
     public long ExitCode { get; set; }
     public object? ReturnedValue { get; set; }
+}
+
+public static class TestResultExtensions
+{
+    public static SubmissionStatus ToSubmissionStatus(this IEnumerable<TestResultDto> results)
+    {
+        return results switch
+        {
+            _ when results.All(r => r.Passed) => SubmissionStatus.Accepted,
+            _ when results.All(r => string.IsNullOrEmpty(r.StdErr) && r.Errors.Count == 0) => SubmissionStatus.Rejected,
+            _ => SubmissionStatus.Error,
+        };
+    }
 }

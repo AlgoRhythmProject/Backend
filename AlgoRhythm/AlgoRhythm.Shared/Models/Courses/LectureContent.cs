@@ -20,6 +20,10 @@ public abstract class LectureContent
     [Required]
     public ContentType Type { get; set; }
 
+    public int Order { get; set; } = 0;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     [ForeignKey(nameof(LectureId))]
     public Lecture Lecture { get; set; } = null!;
 }
@@ -27,7 +31,7 @@ public abstract class LectureContent
 public class LectureText : LectureContent
 {
     [Required]
-    public string Text { get; set; } = null!;
+    public string HtmlContent { get; set; } = null!;
 }
 
 public class LecturePhoto : LectureContent
