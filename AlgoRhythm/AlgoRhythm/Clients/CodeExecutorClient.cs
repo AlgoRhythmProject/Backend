@@ -16,7 +16,7 @@ namespace AlgoRhythm.Clients
         {
             try
             {
-                HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+                HttpResponseMessage response = await _client.PostAsJsonAsync("http://executor:8080/code-executor/Execute", req);
                 response.EnsureSuccessStatusCode();
 
                 return await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
