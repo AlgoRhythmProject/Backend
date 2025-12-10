@@ -37,6 +37,12 @@ public class EfTaskRepository : ITaskRepository
     public async Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _db.Set<TaskItem>()
+            .Include(t => t.Courses)
+            .Include(t => t.Hints)
+            .Include(t => t.Tags)
+            .Include(t => t.Submissions)
+            .Include(t => t.Comments)
+            .Include(t => (t as ProgrammingTaskItem)!.TestCases)
             .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
     }
 
@@ -47,6 +53,7 @@ public class EfTaskRepository : ITaskRepository
             .Include(t => t.Courses)
             .Include(t => t.Hints.OrderBy(h => h.Order))
             .Include(t => t.Comments.Where(c => !c.IsDeleted))
+            .Include(t => (t as ProgrammingTaskItem)!.TestCases)
             .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
     }
 

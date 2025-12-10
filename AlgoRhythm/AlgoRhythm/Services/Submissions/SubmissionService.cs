@@ -56,7 +56,7 @@ public class SubmissionService : ISubmissionService
             Score = null,
             SubmittedAt = DateTime.UtcNow,
             Code = request.Code,
-            ExecuteStartedAt = DateTime.UtcNow
+            ExecuteStartedAt = DateTime.UtcNow,
         };
 
         await _submissionRepository.AddSubmissionAsync(submission, ct);
