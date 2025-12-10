@@ -1,6 +1,6 @@
 ﻿using AlgoRhythm.Shared.Models.Courses;
 
-namespace AlgoRhythm.Services.Interfaces
+namespace AlgoRhythm.Services.Blob.Interfaces
 {
     public interface IFileStorageService
     {

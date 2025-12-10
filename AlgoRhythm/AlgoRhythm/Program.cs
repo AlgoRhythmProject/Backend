@@ -30,6 +30,8 @@ using System.Reflection;
 using System.Text;
 using AlgoRhythm.Clients;
 using Azure.Storage.Blobs;
+using AlgoRhythm.Services.Blob.Interfaces;
+using AlgoRhythm.Services.Blob;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,7 +102,7 @@ builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
-builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor.CodeExecutor>();
+builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor.CodeExecutorService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILectureService, LectureService>();

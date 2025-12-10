@@ -1,11 +1,11 @@
-﻿using AlgoRhythm.Services.Interfaces;
+﻿using AlgoRhythm.Services.Blob.Interfaces;
 using AlgoRhythm.Shared.Models.Courses;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 
-namespace AlgoRhythm.Services;
+namespace AlgoRhythm.Services.Blob;
 public class BlobStorageService : IFileStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
