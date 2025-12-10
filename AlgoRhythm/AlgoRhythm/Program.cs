@@ -28,6 +28,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using AlgoRhythm.Clients;
+using Azure.Storage.Blobs;
+using AlgoRhythm.Services.Blob.Interfaces;
+using AlgoRhythm.Services.Blob;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +66,11 @@ if (!builder.Environment.IsEnvironment("Testing"))
     );
 }
 
+string blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"]
+    ?? throw new InvalidOperationException("Azure Blob Storage connection string is not configured.");
+
+builder.Services.AddSingleton(_ => new BlobServiceClient(blobConnectionString));
+
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
 {
@@ -93,7 +102,7 @@ builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
-builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor.CodeExecutor>();
+builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor.CodeExecutorService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILectureService, LectureService>();
@@ -102,7 +111,7 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
-
+builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
 
 // DI - clients

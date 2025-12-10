@@ -6,7 +6,8 @@ namespace AlgoRhythm.Shared.Models.Courses;
 public enum ContentType
 {
     Text,
-    Photo
+    Photo,
+    Video
 }
 
 public abstract class LectureContent
@@ -42,4 +43,13 @@ public class LecturePhoto : LectureContent
     public string? Alt { get; set; }
 
     public string? Title { get; set; }
+}
+
+public class LectureVideo : LectureContent
+{
+    [Required]
+    public string FileName { get; set; } = string.Empty;
+    public string StreamUrl { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public DateTime LastModified { get; set; }
 }

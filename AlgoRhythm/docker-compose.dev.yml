@@ -43,9 +43,12 @@ services:
       JWT_KEY: ${JWT_KEY}
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
     depends_on:
       database:
         condition: service_healthy
+      azurite: 
+        condition: service_started
     networks:
     - default  
     #  - internal_net # Dla testowania security -> siec do executora
@@ -98,6 +101,18 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
+  azurite:
+    container_name: azurite
+    image: mcr.microsoft.com/azure-storage/azurite
+    restart: unless-stopped
+    ports:
+      - "10000:10000" # Blob Storage
+    command: 'azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --location /data --debug /data/debug.log'
+    volumes:
+      # Lokalny folder do przechowywania danych Azurite
+      - azurite_data:/data
+    networks:
+      - default
 
 networks:
   internal_net:
@@ -109,4 +124,5 @@ volumes:
   nuget-cache:  
     name: algorhythm_nuget_cache
   vite-cache:
-    name: algorhythm_vite_cache               
+    name: algorhythm_vite_cache 
+  azurite_data:              
