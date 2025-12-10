@@ -220,6 +220,22 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Error applying migrations.");
         throw;
     }
+
+    if (app.Environment.IsDevelopment())
+    {
+        try
+        {
+            logger.LogInformation("Seeding the data...");
+
+            await DbSeeder.SeedAsync(services);
+
+            logger.LogInformation("Database seeded!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Couldn't seed the database");
+        }
+    }
 }
 
 // Seed default roles
