@@ -137,7 +137,7 @@ public static class DbSeeder
         var content1 = new LectureText
         {
             Lecture = lecture1,
-            Text = "### Welcome!\nThis lecture introduces you to the basics of the C# language.",
+            HtmlContent = "### Welcome!\nThis lecture introduces you to the basics of the C# language.",
             Type = ContentType.Text
         };
 
@@ -152,14 +152,14 @@ public static class DbSeeder
         var content3 = new LectureText
         {
             Lecture = lecture2,
-            Text = "Variables in C# must have a defined type. Examples: int, string, bool.",
+            HtmlContent = "Variables in C# must have a defined type. Examples: int, string, bool.",
             Type = ContentType.Text
         };
 
         var content4 = new LectureText
         {
             Lecture = lecture4,
-            Text = "Algorithms are step-by-step solutions to computational problems.",
+            HtmlContent = "Algorithms are step-by-step solutions to computational problems.",
             Type = ContentType.Text
         };
 
