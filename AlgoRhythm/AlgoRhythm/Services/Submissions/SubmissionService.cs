@@ -9,7 +9,7 @@ using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
 
-namespace AlgoRhythm.Services;
+namespace AlgoRhythm.Services.Submissions;
 
 public class SubmissionService : ISubmissionService
 {

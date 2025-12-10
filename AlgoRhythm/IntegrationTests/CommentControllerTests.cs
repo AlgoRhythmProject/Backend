@@ -33,7 +33,7 @@ namespace IntegrationTests.CommentControllerTests
             _roleManager = _scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
             _httpClient = fixture.ServerFactory.CreateClient();
             _dbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            
+
             // Create a test task for comments
             var testTask = new ProgrammingTaskItem
             {
@@ -183,7 +183,7 @@ namespace IntegrationTests.CommentControllerTests
 
             // Login as different user
             var (_, secondUser) = await SetupAuthenticatedUser();
-            
+
             var response = await _httpClient.PutAsJsonAsync($"{_controllerRoute}/{commentId}", "Hacked content");
 
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -211,7 +211,7 @@ namespace IntegrationTests.CommentControllerTests
 
             // Login as different user
             var (_, secondUser) = await SetupAuthenticatedUser();
-            
+
             var response = await _httpClient.DeleteAsync($"{_controllerRoute}/{commentId}");
 
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
