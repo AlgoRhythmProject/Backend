@@ -26,18 +26,7 @@ namespace AlgoRhythm.Clients
 
             try
             {
-                string json = JsonSerializer.Serialize(req, jsonOptions);
-            }
-            catch (Exception ex)
-            {
-            }
-
-            try
-            {
-                HttpResponseMessage response =
-                    await _client.PostAsJsonAsync("http://executor:8080/code-executor/Execute", req);
-
-
+                HttpResponseMessage response = await _client.PostAsJsonAsync("http://executor:8080/code-executor/Execute", req);
                 response.EnsureSuccessStatusCode();
 
                 var result =
