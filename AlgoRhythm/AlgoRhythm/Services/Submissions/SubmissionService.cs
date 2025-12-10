@@ -9,7 +9,7 @@ using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
 
-namespace AlgoRhythm.Services.Submissions;
+namespace AlgoRhythm.Services;
 
 public class SubmissionService : ISubmissionService
 {
@@ -82,65 +82,95 @@ public class SubmissionService : ISubmissionService
         }
 
         // 3. Start background evaluation
-        StartBackgroundEvaluation(submission.Id, executeRequests);
+        StartBackgroundEvaluation(submission.Id, programmingTask.Id, executeRequests);
 
-        return MapToDto(submission, Array.Empty<TestResultDto>());
+        return MapToDto(submission, []);
 
     }
 
-    private void StartBackgroundEvaluation(Guid submissionId, List<ExecuteCodeRequest> executeCodeRequests)
+    private void StartBackgroundEvaluation(
+        Guid submissionId,
+        Guid taskId,
+        List<ExecuteCodeRequest> executeCodeRequests)
     {
         _ = Task.Run(async () =>
         {
-            using var scope = _scopeFactory.CreateScope();
-
-            var submissionRepo = scope.ServiceProvider.GetRequiredService<ISubmissionRepository>();
-            var taskRepo = scope.ServiceProvider.GetRequiredService<ITaskRepository>();
-            var judge = scope.ServiceProvider.GetRequiredService<ICodeExecutor>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubmissionService>>();
-
             try
             {
+                using var scope = _scopeFactory.CreateScope();
+
+                var submissionRepo = scope.ServiceProvider.GetRequiredService<ISubmissionRepository>();
+                var taskRepo = scope.ServiceProvider.GetRequiredService<ITaskRepository>();
+                var codeParser = scope.ServiceProvider.GetRequiredService<ICodeParser>();
+                var judge = scope.ServiceProvider.GetRequiredService<ICodeExecutor>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubmissionService>>();
+
+                logger.LogInformation("Starting background evaluation for submission {SubmissionId}", submissionId);
+
                 var submission = await submissionRepo.GetSubmissionAsync(submissionId, CancellationToken.None);
-                if (submission == null)
+                if (submission is not ProgrammingSubmission progSubmission)
+                {
+                    logger.LogWarning("Submission {SubmissionId} not found or not programming submission", submissionId);
                     return;
+                }
 
-                var task = await taskRepo.GetByIdAsync(submission.TaskItemId, CancellationToken.None);
+                var task = await taskRepo.GetByIdAsync(taskId, CancellationToken.None);
                 if (task is not ProgrammingTaskItem programmingTask)
-                    throw new InvalidOperationException("Task is not a programming task");
+                {
+                    logger.LogError("Task {TaskId} is not a programming task", taskId);
+                    await submissionRepo.MarkSubmissionAsErrorAsync(submissionId, CancellationToken.None);
+                    return;
+                }
 
-                submission.Status = SubmissionStatus.Pending;
-                await submissionRepo.UpdateSubmissionAsync(submission, CancellationToken.None);
-
-                var service = new SubmissionService(
+                await EvaluateAndSaveResultsInternalAsync(
+                    progSubmission,
+                    programmingTask,
+                    executeCodeRequests,
                     submissionRepo,
-                    taskRepo,
                     judge,
-                    new ConfigurationBuilder().Build(),
-                    _userManager,
-                    _scopeFactory,
-                    scope.ServiceProvider.GetRequiredService<ICodeParser>()
+                    logger
                 );
 
-                var results = await service.EvaluateAndSaveResultsAsync(submission, programmingTask, executeCodeRequests);
+                logger.LogInformation("Background evaluation completed for submission {SubmissionId}", submissionId);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Background evaluation failed.");
-                await submissionRepo.MarkSubmissionAsErrorAsync(submissionId, CancellationToken.None);
+                using var scope = _scopeFactory.CreateScope();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubmissionService>>();
+                var submissionRepo = scope.ServiceProvider.GetRequiredService<ISubmissionRepository>();
+
+                logger.LogError(ex, "Background evaluation failed for submission {SubmissionId}", submissionId);
+
+                try
+                {
+                    await submissionRepo.MarkSubmissionAsErrorAsync(submissionId, CancellationToken.None);
+                }
+                catch (Exception innerEx)
+                {
+                    logger.LogError(innerEx, "Failed to mark submission as error");
+                }
             }
         });
     }
 
-
-    public async Task<IReadOnlyList<TestResultDto>> EvaluateAndSaveResultsAsync(ProgrammingSubmission submission, ProgrammingTaskItem task, List<ExecuteCodeRequest> executeCodeRequests, CancellationToken ct = default)
+    private async Task EvaluateAndSaveResultsInternalAsync(
+        ProgrammingSubmission submission,
+        ProgrammingTaskItem task,
+        List<ExecuteCodeRequest> executeCodeRequests,
+        ISubmissionRepository submissionRepo,
+        ICodeExecutor judge,
+        ILogger logger)
     {
-        submission.ExecuteStartedAt = submission.ExecuteStartedAt == default ? DateTime.UtcNow : submission.ExecuteStartedAt;
+        submission.Status = SubmissionStatus.Pending;
+        submission.ExecuteStartedAt = DateTime.UtcNow;
+        await submissionRepo.UpdateSubmissionAsync(submission, CancellationToken.None);
 
-        await _submissionRepository.SaveChangesAsync(ct);
-
-
-        var judgeResults = (await _judge.EvaluateAsync(submission.Id, task.Id, executeCodeRequests, ct)).ToList();
+        var judgeResults = (await judge.EvaluateAsync(
+            submission.Id,
+            task.Id,
+            executeCodeRequests,
+            CancellationToken.None
+        )).ToList();
 
         var orderedTestCases = task.TestCases.OrderBy(tc => tc.Id).ToList();
         var finalResults = new List<TestResultDto>();
@@ -149,10 +179,21 @@ public class SubmissionService : ISubmissionService
         {
             var tc = orderedTestCases[i];
             TestResultDto judgeDto;
+
             if (i < judgeResults.Count)
+            {
                 judgeDto = judgeResults[i];
+            }
             else
-                judgeDto = new TestResultDto { TestCaseId = tc.Id, Passed = false, Points = 0, ExecutionTimeMs = 0 };
+            {
+                judgeDto = new TestResultDto
+                {
+                    TestCaseId = tc.Id,
+                    Passed = false,
+                    Points = 0,
+                    ExecutionTimeMs = 0
+                };
+            }
 
             var points = Math.Min(tc.MaxPoints, judgeDto.Points);
             var tr = new TestResult
@@ -163,36 +204,25 @@ public class SubmissionService : ISubmissionService
                 Points = points,
                 ExecutionTimeMs = judgeDto.ExecutionTimeMs,
                 StdOut = judgeDto.StdOut,
-                StdErr = judgeDto.StdErr
+                StdErr = judgeDto.StdErr,
             };
 
-            await _submissionRepository.AddTestResultAsync(tr, ct);
+            await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
 
-            finalResults.Add(new TestResultDto
-            {
-                TestCaseId = tc.Id,
-                Passed = tr.Passed,
-                Points = tr.Points,
-                ExecutionTimeMs = tr.ExecutionTimeMs,
-                StdOut = tr.StdOut,
-                StdErr = tr.StdErr
-            });
+            finalResults.Add(judgeResults[i]);
         }
 
         submission.ExecuteFinishedAt = DateTime.UtcNow;
-        submission.TestResults = submission.TestResults ?? new List<TestResult>();
-        await _submissionRepository.SaveChangesAsync(ct);
 
         var totalPoints = finalResults.Sum(r => r.Points);
         var maxPoints = task.TestCases.Sum(tc => tc.MaxPoints);
         var score = maxPoints > 0 ? (double)totalPoints / maxPoints * 100.0 : 0;
+
         submission.Score = Math.Round(score, 2);
         submission.IsSolved = finalResults.All(r => r.Passed);
-        submission.Status = submission.IsSolved ? SubmissionStatus.Accepted : SubmissionStatus.Rejected;
+        submission.Status = finalResults.ToSubmissionStatus();
 
-        await _submissionRepository.SaveChangesAsync(ct);
-
-        return finalResults;
+        await submissionRepo.SaveChangesAsync(CancellationToken.None);
     }
 
     public async Task<SubmissionResponseDto?> GetSubmissionAsync(Guid submissionId, CancellationToken ct = default)

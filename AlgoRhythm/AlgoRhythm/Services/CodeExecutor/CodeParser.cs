@@ -63,7 +63,7 @@ public class CSharpCodeParser : ICodeParser
                 Args = argsList,
                 Timeout = timeout ?? TimeSpan.FromSeconds(5),
                 ExecutionClass = className,
-                ExecutionMethod = methodName
+                ExecutionMethod = methodName,
             };
         }
         catch (FormatException ex)
@@ -109,7 +109,8 @@ public class CSharpCodeParser : ICodeParser
                 ExecutionClass = templateRequest.ExecutionClass,
                 ExecutionMethod = templateRequest.ExecutionMethod,
                 Args = argsForTest,
-                Timeout = templateRequest.Timeout
+                Timeout = templateRequest.Timeout,
+                ExpectedValue = tc?.ExpectedJson ?? string.Empty,
             });
         }
 
