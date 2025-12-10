@@ -1,9 +1,12 @@
 ﻿using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AlgoRhythm.Clients
 {
-    public class CodeExecutorClient 
+    public class CodeExecutorClient
     {
         private readonly HttpClient _client;
 
@@ -14,24 +17,40 @@ namespace AlgoRhythm.Clients
 
         public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
         {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+
             try
             {
                 HttpResponseMessage response = await _client.PostAsJsonAsync("http://executor:8080/code-executor/Execute", req);
                 response.EnsureSuccessStatusCode();
 
-                return await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
-                    
+                var result =
+                    await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
+
+                try
+                {
+                    string jsonResult = JsonSerializer.Serialize(result, jsonOptions);
+                }
+                catch (Exception ex)
+                {
+                }
+                return result;
             }
-            catch (Exception) 
+            catch (Exception ex)
             {
+
                 return
                 [
-                    new()
+                    new TestResultDto
                     {
-                        Errors = [new("Couldn't connect with external service")],
+                        Errors = [ new("Couldn't connect with external service") ]
                     }
                 ];
-                
             }
         }
     }

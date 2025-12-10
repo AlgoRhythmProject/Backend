@@ -138,140 +138,142 @@ namespace IntegrationTests.CodeExecutorTests
             Assert.Equal(SubmissionStatus.Accepted, submission.Status);
         }
 
-        //[Fact]
-        //public async Task Submission_Controller_WrongCode_Returns_Rejected()
-        //{
-        //    // Arrange
-        //    var taskId = Guid.NewGuid();
-        //    var taskItem = new ProgrammingTaskItem
-        //    {
-        //        Id = taskId,
-        //        Title = "Test Add Task",
-        //        TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
-        //        IsPublished = true,
-        //        Difficulty = Difficulty.Easy
-        //    };
+        [Fact]
+        public async Task Submission_Controller_WrongCode_Returns_Rejected()
+        {
+            // Arrange
+            var taskId = Guid.NewGuid();
+            var taskItem = new ProgrammingTaskItem
+            {
+                Id = taskId,
+                Title = "Test Add Task",
+                TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
+                IsPublished = true,
+                Difficulty = Difficulty.Easy
+            };
 
-        //    var testCase = new TestCase
-        //    {
-        //        ProgrammingTaskItemId = taskId,
-        //        InputJson = "{\"a\": 10, \"b\": 2}",
-        //        ExpectedJson = "12",
-        //        MaxPoints = 10,
-        //        IsVisible = false
-        //    };
+            var testCase = new TestCase
+            {
+                ProgrammingTaskItemId = taskId,
+                InputJson = "{\"a\": 10, \"b\": 2}",
+                ExpectedJson = "12",
+                MaxPoints = 10,
+                IsVisible = false
+            };
 
-        //    taskItem.TestCases.Add(testCase);
-        //    _dbContext.ProgrammingTaskItems.Add(taskItem);
-        //    await _dbContext.SaveChangesAsync();
+            taskItem.TestCases.Add(testCase);
+            _dbContext.ProgrammingTaskItems.Add(taskItem);
+            await _dbContext.SaveChangesAsync();
 
-        //    var token = await TestHelpers.SetupAuthenticatedUser(
-        //        TestConstants.TestUserEmail + Guid.NewGuid(),
-        //        TestConstants.TestUserPassword + Guid.NewGuid(),
-        //        _roleManager,
-        //        _userManager,
-        //        _authService
-        //    );
+            var token = await TestHelpers.SetupAuthenticatedUser(
+                TestConstants.TestUserEmail + Guid.NewGuid(),
+                TestConstants.TestUserPassword + Guid.NewGuid(),
+                _roleManager,
+                _userManager,
+                _authService
+            );
 
-        //    _httpClient.DefaultRequestHeaders.Authorization =
-        //        new AuthenticationHeaderValue("Bearer", token);
+            _dbContext.ChangeTracker.Clear();
 
-        //    // Act
-        //    var submissionRequest = new SubmitProgrammingRequestDto
-        //    {
-        //        TaskId = taskId,
-        //        Code = "public class Solution { public int Solve(int a, int b) => a - b; }"
-        //    };
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
 
-        //    var content = JsonContent.Create(submissionRequest);
-        //    var response = await _httpClient.PostAsync("/api/submissions/programming", content);
+            // Act
+            var submissionRequest = new SubmitProgrammingRequestDto
+            {
+                TaskId = taskId,
+                Code = "public class Solution { public int Solve(int a, int b) => a - b; }"
+            };
 
-        //    // Debug
-        //    var responseBody = await response.Content.ReadAsStringAsync();
+            var content = JsonContent.Create(submissionRequest);
+            var response = await _httpClient.PostAsync("/api/submissions/programming", content);
 
-        //    // Assert
-        //    Assert.True(
-        //        response.IsSuccessStatusCode,
-        //        $"Expected success but got {response.StatusCode}. Response: {responseBody}"
-        //    );
+            // Debug
+            var responseBody = await response.Content.ReadAsStringAsync();
 
-        //    // Wait for background processing
-        //    await Task.Delay(3000);
-        //    await _dbContext.SaveChangesAsync();
+            // Assert
+            Assert.True(
+                response.IsSuccessStatusCode,
+                $"Expected success but got {response.StatusCode}. Response: {responseBody}"
+            );
 
-        //    Submission? submission = await _dbContext.Submissions
-        //        .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
+            // Wait for background processing
+            await Task.Delay(3000);
+            await _dbContext.SaveChangesAsync();
 
-        //    Assert.NotNull(submission);
-        //    Assert.Equal(SubmissionStatus.Rejected, submission.Status);
-        //}
+            Submission? submission = await _dbContext.Submissions
+                .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
 
-        //[Fact]
-        //public async Task Submission_Controller_CompileError_Returns_Error()
-        //{
-        //    // Arrange
-        //    var taskId = Guid.NewGuid();
-        //    var taskItem = new ProgrammingTaskItem
-        //    {
-        //        Id = taskId,
-        //        Title = "Test Add Task",
-        //        TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
-        //        IsPublished = true,
-        //        Difficulty = Difficulty.Easy
-        //    };
+            Assert.NotNull(submission);
+            Assert.Equal(SubmissionStatus.Rejected, submission.Status);
+        }
 
-        //    var testCase = new TestCase
-        //    {
-        //        ProgrammingTaskItemId = taskId,
-        //        InputJson = "{\"a\": 10, \"b\": 2}",
-        //        ExpectedJson = "12",
-        //        MaxPoints = 10,
-        //        IsVisible = false
-        //    };
+        [Fact]
+        public async Task Submission_Controller_CompileError_Returns_Error()
+        {
+            // Arrange
+            var taskId = Guid.NewGuid();
+            var taskItem = new ProgrammingTaskItem
+            {
+                Id = taskId,
+                Title = "Test Add Task",
+                TemplateCode = "public class Solution { public int Solve(int a, int b) { } }",
+                IsPublished = true,
+                Difficulty = Difficulty.Easy
+            };
 
-        //    taskItem.TestCases.Add(testCase);
-        //    _dbContext.ProgrammingTaskItems.Add(taskItem);
-        //    await _dbContext.SaveChangesAsync();
+            var testCase = new TestCase
+            {
+                ProgrammingTaskItemId = taskId,
+                InputJson = "{\"a\": 10, \"b\": 2}",
+                ExpectedJson = "12",
+                MaxPoints = 10,
+                IsVisible = false
+            };
 
-        //    var token = await TestHelpers.SetupAuthenticatedUser(
-        //        TestConstants.TestUserEmail + Guid.NewGuid(),
-        //        TestConstants.TestUserPassword + Guid.NewGuid(),
-        //        _roleManager,
-        //        _userManager,
-        //        _authService
-        //    );
+            taskItem.TestCases.Add(testCase);
+            _dbContext.ProgrammingTaskItems.Add(taskItem);
+            await _dbContext.SaveChangesAsync();
 
-        //    _httpClient.DefaultRequestHeaders.Authorization =
-        //        new AuthenticationHeaderValue("Bearer", token);
+            var token = await TestHelpers.SetupAuthenticatedUser(
+                TestConstants.TestUserEmail + Guid.NewGuid(),
+                TestConstants.TestUserPassword + Guid.NewGuid(),
+                _roleManager,
+                _userManager,
+                _authService
+            );
 
-        //    // Act
-        //    var submissionRequest = new SubmitProgrammingRequestDto
-        //    {
-        //        TaskId = taskId,
-        //        Code = "public class Solution { public int Solve(int a, int b) => a - b "
-        //    };
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
 
-        //    var content = JsonContent.Create(submissionRequest);
-        //    var response = await _httpClient.PostAsync("/api/submissions/programming", content);
+            // Act
+            var submissionRequest = new SubmitProgrammingRequestDto
+            {
+                TaskId = taskId,
+                Code = "public class Solution { public int Solve(int a, int b) => a - b "
+            };
 
-        //    // Debug
-        //    var responseBody = await response.Content.ReadAsStringAsync();
+            var content = JsonContent.Create(submissionRequest);
+            var response = await _httpClient.PostAsync("/api/submissions/programming", content);
 
-        //    // Assert
-        //    Assert.True(
-        //        response.IsSuccessStatusCode,
-        //        $"Expected success but got {response.StatusCode}. Response: {responseBody}"
-        //    );
+            // Debug
+            var responseBody = await response.Content.ReadAsStringAsync();
 
-        //    // Wait for background processing
-        //    await Task.Delay(2000);
-        //    await _dbContext.SaveChangesAsync();
+            // Assert
+            Assert.True(
+                response.IsSuccessStatusCode,
+                $"Expected success but got {response.StatusCode}. Response: {responseBody}"
+            );
 
-        //    Submission? submission = await _dbContext.Submissions
-        //        .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
+            // Wait for background processing
+            await Task.Delay(2000);
+            await _dbContext.SaveChangesAsync();
 
-        //    Assert.NotNull(submission);
-        //    Assert.Equal(SubmissionStatus.Error, submission.Status);
-        //}
+            Submission? submission = await _dbContext.Submissions
+                .FirstOrDefaultAsync(s => s.TaskItemId == taskId);
+
+            Assert.NotNull(submission);
+            Assert.Equal(SubmissionStatus.Error, submission.Status);
+        }
     }
 }
