@@ -8,13 +8,13 @@ using AlgoRhythm.Services.CodeExecutor.Interfaces;
 
 namespace AlgoRhythm.Services.CodeExecutor;
 
-public class CodeExecutor : ICodeExecutor
+public class CodeExecutorService : ICodeExecutor
 {
     private readonly ITaskRepository _taskRepository;
-    private readonly ILogger<CodeExecutor> _logger;
+    private readonly ILogger<CodeExecutorService> _logger;
     private readonly CodeExecutorClient _codeExecutorClient;
 
-    public CodeExecutor(ITaskRepository taskRepo, ILogger<CodeExecutor> logger, CodeExecutorClient client)
+    public CodeExecutorService(ITaskRepository taskRepo, ILogger<CodeExecutorService> logger, CodeExecutorClient client)
     {
         _taskRepository = taskRepo;
         _logger = logger;
