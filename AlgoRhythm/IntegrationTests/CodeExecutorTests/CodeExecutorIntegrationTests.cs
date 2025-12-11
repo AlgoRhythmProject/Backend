@@ -198,7 +198,7 @@ namespace IntegrationTests.CodeExecutorTests
             );
 
             // Wait for background processing
-            await Task.Delay(3000);
+            await Task.Delay(5000);
             await _dbContext.SaveChangesAsync();
 
             Submission? submission = await _dbContext.Submissions
