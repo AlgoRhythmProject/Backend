@@ -9,10 +9,12 @@ namespace AlgoRhythm.Clients
     public class CodeExecutorClient
     {
         private readonly HttpClient _client;
+        private readonly ILogger<CodeExecutorClient> _logger;
 
-        public CodeExecutorClient(HttpClient client)
+        public CodeExecutorClient(HttpClient client, ILogger<CodeExecutorClient> logger)
         {
             _client = client;
+            _logger = logger;
         }
 
         public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
