@@ -23,7 +23,7 @@ services:
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
       AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
       CODE_EXECUTOR_URL: http://executor:8080
-    restart: unless-stoped
+    restart: unless-stopped
     depends_on:
       - database
     networks:
