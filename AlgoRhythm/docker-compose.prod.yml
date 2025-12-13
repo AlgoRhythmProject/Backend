@@ -11,7 +11,7 @@ services:
     - db_data:/var/opt/mssql # database lives as long as the image is not deleted
   backend:
     container_name: backend
-    image: ghcr.io/algorhythmproject/algorhythm-backend:latest
+    image: ghcr.io/algorhythmproject/backend/algorhythm-backend:latest
     ports:
     - "7062:8080"
     - "5289:8081"
@@ -43,7 +43,7 @@ services:
     
   executor:
     container_name: code_executor
-    image: ghcr.io/algorhythmproject/code-executor:latest
+    image: ghcr.io/algorhythmproject/backend/code-executor:latest
     restart: always
     cpus: 0.5              # CPU limit
     mem_limit: 256M        # Memory limit

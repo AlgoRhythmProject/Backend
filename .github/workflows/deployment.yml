@@ -2,9 +2,10 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -25,16 +26,16 @@ jobs:
     
     # Build backend image
     - name: Build backend
-      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/algorhythm-backend:latest -f ./AlgoRhythm/AlgoRhythm/Dockerfile ./AlgoRhythm
+      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/backend/algorhythm-backend:latest -f ./AlgoRhythm/AlgoRhythm/Dockerfile ./AlgoRhythm
     
     # Push backend image
     - name: Push backend
-      run: docker push ${{ env.REGISTRY }}/algorhythmproject/algorhythm-backend:latest
+      run: docker push ${{ env.REGISTRY }}/algorhythmproject/backend/algorhythm-backend:latest
     
     # Build code executor image
     - name: Build code executor
-      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/code-executor:latest -f ./AlgoRhythm/CodeExecutor/Dockerfile ./AlgoRhythm
+      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/backend/code-executor:latest -f ./AlgoRhythm/CodeExecutor/Dockerfile ./AlgoRhythm
     
     # Push code executor image
     - name: Push code executor
-      run: docker push ${{ env.REGISTRY }}/algorhythmproject/code-executor:latest
+      run: docker push ${{ env.REGISTRY }}/algorhythmproject/backend/code-executor:latest
