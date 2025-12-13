@@ -14,6 +14,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["AlgoRhythm/AlgoRhythm.csproj", "AlgoRhythm/"]
+COPY ["AlgoRhythm.Shared/AlgoRhythm.Shared.csproj", "AlgoRhythm.Shared/"]
 RUN dotnet restore "./AlgoRhythm/AlgoRhythm.csproj"
 COPY . .
 WORKDIR "/src/AlgoRhythm"
@@ -28,4 +29,5 @@ RUN dotnet publish "./AlgoRhythm.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "AlgoRhythm.dll"]

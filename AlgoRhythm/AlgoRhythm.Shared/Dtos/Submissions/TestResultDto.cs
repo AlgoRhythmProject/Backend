@@ -1,4 +1,4 @@
-﻿using AlgoRhythm.Shared.Models.CodeExecution;
+using AlgoRhythm.Shared.Models.CodeExecution;
 using AlgoRhythm.Shared.Models.Submissions;
 
 namespace AlgoRhythm.Shared.Dtos.Submissions;
