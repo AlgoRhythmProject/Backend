@@ -7,7 +7,7 @@ using System.Text.Encodings.Web;
 using System.Web;
 using AlgoRhythm.Services.Blob.Interfaces;
 
-namespace AlgoRhythm.Controllers
+namespace AlgoRhythm.Controllers.Common
 {
     [ApiController]
     [Route("api/[controller]")]
