@@ -1,0 +1,8 @@
+namespace AlgoRhythm.Shared.Dtos.Users;
+
+public class ResetPasswordDto
+{
+    public required string Email { get; set; }
+    public required string Code { get; set; }
+    public required string NewPassword { get; set; }
+}

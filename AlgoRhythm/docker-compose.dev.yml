@@ -1,0 +1,129 @@
+services:
+  database:
+    container_name: database
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "8002:1433"
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+      MSSQL_PID: Developer 
+    volumes:
+      - db_data:/var/opt/mssql # Baza danych dopoki nie zostanie usuniety volume
+    healthcheck:  # Health check dla pewnosci ze DB jest gotowa
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD}" -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    container_name: backend
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    volumes:
+      # Montowanie plikow rozwiazania
+      - ./AlgoRhythm:/src/AlgoRhythm:rw
+      - ./AlgoRhythm.Shared:/src/AlgoRhythm.Shared:rw
+      - ./CodeExecutor:/src/CodeExecutor:rw
+      # Wylaczenie folderow build
+      - /src/AlgoRhythm/bin
+      - /src/AlgoRhythm/obj
+      - /src/AlgoRhythm.Shared/bin
+      - /src/AlgoRhythm.Shared/obj
+      - nuget-cache:/root/.nuget/packages
+    working_dir: /src/AlgoRhythm
+    ports:
+      - "7062:8080"
+      - "5289:8081"
+    command: ["dotnet", "watch", "run", "--project", "AlgoRhythm.csproj", "--urls", "http://+:8080"]
+    environment:
+      SendGrid__ApiKey: ${SENDGRID_API_KEY}
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      JWT_KEY: ${JWT_KEY}
+      ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+      CODE_EXECUTOR_URL: http://executor:8080
+    depends_on:
+      database:
+        condition: service_healthy
+      azurite: 
+        condition: service_started
+    networks:
+    - default  
+    #  - internal_net # Dla testowania security -> siec do executora
+    restart: unless-stopped
+
+  frontend:
+    container_name: frontend
+    build:
+        context: ../../Frontend/AlgoRhythm
+        dockerfile:  Dockerfile
+        target: build
+        cache_from:
+        - algorhythm-frontend:latest
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../../Frontend/AlgoRhythm:/app:rw  # Mapowanie kodu do folderu roboczego w kontenerze
+      - /app/node_modules               # Uzywa node_modules z kontenera, a nie z Windowsa
+      - vite-cache:/app/.vite
+    environment:
+      - CHOKIDAR_USEPOLLING=true        # Wymusza odswiezanie na Windows/Dockerze
+      - VITE_HOST=0.0.0.0
+    depends_on: 
+      - backend
+    networks:
+      - default  
+      - internal_net
+
+  executor:
+    container_name: code_executor
+    build: 
+      context: .
+      dockerfile: ./CodeExecutor/Dockerfile
+    cpus: "0.5"              # limit CPU 
+    mem_limit: 256M          # limit pamieci
+    networks:
+      - default
+    #  - internal_net# Dla testowania security -> wewnetrzna siec executora
+    ports:
+      - "7070:8080"
+    pids_limit: 50
+    read_only: true
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+  azurite:
+    container_name: azurite
+    image: mcr.microsoft.com/azure-storage/azurite
+    restart: unless-stopped
+    ports:
+      - "10000:10000" # Blob Storage
+    command: 'azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --location /data --debug /data/debug.log'
+    volumes:
+      # Lokalny folder do przechowywania danych Azurite
+      - azurite_data:/data
+    networks:
+      - default
+
+networks:
+  internal_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  db_data:                  
+  nuget-cache:  
+    name: algorhythm_nuget_cache
+  vite-cache:
+    name: algorhythm_vite_cache 
+  azurite_data:              

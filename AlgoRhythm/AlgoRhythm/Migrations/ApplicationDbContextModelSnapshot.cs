@@ -263,8 +263,14 @@ namespace AlgoRhythm.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("LectureId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -785,7 +791,7 @@ namespace AlgoRhythm.Migrations
                 {
                     b.HasBaseType("AlgoRhythm.Shared.Models.Courses.LectureContent");
 
-                    b.Property<string>("Text")
+                    b.Property<string>("HtmlContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

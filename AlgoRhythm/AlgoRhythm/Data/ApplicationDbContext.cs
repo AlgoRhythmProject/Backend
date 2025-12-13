@@ -91,7 +91,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         // Many-to-many relationships
         builder.Entity<TaskItem>()
             .HasMany(t => t.Tags)
-            .WithMany(tag => tag.TaskItems);
+            .WithMany(tag => tag.TaskItems); 
+
 
         builder.Entity<Lecture>()
             .HasMany(l => l.Tags)
@@ -99,9 +100,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
         builder.Entity<Course>()
             .HasMany(c => c.TaskItems)
-            .WithMany(t => t.Courses);
+            .WithMany(t => t.Courses); 
 
-        // FIX: Disable cascade delete for conflicting relationships
+        // Disable cascade delete for conflicting relationships
         builder.Entity<TestResult>()
             .HasOne(tr => tr.TestCase)
             .WithMany(tc => tc.TestResults)

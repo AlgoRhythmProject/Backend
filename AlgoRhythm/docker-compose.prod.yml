@@ -1,0 +1,68 @@
+services:
+  database:
+    container_name: database
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+    - "8002:1433" # default mssql server port
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+    volumes:
+    - db_data:/var/opt/mssql # database lives as long as the image is not deleted
+  backend:
+    container_name: backend
+    image: ghcr.io/algorhythmproject/algorhythm-backend:latest
+    ports:
+    - "7062:8080"
+    - "5289:8081"
+    environment:
+      SendGrid__ApiKey: ${SENDGRID_API_KEY}
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      JWT_KEY: ${JWT_KEY}
+      ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
+      AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+      CODE_EXECUTOR_URL: http://executor:8080
+    restart: unless-stoped
+    depends_on:
+      - database
+    networks:
+    - default  
+    - internal_net
+  
+  frontend:
+    container_name: frontend
+    image: ghcr.io/algorhythmproject/algorhythm-frontend:latest 
+    ports:
+    - "5173:80"
+    depends_on: 
+    - backend
+    networks:
+    - default  
+    - internal_net
+    
+  executor:
+    container_name: code_executor
+    image: ghcr.io/algorhythmproject/code-executor:latest
+    restart: always
+    cpus: 0.5              # CPU limit
+    mem_limit: 256M        # Memory limit
+    networks:
+      - internal_net # limited network (other containers)
+    ports:
+    - "7070:8080"
+    pids_limit: 50
+    read_only: true
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    tmpfs:
+      - /tmp
+
+networks:
+  internal_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  db_data:
+  

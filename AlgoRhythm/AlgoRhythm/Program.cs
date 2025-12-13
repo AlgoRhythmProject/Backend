@@ -1,9 +1,25 @@
-using AlgoRhythm.Api.Services.Interfaces;
+using AlgoRhythm.Clients;
 using AlgoRhythm.Data;
-using AlgoRhythm.Repositories;
-using AlgoRhythm.Repositories.Interfaces;
-using AlgoRhythm.Services;
-using AlgoRhythm.Services.Interfaces;
+using AlgoRhythm.Repositories.Common;
+using AlgoRhythm.Repositories.Common.Interfaces;
+using AlgoRhythm.Repositories.Courses;
+using AlgoRhythm.Repositories.Courses.Interfaces;
+using AlgoRhythm.Repositories.Submissions;
+using AlgoRhythm.Repositories.Submissions.Interfaces;
+using AlgoRhythm.Repositories.Tasks;
+using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Services.Submissions;
+using AlgoRhythm.Services.CodeExecutor;
+using AlgoRhythm.Services.CodeExecutor.Interfaces;
+using AlgoRhythm.Services.Common;
+using AlgoRhythm.Services.Common.Interfaces;
+using AlgoRhythm.Services.Courses;
+using AlgoRhythm.Services.Courses.Interfaces;
+using AlgoRhythm.Services.Submissions.Interfaces;
+using AlgoRhythm.Services.Tasks;
+using AlgoRhythm.Services.Tasks.Interfaces;
+using AlgoRhythm.Services.Users;
+using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +28,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using AlgoRhythm.Clients;
+using Azure.Storage.Blobs;
+using AlgoRhythm.Services.Blob.Interfaces;
+using AlgoRhythm.Services.Blob;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,8 +48,28 @@ builder.Services.AddCors(options =>
 });
 
 // Database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 10,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null
+                );
+            }
+        )
+    );
+}
+
+string blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"]
+    ?? throw new InvalidOperationException("Azure Blob Storage connection string is not configured.");
+
+builder.Services.AddSingleton(_ => new BlobServiceClient(blobConnectionString));
 
 // ASP.NET Core Identity
 builder.Services.AddIdentity<User, Role>(options =>
@@ -52,14 +92,37 @@ builder.Services.AddIdentity<User, Role>(options =>
 
 builder.Services.AddScoped<ISubmissionRepository, EfSubmissionRepository>();
 builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
+builder.Services.AddScoped<ICourseRepository, EfCourseRepository>();
+builder.Services.AddScoped<ILectureRepository, EfLectureRepository>();
+builder.Services.AddScoped<ICourseProgressRepository, EfCourseProgressRepository>();
+builder.Services.AddScoped<ITagRepository, EfTagRepository>();
+builder.Services.AddScoped<ICommentRepository, EfCommentRepository>();
+builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
-builder.Services.AddScoped<ICodeExecutor, RandomCodeExecutor>();
+builder.Services.AddScoped<ICodeExecutor, AlgoRhythm.Services.CodeExecutor.CodeExecutorService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ILectureService, LectureService>();
+builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
+builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
+
+// DI - clients
+builder.Services.AddHttpClient<CodeExecutorClient>(client =>
+{
+    string? url = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")
+                ?? builder.Configuration["CodeExecutor:Url"]
+                ?? throw new InvalidOperationException("Code executor url is not configured!");
+
+    client.BaseAddress = new Uri(url);
+});
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings
@@ -87,7 +150,7 @@ builder.Services.AddAuthentication(options =>
             {
                 context.Token = context.Request.Cookies["JWT"];
             }
-            return System.Threading.Tasks.Task.CompletedTask;
+            return Task.CompletedTask;
         }
     };
 
@@ -106,54 +169,92 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger with JWT Authorization
-builder.Services.AddSwaggerGen(options =>
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    builder.Services.AddSwaggerGen(options =>
     {
-        Title = "AlgoRhythm API",
-        Version = "v1",
-        Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
-    });
-
-    // Add JWT Authorization to Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter JWT token (without 'Bearer' prefix)"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+        options.SwaggerDoc("v1", new OpenApiInfo
         {
-            new OpenApiSecurityScheme
+            Title = "AlgoRhythm API",
+            Version = "v1",
+            Description = "API for AlgoRhythm e-learning platform - authentication, courses, exercises"
+        });
+
+        // Add JWT Authorization to Swagger
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Enter JWT token (without 'Bearer' prefix)"
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                []
+            }
+        });
+
+        // Optional: add XML comments (only if file exists)
+        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
         }
     });
-
-    // Optional: add XML comments (only if file exists)
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
-});
-
+}
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
-// Swagger UI (domyœlna œcie¿ka /swagger)
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    // Applying migrations
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Applying migrations...");
+        context.Database.Migrate(); // ensures Roles, Users, etc. exist
+        logger.LogInformation("Database ready!");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error applying migrations.");
+        throw;
+    }
+
+    if (app.Environment.IsDevelopment())
+    {
+        try
+        {
+            logger.LogInformation("Seeding the data...");
+
+            await DbSeeder.SeedAsync(services);
+
+            logger.LogInformation("Database seeded!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Couldn't seed the database");
+        }
+    }
+}
 
 // Seed default roles
 using (var scope = app.Services.CreateScope())
@@ -180,10 +281,16 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Swagger UI (default path /swagger)
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-app.UseHttpsRedirection();
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
