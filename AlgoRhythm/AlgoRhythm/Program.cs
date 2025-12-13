@@ -117,9 +117,11 @@ builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 // DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
 {
-    client.BaseAddress = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL") != null
-        ? new Uri(Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")!)
-        : new Uri(builder.Configuration["CodeExecutor:Url"]!);
+    string? url = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")
+                ?? builder.Configuration["CodeExecutor:Url"]
+                ?? throw new InvalidOperationException("Code executor url is not configured!");
+
+    client.BaseAddress = new Uri(url);
 });
 
 // JWT Authentication
