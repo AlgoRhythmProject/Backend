@@ -25,23 +25,15 @@ namespace AlgoRhythm.Clients
             };
 
             try
-            {
-                HttpResponseMessage response = await _client.PostAsJsonAsync("http://executor:8080/code-executor/Execute", req);
+            {   
+                HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
                 response.EnsureSuccessStatusCode();
 
-                var result =
-                    await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
+                var result = await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
 
-                try
-                {
-                    string jsonResult = JsonSerializer.Serialize(result, jsonOptions);
-                }
-                catch (Exception ex)
-                {
-                }
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
                 return

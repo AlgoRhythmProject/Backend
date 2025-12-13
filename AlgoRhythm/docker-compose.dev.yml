@@ -44,6 +44,7 @@ services:
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
       AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+      CODE_EXECUTOR_URL: http://executor:8080
     depends_on:
       database:
         condition: service_healthy
