@@ -24,13 +24,3 @@ public class EmailAlreadyExistsException : Exception
 {
     public EmailAlreadyExistsException() : base("An account with this email address already exists.") { }
 }
-
-public class EmailAlreadyVerifiedException : Exception
-{
-    public EmailAlreadyVerifiedException() : base("This email address has already been verified.") { }
-}
-
-public class TooManyRequestsException : Exception
-{
-    public TooManyRequestsException(string message) : base(message) { }
-}

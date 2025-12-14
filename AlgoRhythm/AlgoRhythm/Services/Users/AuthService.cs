@@ -16,10 +16,6 @@ public class AuthService : IAuthService
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
-    
-    // Simple in-memory rate limiting (w produkcji użyj Redis/distributed cache)
-    private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
-    private static readonly TimeSpan _emailCooldown = TimeSpan.FromMinutes(1);
 
     public AuthService(
         UserManager<User> userManager,
@@ -75,177 +71,15 @@ public class AuthService : IAuthService
         // Add to default role
         await _userManager.AddToRoleAsync(user, "User");
 
-        // Generate and send verification code
-        await GenerateAndSendVerificationCodeAsync(user);
+        // Generate 6-digit verification code
+        var simpleCode = Random.Shared.Next(100000, 999999).ToString();
+        user.SecurityStamp = simpleCode; // Temporary storage
+        await _userManager.UpdateAsync(user);
 
         _logger.LogInformation("User registered successfully: {Email}", user.Email);
-    }
 
-    public async Task ResendVerificationCodeAsync(ResendVerificationCodeDto request)
-    {
-        // Rate limiting check
-        if (_lastEmailSent.TryGetValue(request.Email, out var lastSent))
-        {
-            var timeSinceLastEmail = DateTime.UtcNow - lastSent;
-            if (timeSinceLastEmail < _emailCooldown)
-            {
-                var waitTime = _emailCooldown - timeSinceLastEmail;
-                throw new TooManyRequestsException(
-                    $"Please wait {waitTime.Seconds} seconds before requesting another code.");
-            }
-        }
-
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-        {
-            _logger.LogWarning("Resend verification code attempt for non-existent user: {Email}", request.Email);
-            throw new UserNotFoundException();
-        }
-
-        if (user.EmailConfirmed)
-        {
-            _logger.LogWarning("Resend verification code attempt for already verified user: {Email}", request.Email);
-            throw new EmailAlreadyVerifiedException();
-        }
-
-        // Generate and send new verification code
-        await GenerateAndSendVerificationCodeAsync(user);
-
-        _logger.LogInformation("Verification code resent to: {Email}", user.Email);
-    }
-
-    public async Task RequestPasswordResetAsync(ResetPasswordRequestDto request)
-    {
-        // Rate limiting check
-        if (_lastEmailSent.TryGetValue(request.Email, out var lastSent))
-        {
-            var timeSinceLastEmail = DateTime.UtcNow - lastSent;
-            if (timeSinceLastEmail < _emailCooldown)
-            {
-                var waitTime = _emailCooldown - timeSinceLastEmail;
-                throw new TooManyRequestsException(
-                    $"Please wait {waitTime.Seconds} seconds before requesting another code.");
-            }
-        }
-
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-        {
-            // Nie ujawniamy że użytkownik nie istnieje (security best practice)
-            _logger.LogWarning("Password reset request for non-existent user: {Email}", request.Email);
-            return;
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            _logger.LogWarning("Password reset request for unverified user: {Email}", request.Email);
-            throw new EmailNotVerifiedException();
-        }
-
-        // Generate and send password reset code
-        await GenerateAndSendPasswordResetCodeAsync(user);
-
-        _logger.LogInformation("Password reset code sent to: {Email}", user.Email);
-    }
-
-    public async Task ResetPasswordAsync(ResetPasswordDto request)
-    {
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
-            throw new ArgumentException("Password must be at least 6 characters long.");
-
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-        {
-            _logger.LogWarning("Password reset attempt for non-existent user: {Email}", request.Email);
-            throw new UserNotFoundException();
-        }
-
-        // Verify code (stored in SecurityStamp temporarily)
-        if (user.SecurityStamp != request.Code)
-        {
-            _logger.LogWarning("Invalid password reset code for user: {Email}", user.Email);
-            throw new InvalidVerificationCodeException();
-        }
-
-        // Remove current password and set new one
-        var removePasswordResult = await _userManager.RemovePasswordAsync(user);
-        if (!removePasswordResult.Succeeded)
-        {
-            var errors = string.Join(", ", removePasswordResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to reset password: {errors}");
-        }
-
-        var addPasswordResult = await _userManager.AddPasswordAsync(user, request.NewPassword);
-        if (!addPasswordResult.Succeeded)
-        {
-            var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to set new password: {errors}");
-        }
-
-        // Reset security stamp
-        user.SecurityStamp = Guid.NewGuid().ToString();
-        await _userManager.UpdateAsync(user);
-
-        _logger.LogInformation("Password reset successfully for user: {Email}", user.Email);
-    }
-
-    public async Task ChangePasswordAsync(Guid userId, ChangePasswordDto request)
-    {
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
-            throw new ArgumentException("Password must be at least 6 characters long.");
-
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-        {
-            _logger.LogWarning("Password change attempt for non-existent user: {UserId}", userId);
-            throw new UserNotFoundException();
-        }
-
-        // Verify current password
-        var isCurrentPasswordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
-        if (!isCurrentPasswordValid)
-        {
-            _logger.LogWarning("Password change attempt with invalid current password for user: {UserId}", userId);
-            throw new InvalidPasswordException();
-        }
-
-        // Change password
-        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-        if (!result.Succeeded)
-        {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to change password: {errors}");
-        }
-
-        _logger.LogInformation("Password changed successfully for user: {UserId}", userId);
-    }
-
-    private async Task GenerateAndSendVerificationCodeAsync(User user)
-    {
-        // Generate 6-digit verification code
-        var code = Random.Shared.Next(100000, 999999).ToString();
-        user.SecurityStamp = code; // Temporary storage
-        await _userManager.UpdateAsync(user);
-
-        // Send email
-        await SendVerificationEmailAsync(user, code);
-
-        // Update rate limiting
-        _lastEmailSent[user.Email!] = DateTime.UtcNow;
-    }
-
-    private async Task GenerateAndSendPasswordResetCodeAsync(User user)
-    {
-        // Generate 6-digit reset code
-        var code = Random.Shared.Next(100000, 999999).ToString();
-        user.SecurityStamp = code; // Temporary storage
-        await _userManager.UpdateAsync(user);
-
-        // Send email
-        await SendPasswordResetEmailAsync(user, code);
-
-        // Update rate limiting
-        _lastEmailSent[user.Email!] = DateTime.UtcNow;
+        // Send verification email
+        await SendVerificationEmailAsync(user, simpleCode);
     }
 
     private async Task SendVerificationEmailAsync(User user, string code)
@@ -256,38 +90,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        Thank you for registering at AlgoRhythm - a programming learning platform.
+            Thank you for registering at AlgoRhythm - a programming learning platform.
 
-        To complete the registration process, please verify your email address by entering the verification code below:
+            To complete the registration process, please verify your email address by entering the verification code below:
 
-        {code}
+            {code}
 
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
+            The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-        If you did not create this account, please ignore this message.
+            If you did not create this account, please ignore this message.
 
-        Best regards,
-        AlgoRhythm Team
+            Best regards,
+            AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+            ---
+            This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
+            <p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
 
-        <p>To complete the registration process, please verify your email address by entering the verification code below:</p>
+            <p>To complete the registration process, please verify your email address by entering the verification code below:</p>
 
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+            <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+            <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-        <p>If you did not create this account, please ignore this message.</p>
+            <p>If you did not create this account, please ignore this message.</p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+            <p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+            <hr>
+            <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -297,60 +131,6 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send verification email to: {Email}", user.Email);
-            throw;
-        }
-    }
-
-    private async Task SendPasswordResetEmailAsync(User user, string code)
-    {
-        var expiryTime = DateTime.UtcNow.AddHours(1).ToLocalTime();
-
-        var subject = "Reset your password at AlgoRhythm";
-
-        var plain = $@"Hello {user.FirstName}!
-
-        We received a request to reset your password for your AlgoRhythm account.
-
-        To reset your password, use the following verification code:
-
-        {code}
-
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
-
-        If you did not request a password reset, please ignore this message and your password will remain unchanged.
-
-        Best regards,
-        AlgoRhythm Team
-
-        ---
-        This is an automated message, please do not reply.";
-
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
-
-        <p>We received a request to reset your password for your AlgoRhythm account.</p>
-
-        <p>To reset your password, use the following verification code:</p>
-
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
-
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
-
-        <p>If you did not request a password reset, please ignore this message and your password will remain unchanged.</p>
-
-        <p>Best regards,<br>AlgoRhythm Team</p>
-
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
-
-        try
-        {
-            await _emailSender.SendEmailAsync(user.Email!, subject, plain, html);
-            _logger.LogInformation("Password reset email sent to: {Email}", user.Email);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send password reset email to: {Email}", user.Email);
-            throw;
         }
     }
 
