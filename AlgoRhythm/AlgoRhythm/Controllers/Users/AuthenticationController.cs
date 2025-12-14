@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using AlgoRhythm.Shared.Dtos.Users;
 using AlgoRhythm.Services.Users.Interfaces;
-using AlgoRhythm.Services.Users.Exceptions;
 
 namespace AlgoRhythm.Controllers.Users;
 
@@ -24,7 +23,7 @@ public class AuthenticationController : ControllerBase
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(object), 200)]
-    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [ProducesResponseType(400)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
         try
@@ -35,22 +34,17 @@ public class AuthenticationController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Registration validation error");
-            return BadRequest(new ErrorResponse("VALIDATION_ERROR", ex.Message));
-        }
-        catch (EmailAlreadyExistsException ex)
-        {
-            _logger.LogWarning(ex, "Email already exists");
-            return BadRequest(new ErrorResponse("EMAIL_EXISTS", ex.Message));
+            return BadRequest(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Registration failed");
-            return BadRequest(new ErrorResponse("REGISTRATION_FAILED", ex.Message));
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during registration");
-            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred during registration. Please try again later."));
+            return StatusCode(500, new { error = "An error occurred during registration. Please try again later." });
         }
     }
 
@@ -60,7 +54,7 @@ public class AuthenticationController : ControllerBase
     /// </summary>
     [HttpPost("verify-email")]
     [ProducesResponseType(typeof(AuthResponse), 200)]
-    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [ProducesResponseType(400)]
     public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest req)
     {
         try
@@ -79,20 +73,15 @@ public class AuthenticationController : ControllerBase
             // Return full response with token and user data
             return Ok(authResponse);
         }
-        catch (UserNotFoundException ex)
+        catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "User not found during email verification");
-            return BadRequest(new ErrorResponse("USER_NOT_FOUND", ex.Message));
-        }
-        catch (InvalidVerificationCodeException ex)
-        {
-            _logger.LogWarning(ex, "Invalid verification code");
-            return BadRequest(new ErrorResponse("INVALID_CODE", ex.Message));
+            _logger.LogWarning(ex, "Email verification failed");
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during email verification");
-            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
+            return StatusCode(500, new { error = "An error occurred. Please try again later." });
         }
     }
 
@@ -101,8 +90,7 @@ public class AuthenticationController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), 200)]
-    [ProducesResponseType(typeof(ErrorResponse), 400)]
-    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    [ProducesResponseType(401)]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         try
@@ -121,25 +109,15 @@ public class AuthenticationController : ControllerBase
             // Return full response with token and user data
             return Ok(authResponse);
         }
-        catch (UserNotFoundException ex)
+        catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "User not found during login");
-            return Unauthorized(new ErrorResponse("USER_NOT_FOUND", ex.Message));
-        }
-        catch (InvalidPasswordException ex)
-        {
-            _logger.LogWarning(ex, "Invalid password during login for email: {Email}", req.Email);
-            return Unauthorized(new ErrorResponse("INVALID_PASSWORD", ex.Message));
-        }
-        catch (EmailNotVerifiedException ex)
-        {
-            _logger.LogWarning(ex, "Email not verified during login for email: {Email}", req.Email);
-            return BadRequest(new ErrorResponse("EMAIL_NOT_VERIFIED", ex.Message));
+            _logger.LogWarning(ex, "Login failed for email: {Email}", req.Email);
+            return Unauthorized(new { error = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during login");
-            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
+            return StatusCode(500, new { error = "An error occurred. Please try again later." });
         }
     }
 
@@ -158,8 +136,3 @@ public class AuthenticationController : ControllerBase
         return Ok(new { message = "Logged out successfully." });
     }
 }
-
-/// <summary>
-/// Standardized error response for API
-/// </summary>
-public record ErrorResponse(string Code, string Message);
