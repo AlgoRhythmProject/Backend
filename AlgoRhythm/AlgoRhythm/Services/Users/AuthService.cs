@@ -1,11 +1,12 @@
 ﻿using AlgoRhythm.Services.Users.Interfaces;
+using AlgoRhythm.Services.Users.Exceptions;
 using AlgoRhythm.Shared.Dtos.Users;
-using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using User = AlgoRhythm.Shared.Models.Users.User;
 
 namespace AlgoRhythm.Services.Users;
 
@@ -47,7 +48,7 @@ public class AuthService : IAuthService
         if (existingUser != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            throw new InvalidOperationException("Email already registered.");
+            throw new EmailAlreadyExistsException();
         }
 
         var user = new User
@@ -139,7 +140,7 @@ public class AuthService : IAuthService
         if (user == null)
         {
             _logger.LogWarning("Email verification attempt for non-existent user: {Email}", request.Email);
-            throw new InvalidOperationException("User not found.");
+            throw new UserNotFoundException();
         }
 
         if (user.EmailConfirmed)
@@ -152,7 +153,7 @@ public class AuthService : IAuthService
         if (user.SecurityStamp != request.Code)
         {
             _logger.LogWarning("Invalid verification code for user: {Email}", user.Email);
-            throw new InvalidOperationException("Invalid verification code.");
+            throw new InvalidVerificationCodeException();
         }
 
         // Confirm email
@@ -220,20 +221,20 @@ public class AuthService : IAuthService
         if (user == null)
         {
             _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new UserNotFoundException();
         }
 
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!isPasswordValid)
         {
             _logger.LogWarning("Login attempt with invalid password for user: {Email}", user.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new InvalidPasswordException();
         }
 
         if (!user.EmailConfirmed)
         {
             _logger.LogWarning("Login attempt with unverified email: {Email}", user.Email);
-            throw new UnauthorizedAccessException("Email not verified. Please verify your email first.");
+            throw new EmailNotVerifiedException();
         }
 
         _logger.LogInformation("User logged in successfully: {Email}", user.Email);
