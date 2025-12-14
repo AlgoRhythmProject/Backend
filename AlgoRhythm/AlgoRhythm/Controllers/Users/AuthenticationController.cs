@@ -103,7 +103,7 @@ public class AuthenticationController : ControllerBase
         try
         {
             var authResponse = await _auth.VerifyEmailAsync(req);
-            
+
             // Set JWT in HTTP-only cookie (automatic login)
             Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
             {
