@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using AlgoRhythm.Services.Users.Interfaces;
+using AlgoRhythm.Shared.Models.Users;
+using Microsoft.AspNetCore.Identity;
 
 namespace IntegrationTests.IntegrationTestSetup;
 
@@ -60,6 +63,13 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 return new CodeExecutorClient(http);
             });
 
+            // Remove the real DbContext
+            var emailSenderDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IEmailSender));
+            if (emailSenderDescriptor != null)
+                services.Remove(emailSenderDescriptor);
+
+            services.AddScoped<IEmailSender, MockEmailSender>();
 
         });
 
@@ -69,5 +79,16 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Debug);
         });
+    }
+}
+
+// ⬇️ MOCK EMAIL SENDER - NIE WYSYŁA PRAWDZIWYCH EMAILI
+public class MockEmailSender : IEmailSender
+{
+    public Task SendEmailAsync(string to, string subject, string plainTextContent, string htmlContent)
+    {
+        // W testach nie wysyłamy emaili - tylko logujemy do konsoli
+        Console.WriteLine($"[MOCK EMAIL] To: {to}, Subject: {subject}");
+        return Task.CompletedTask;
     }
 }
