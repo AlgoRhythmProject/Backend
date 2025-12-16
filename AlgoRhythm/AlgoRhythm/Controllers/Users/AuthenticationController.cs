@@ -299,6 +299,56 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+
+    /// <summary>
+    /// Updates user profile information (first name, last name, email).
+    /// Requires authentication. If email is changed, user will need to verify the new email.
+    /// </summary>
+    [HttpPut("update-profile")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserDto), 200)]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto req)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new ErrorResponse("UNAUTHORIZED", "User not authenticated."));
+            }
+
+            var updatedUser = await _auth.UpdateUserProfileAsync(userId, req);
+            return Ok(updatedUser);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Profile update validation error");
+            return BadRequest(new ErrorResponse("VALIDATION_ERROR", ex.Message));
+        }
+        catch (UserNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "User not found during profile update");
+            return BadRequest(new ErrorResponse("USER_NOT_FOUND", ex.Message));
+        }
+        catch (EmailAlreadyExistsException ex)
+        {
+            _logger.LogWarning(ex, "Email already exists during profile update");
+            return BadRequest(new ErrorResponse("EMAIL_EXISTS", ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile update failed");
+            return BadRequest(new ErrorResponse("UPDATE_FAILED", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during profile update");
+            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
+        }
+    }
+
     /// <summary>
     /// User logout (stateless JWT — client must delete the token).
     /// </summary>
@@ -312,6 +362,7 @@ public class AuthenticationController : ControllerBase
         return Ok(new { message = "Logged out successfully." });
     }
 }
+
 
 /// <summary>
 /// Standardized error response for API

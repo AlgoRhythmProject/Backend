@@ -461,4 +461,134 @@ public class AuthService : IAuthService
 
         return await GenerateAuthResponseAsync(user);
     }
+
+    public async Task<UserDto> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDto request)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            _logger.LogWarning("Profile update attempt for non-existent user: {UserId}", userId);
+            throw new UserNotFoundException();
+        }
+
+        bool emailChanged = false;
+        string? oldEmail = user.Email;
+
+        // Update FirstName if provided
+        if (!string.IsNullOrWhiteSpace(request.FirstName))
+        {
+            user.FirstName = request.FirstName.Trim();
+        }
+
+        // Update LastName if provided
+        if (!string.IsNullOrWhiteSpace(request.LastName))
+        {
+            user.LastName = request.LastName.Trim();
+        }
+
+        // Update Email if provided and different
+        if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != user.Email)
+        {
+            // Validate email format
+            if (!request.Email.Contains("@"))
+            {
+                throw new ArgumentException("Invalid email format.");
+            }
+
+            // Check if new email is already taken
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser != null && existingUser.Id != userId)
+            {
+                _logger.LogWarning("Profile update attempt with existing email: {Email}", request.Email);
+                throw new EmailAlreadyExistsException();
+            }
+
+            emailChanged = true;
+            user.Email = request.Email.Trim();
+            user.UserName = request.Email.Trim(); // Update username to match email
+            user.NormalizedEmail = request.Email.Trim().ToUpperInvariant();
+            user.NormalizedUserName = request.Email.Trim().ToUpperInvariant();
+        }
+
+        // Update timestamp
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Save changes
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to update user profile: {errors}");
+        }
+
+        _logger.LogInformation("User profile updated successfully: {UserId}", userId);
+
+        // Send email notification if email was changed
+        if (emailChanged && !string.IsNullOrEmpty(user.Email))
+        {
+            await SendEmailChangeNotificationAsync(user, oldEmail!);
+        }
+
+        // Return updated user data
+        return new UserDto(
+            user.Id,
+            user.Email!,
+            user.FirstName,
+            user.LastName,
+            user.CreatedAt
+        );
+    }
+
+    private async Task SendEmailChangeNotificationAsync(User user, string oldEmail)
+    {
+        var subject = "Email Address Changed - AlgoRhythm";
+
+        var plain = $@"Hello {user.FirstName}!
+
+        Your email address for your AlgoRhythm account has been successfully changed.
+
+        Old email: {oldEmail}
+        New email: {user.Email}
+
+        If you did not make this change, please contact our support team immediately.
+
+        Best regards,
+        AlgoRhythm Team
+
+        ---
+        This is an automated message, please do not reply.";
+
+                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+
+        <p>Your email address for your AlgoRhythm account has been successfully changed.</p>
+
+        <table style='margin: 20px 0;'>
+        <tr>
+            <td style='padding: 5px; font-weight: bold;'>Old email:</td>
+            <td style='padding: 5px;'>{oldEmail}</td>
+        </tr>
+        <tr>
+            <td style='padding: 5px; font-weight: bold;'>New email:</td>
+            <td style='padding: 5px;'>{user.Email}</td>
+        </tr>
+        </table>
+
+        <p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
+
+        <p>Best regards,<br>AlgoRhythm Team</p>
+
+        <hr>
+        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+
+        try
+        {
+            await _emailSender.SendEmailAsync(user.Email!, subject, plain, html);
+            _logger.LogInformation("Email change notification sent to: {Email}", user.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email change notification to: {Email}", user.Email);
+            // Don't throw - profile was already updated successfully
+        }
+    }
 }
