@@ -13,6 +13,7 @@ public class EfSubmissionRepository : ISubmissionRepository
     public async Task<ProgrammingSubmission?> GetSubmissionAsync(Guid id, CancellationToken ct)
         => await _db.ProgrammingSubmissions
             .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.Errors)
             .FirstOrDefaultAsync(s => s.Id == id, ct);
 
     public async Task AddSubmissionAsync(ProgrammingSubmission submission, CancellationToken ct)

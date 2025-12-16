@@ -9,10 +9,12 @@ namespace AlgoRhythm.Clients
     public class CodeExecutorClient
     {
         private readonly HttpClient _client;
+        private readonly ILogger _logger;
 
-        public CodeExecutorClient(HttpClient client)
+        public CodeExecutorClient(HttpClient client, ILogger<CodeExecutorClient> logger)
         {
             _client = client;
+            _logger = logger;
         }
 
         public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
@@ -33,8 +35,9 @@ namespace AlgoRhythm.Clients
 
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError("Exception thrown {0}", ex.Message);
 
                 return
                 [

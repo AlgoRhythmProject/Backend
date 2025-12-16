@@ -54,13 +54,13 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 options.EnableSensitiveDataLogging(); 
             });
 
+           
             services.AddSingleton(sp =>
             {
                 var http = _serviceFactory.CreateClient();
-                return new CodeExecutorClient(http);
+                var logger = sp.GetRequiredService<ILogger<CodeExecutorClient>>();
+                return new CodeExecutorClient(http, logger);
             });
-
-
         });
 
         builder.ConfigureLogging(logging =>

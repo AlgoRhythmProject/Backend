@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Emit;
 using System.Reflection;
 using AlgoRhythm.Shared.Models.CodeExecution;
 using System.Diagnostics.CodeAnalysis;
+using AlgoRhythm.Shared.Dtos.Submissions;
 
 namespace CodeExecutor.Helpers
 {
@@ -61,9 +62,9 @@ namespace CodeExecutor.Helpers
             // Handle compilation errors
             if (!result.Success)
             {
-                List<CSharpExecutionError> errors = [.. result.Diagnostics
+                List<ExecutionErrorDto> errors = [.. result.Diagnostics
                     .Where(d => d.Severity == DiagnosticSeverity.Error)
-                    .Select(d => new CSharpExecutionError(d)) ];
+                    .Select(d => new ExecutionErrorDto(d)) ];
 
                 return new(false, null, errors);
             }

@@ -30,4 +30,6 @@ public class TestResult
     
     [ForeignKey(nameof(TestCaseId))]
     public TestCase TestCase { get; set; } = null!;
+
+    public ICollection<ExecutionError> Errors { get; set; } = [];
 }

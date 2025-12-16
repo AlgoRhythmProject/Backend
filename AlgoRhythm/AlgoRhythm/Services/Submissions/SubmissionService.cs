@@ -205,6 +205,7 @@ public class SubmissionService : ISubmissionService
                 ExecutionTimeMs = judgeDto.ExecutionTimeMs,
                 StdOut = judgeDto.StdOut,
                 StdErr = judgeDto.StdErr,
+                Errors = [.. judgeDto.Errors.FromDto()],
             };
 
             await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
@@ -238,7 +239,8 @@ public class SubmissionService : ISubmissionService
             Points = tr.Points,
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
-            StdErr = tr.StdErr
+            StdErr = tr.StdErr,
+            Errors = [.. tr.Errors.ToDto()]
         }).ToList() ?? [];
 
 
