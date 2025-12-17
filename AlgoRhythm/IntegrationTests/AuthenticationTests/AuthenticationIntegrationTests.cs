@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace IntegrationTests.AuthenticationTests
@@ -58,7 +59,6 @@ namespace IntegrationTests.AuthenticationTests
             }
         }
 
-
         [Fact]
         public async Task POST_Login_ValidCredentials_Returns200WithToken_User()
         {
@@ -66,10 +66,7 @@ namespace IntegrationTests.AuthenticationTests
             LoginRequest req = new(TestConstants.TestUserEmail, TestConstants.TestUserPassword);
             HttpContent content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(
-                "/api/authentication/login", 
-                content
-            );
+            var response = await _httpClient.PostAsync("/api/authentication/login", content);
 
             response.EnsureSuccessStatusCode();
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -295,5 +292,271 @@ namespace IntegrationTests.AuthenticationTests
             Assert.True(isPasswordValid);
         }
 
+
+        [Fact]
+        public async Task POST_ForgotPassword_ValidEmail_Returns200()
+        {
+            string email = $"forgot-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var request = new ResetPasswordRequestDto { Email = email };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/forgot-password", content);
+
+            response.EnsureSuccessStatusCode();
+            var responseBody = await response.Content.ReadAsStringAsync();
+            Assert.Contains("password reset code has been sent", responseBody);
+        }
+
+        [Fact]
+        public async Task POST_ForgotPassword_UnverifiedEmail_Returns400()
+        {
+            string email = $"unverified-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: false);
+
+            var request = new ResetPasswordRequestDto { Email = email };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/forgot-password", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_ResetPassword_ValidCode_Returns200AndPasswordChanged()
+        {
+            string email = $"reset-{Guid.NewGuid()}@test.com";
+            string resetCode = "123456";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true, securityStamp: resetCode);
+
+            var request = new ResetPasswordDto
+            {
+                Email = email,
+                Code = resetCode,
+                NewPassword = "NewPassword123!"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/reset-password", content);
+
+            response.EnsureSuccessStatusCode();
+
+            _dbContext.ChangeTracker.Clear();
+            var user = await _userManager.FindByEmailAsync(email);
+            Assert.NotNull(user);
+
+            var isNewPasswordValid = await _userManager.CheckPasswordAsync(user, "NewPassword123!");
+            Assert.True(isNewPasswordValid);
+        }
+
+        [Fact]
+        public async Task POST_ResetPassword_InvalidCode_Returns400()
+        {
+            string email = $"reset-invalid-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true, securityStamp: "123456");
+
+            var request = new ResetPasswordDto
+            {
+                Email = email,
+                Code = "wrong-code",
+                NewPassword = "NewPassword123!"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/reset-password", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_ChangePassword_ValidCurrentPassword_Returns200()
+        {
+            string email = $"change-pwd-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var loginResponse = await _authService.LoginAsync(new LoginRequest(email, TestConstants.TestUserPassword));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+            var request = new ChangePasswordDto
+            {
+                CurrentPassword = TestConstants.TestUserPassword,
+                NewPassword = "NewSecurePassword123!"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/change-password", content);
+
+            response.EnsureSuccessStatusCode();
+
+            _dbContext.ChangeTracker.Clear();
+            var user = await _userManager.FindByEmailAsync(email);
+            var isNewPasswordValid = await _userManager.CheckPasswordAsync(user!, "NewSecurePassword123!");
+            Assert.True(isNewPasswordValid);
+        }
+
+        [Fact]
+        public async Task POST_ChangePassword_InvalidCurrentPassword_Returns400()
+        {
+            string email = $"change-pwd-invalid-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var loginResponse = await _authService.LoginAsync(new LoginRequest(email, TestConstants.TestUserPassword));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+            var request = new ChangePasswordDto
+            {
+                CurrentPassword = "WrongPassword123!",
+                NewPassword = "NewSecurePassword123!"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/change-password", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_ChangePassword_Unauthorized_Returns401()
+        {
+            var request = new ChangePasswordDto
+            {
+                CurrentPassword = "OldPassword",
+                NewPassword = "NewPassword123!"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/change-password", content);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_UpdateProfile_ValidData_Returns200()
+        {
+            string email = $"update-profile-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var loginResponse = await _authService.LoginAsync(new LoginRequest(email, TestConstants.TestUserPassword));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+            var request = new UpdateUserProfileDto
+            {
+                FirstName = "UpdatedFirst",
+                LastName = "UpdatedLast"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/authentication/update-profile", content);
+
+            response.EnsureSuccessStatusCode();
+
+            _dbContext.ChangeTracker.Clear();
+            var user = await _userManager.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            Assert.Equal("UpdatedFirst", user.FirstName);
+            Assert.Equal("UpdatedLast", user.LastName);
+        }
+
+        [Fact]
+        public async Task PUT_UpdateProfile_ChangeEmail_Returns200AndEmailChanged()
+        {
+            string oldEmail = $"old-{Guid.NewGuid()}@test.com";
+            string newEmail = $"new-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(oldEmail, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var loginResponse = await _authService.LoginAsync(new LoginRequest(oldEmail, TestConstants.TestUserPassword));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+            var request = new UpdateUserProfileDto
+            {
+                Email = newEmail
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/authentication/update-profile", content);
+
+            response.EnsureSuccessStatusCode();
+
+            _dbContext.ChangeTracker.Clear();
+            var user = await _userManager.FindByEmailAsync(newEmail);
+            Assert.NotNull(user);
+            Assert.Equal(newEmail, user.Email);
+        }
+
+        [Fact]
+        public async Task PUT_UpdateProfile_EmailAlreadyExists_Returns400()
+        {
+            string email1 = $"user1-{Guid.NewGuid()}@test.com";
+            string email2 = $"user2-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email1, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+            await AddUserToDb(email2, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var loginResponse = await _authService.LoginAsync(new LoginRequest(email1, TestConstants.TestUserPassword));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+            var request = new UpdateUserProfileDto
+            {
+                Email = email2 // Try to change to already existing email
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/authentication/update-profile", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_UpdateProfile_Unauthorized_Returns401()
+        {
+            var request = new UpdateUserProfileDto
+            {
+                FirstName = "Test"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/authentication/update-profile", content);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_ResendVerificationCode_UnverifiedUser_Returns200()
+        {
+            string email = $"resend-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: false);
+
+            var request = new ResendVerificationCodeDto { Email = email };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/resend-verification-code", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task POST_ResendVerificationCode_AlreadyVerified_Returns400()
+        {
+            string email = $"verified-{Guid.NewGuid()}@test.com";
+            await AddUserToDb(email, "User", TestConstants.TestUserPassword, emailConfirmed: true);
+
+            var request = new ResendVerificationCodeDto { Email = email };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/resend-verification-code", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_ResendVerificationCode_UserNotFound_Returns400()
+        {
+            var request = new ResendVerificationCodeDto { Email = "nonexistent@test.com" };
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/authentication/resend-verification-code", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
     }
 }
