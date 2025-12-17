@@ -6,12 +6,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using AlgoRhythm.Services.Users.Interfaces;
+using AlgoRhythm.Shared.Models.Users;
+using Microsoft.AspNetCore.Identity;
 
 namespace IntegrationTests.IntegrationTestSetup;
 
 internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly WebApplicationFactory<CodeExecutor.Program> _serviceFactory;
+    
     public AlgoRhythmWebApplicationFactory(WebApplicationFactory<CodeExecutor.Program> serviceFactory)
     {
         _serviceFactory = serviceFactory;
@@ -38,7 +42,7 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Delete existing db context
+            // Remove existing DbContext
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
             if (descriptor != null)
@@ -46,7 +50,7 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // In-Memory Database
+            // Add In-Memory Database for testing
             var dbName = "TestDb_" + Guid.NewGuid();
             services.AddDbContext<ApplicationDbContext>(options =>
             {
@@ -54,13 +58,20 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 options.EnableSensitiveDataLogging(); 
             });
 
+            // Add mock CodeExecutor client
             services.AddSingleton(sp =>
             {
                 var http = _serviceFactory.CreateClient();
                 return new CodeExecutorClient(http);
             });
 
+            // Replace real EmailSender with mock implementation
+            var emailSenderDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IEmailSender));
+            if (emailSenderDescriptor != null)
+                services.Remove(emailSenderDescriptor);
 
+            services.AddScoped<IEmailSender, MockEmailSender>();
         });
 
         builder.ConfigureLogging(logging =>
@@ -69,5 +80,25 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Debug);
         });
+    }
+}
+
+/// <summary>
+/// Mock email sender for integration tests - does not send real emails.
+/// </summary>
+public class MockEmailSender : IEmailSender
+{
+    private readonly ILogger<MockEmailSender> _logger;
+
+    public MockEmailSender(ILogger<MockEmailSender> logger)
+    {
+        _logger = logger;
+    }
+
+    public Task SendEmailAsync(string toEmail, string subject, string plainTextContent, string htmlContent)
+    {
+        // In tests, we don't send real emails - just log the attempt
+        _logger.LogInformation("[MOCK EMAIL] To: {To}, Subject: {Subject}", toEmail, subject);
+        return Task.CompletedTask;
     }
 }
