@@ -89,6 +89,8 @@ builder.Services.AddIdentity<User, Role>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddScoped<ISubmissionRepository, EfSubmissionRepository>();
 builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
 builder.Services.AddScoped<ICourseRepository, EfCourseRepository>();
@@ -296,4 +298,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapHealthChecks("/health");
 await app.RunAsync();
