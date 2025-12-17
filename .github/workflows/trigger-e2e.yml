@@ -13,7 +13,7 @@ jobs:
       - name: Send signal to Frontend repo
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           repository: AlgoRhythmProject/Frontend
           event-type: backend_push
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
