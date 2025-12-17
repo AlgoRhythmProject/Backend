@@ -1,0 +1,19 @@
+name: Trigger Frontend E2E
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send signal to Frontend repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_PAT_E2E }}
+          repository: AlgoRhythmProject/Frontend
+          event-type: backend_push
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
