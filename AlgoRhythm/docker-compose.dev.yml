@@ -20,6 +20,11 @@ services:
   backend:
     container_name: backend
     image: mcr.microsoft.com/dotnet/sdk:9.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
       # Montowanie plikow rozwiazania
       - ./AlgoRhythm:/src/AlgoRhythm:rw
@@ -75,7 +80,8 @@ services:
       - CHOKIDAR_USEPOLLING=true        # Wymusza odswiezanie na Windows/Dockerze
       - VITE_HOST=0.0.0.0
     depends_on: 
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - default  
       - internal_net
