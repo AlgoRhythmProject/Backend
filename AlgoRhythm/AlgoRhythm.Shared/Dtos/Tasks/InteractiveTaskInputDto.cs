@@ -4,6 +4,6 @@ namespace AlgoRhythm.Shared.Dtos.Tasks;
 
 public class InteractiveTaskInputDto : TaskInputDto
 {
-    public string? OptionsJson { get; set; }
-    public string? CorrectAnswer { get; set; }
+    public new string? OptionsJson { get; set; }
+    public new string? CorrectAnswer { get; set; }
 }

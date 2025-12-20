@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using Azure;
 
-namespace IntegrationTests.FileTests
+namespace IntegrationTests.BlobTests
 {
     public class FileControllerIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     {
