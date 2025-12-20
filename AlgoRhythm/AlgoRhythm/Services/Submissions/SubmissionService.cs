@@ -1,6 +1,7 @@
 ﻿using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
 using AlgoRhythm.Services.CodeExecutor.Interfaces;
+using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Services.Submissions.Interfaces;
 using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
@@ -224,6 +225,36 @@ public class SubmissionService : ISubmissionService
         submission.Status = finalResults.ToSubmissionStatus();
 
         await submissionRepo.SaveChangesAsync(CancellationToken.None);
+
+        // ✅ NOWE - Przelicz postęp kursów po submission
+        if (submission.IsSolved)
+        {
+            try
+            {
+                using var progressScope = _scopeFactory.CreateScope();
+                var courseProgressService = progressScope.ServiceProvider
+                    .GetRequiredService<ICourseProgressService>();
+
+                // Znajdź wszystkie kursy zawierające ten task
+                var courses = task.Courses;
+                foreach (var course in courses)
+                {
+                    await courseProgressService.RecalculateProgressAsync(
+                        submission.UserId, 
+                        course.Id, 
+                        CancellationToken.None);
+                    
+                    logger.LogInformation(
+                        "Recalculated progress for user {UserId} in course {CourseId} after completing task {TaskId}",
+                        submission.UserId, course.Id, task.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to recalculate course progress after submission");
+                // Don't throw - submission was already saved
+            }
+        }
     }
 
     public async Task<SubmissionResponseDto?> GetSubmissionAsync(Guid submissionId, CancellationToken ct = default)

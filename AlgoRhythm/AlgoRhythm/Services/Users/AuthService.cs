@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Services.Users.Exceptions;
+using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -16,8 +17,9 @@ public class AuthService : IAuthService
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
+    private readonly ICourseProgressService _courseProgressService;
     
-    // Simple in-memory rate limiting (w produkcji użyj Redis/distributed cache)
+    // Simple in-memory rate limiting
     private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
     private static readonly TimeSpan _emailCooldown = TimeSpan.FromMinutes(1);
 
@@ -25,12 +27,14 @@ public class AuthService : IAuthService
         UserManager<User> userManager,
         IEmailSender emailSender,
         IConfiguration config,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        ICourseProgressService courseProgressService)
     {
         _userManager = userManager;
         _emailSender = emailSender;
         _config = config;
         _logger = logger;
+        _courseProgressService = courseProgressService;
     }
 
     public async Task RegisterAsync(RegisterRequest request)
@@ -74,6 +78,18 @@ public class AuthService : IAuthService
 
         // Add to default role
         await _userManager.AddToRoleAsync(user, "User");
+
+        // Initialize course progress for all courses
+        try
+        {
+            await _courseProgressService.InitializeAllCoursesForUserAsync(user.Id, CancellationToken.None);
+            _logger.LogInformation("Initialized course progress for new user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize course progress for user: {UserId}", user.Id);
+            // Don't throw - user was created successfully
+        }
 
         // Generate and send verification code
         await GenerateAndSendVerificationCodeAsync(user);
@@ -131,7 +147,6 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
-            // Nie ujawniamy że użytkownik nie istnieje (security best practice)
             _logger.LogWarning("Password reset request for non-existent user: {Email}", request.Email);
             return;
         }

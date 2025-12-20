@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
-
 using AlgoRhythm.Shared.Models.Achievements;
 using AlgoRhythm.Shared.Models.Common;
 using AlgoRhythm.Shared.Models.Courses;
 using AlgoRhythm.Shared.Models.Submissions;
+using AlgoRhythm.Shared.Models.Tasks;
 
 namespace AlgoRhythm.Shared.Models.Users;
 
@@ -24,6 +24,10 @@ public class User : IdentityUser<Guid>
     public DateTime? UpdatedAt { get; set; }
 
     public bool IsDeleted { get; set; } = false;
+
+    public ICollection<Lecture> CompletedLectures { get; set; } = new List<Lecture>();
+    
+    public ICollection<TaskItem> CompletedTasks { get; set; } = new List<TaskItem>();
 
     // Navigation properties
     public UserPreferences? Preferences { get; set; }

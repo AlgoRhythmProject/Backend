@@ -10,4 +10,6 @@ public interface ICourseProgressRepository
     Task CreateAsync(CourseProgress progress, CancellationToken ct);
     Task UpdateAsync(CourseProgress progress, CancellationToken ct);
     Task DeleteAsync(Guid id, CancellationToken ct);
+    Task<HashSet<Guid>> GetCompletedLectureIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
+    Task<HashSet<Guid>> GetCompletedTaskIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
 }

@@ -1,72 +1,221 @@
+﻿using AlgoRhythm.Data;
 using AlgoRhythm.Repositories.Courses.Interfaces;
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
 using AlgoRhythm.Shared.Models.Courses;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AlgoRhythm.Services.Courses;
 
 public class CourseProgressService : ICourseProgressService
 {
     private readonly ICourseProgressRepository _repo;
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CourseProgressService> _logger;
 
-    public CourseProgressService(ICourseProgressRepository repo)
+    public CourseProgressService(
+        ICourseProgressRepository repo, 
+        ApplicationDbContext context,
+        ILogger<CourseProgressService> logger)
     {
         _repo = repo;
+        _context = context;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<CourseProgressDto>> GetByUserIdAsync(Guid userId, CancellationToken ct)
     {
         var progresses = await _repo.GetByUserIdAsync(userId, ct);
-        return progresses.Select(MapToDto);
+        
+        var result = new List<CourseProgressDto>();
+        foreach (var progress in progresses)
+        {
+            result.Add(await MapToDtoAsync(progress, ct));
+        }
+        
+        return result;
     }
 
     public async Task<CourseProgressDto?> GetByUserAndCourseAsync(Guid userId, Guid courseId, CancellationToken ct)
     {
         var progress = await _repo.GetByUserAndCourseAsync(userId, courseId, ct);
-        return progress == null ? null : MapToDto(progress);
+        return progress == null ? null : await MapToDtoAsync(progress, ct);
     }
 
-    public async Task<CourseProgressDto> StartCourseAsync(Guid userId, Guid courseId, CancellationToken ct)
+    /// <summary>
+    /// Inicjalizuje CourseProgress dla wszystkich kursów dla nowego użytkownika
+    /// Wywoływane automatycznie przy tworzeniu konta
+    /// </summary>
+    public async Task InitializeAllCoursesForUserAsync(Guid userId, CancellationToken ct)
     {
-        var existing = await _repo.GetByUserAndCourseAsync(userId, courseId, ct);
-        if (existing != null)
-            return MapToDto(existing);
+        var allCourses = await _context.Courses.ToListAsync(ct);
+        var existingProgresses = await _repo.GetByUserIdAsync(userId, ct);
+        var existingCourseIds = existingProgresses.Select(p => p.CourseId).ToHashSet();
 
-        var progress = new CourseProgress
+        foreach (var course in allCourses)
         {
-            UserId = userId,
-            CourseId = courseId,
-            Percentage = 0,
-            StartedAt = DateTime.UtcNow
-        };
+            if (!existingCourseIds.Contains(course.Id))
+            {
+                var progress = new CourseProgress
+                {
+                    UserId = userId,
+                    CourseId = course.Id,
+                    Percentage = 0,
+                    StartedAt = DateTime.UtcNow
+                };
 
-        await _repo.CreateAsync(progress, ct);
-        return MapToDto(progress);
+                await _repo.CreateAsync(progress, ct);
+                
+                _logger.LogInformation("Initialized course progress for course {CourseId} and user {UserId}", course.Id, userId);
+            }
+        }
     }
 
-    public async Task UpdateProgressAsync(Guid userId, Guid courseId, int percentage, CancellationToken ct)
+    public async Task<bool> ToggleLectureCompletionAsync(Guid userId, Guid lectureId, CancellationToken ct)
+    {
+        var user = await _context.Users
+            .Include(u => u.CompletedLectures)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user == null)
+            throw new KeyNotFoundException("User not found");
+
+        var lecture = await _context.Lectures
+            .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
+
+        if (lecture == null)
+            throw new KeyNotFoundException("Lecture not found");
+
+        bool isCompleted;
+        
+        if (user.CompletedLectures.Any(l => l.Id == lectureId))
+        {
+            // Mark as incomplete
+            var completedLecture = user.CompletedLectures.First(l => l.Id == lectureId);
+            user.CompletedLectures.Remove(completedLecture);
+            isCompleted = false;
+            _logger.LogInformation("User {UserId} marked lecture {LectureId} as incomplete", userId, lectureId);
+        }
+        else
+        {
+            // Mark as complete
+            user.CompletedLectures.Add(lecture);
+            isCompleted = true;
+            _logger.LogInformation("User {UserId} completed lecture {LectureId}", userId, lectureId);
+        }
+
+        await _context.SaveChangesAsync(ct);
+
+        // Przelicz postęp kursu
+        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+
+        return isCompleted;
+    }
+
+    public async Task<bool> MarkLectureAsCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct)
+    {
+        var user = await _context.Users
+            .Include(u => u.CompletedLectures)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user == null)
+            throw new KeyNotFoundException("User not found");
+
+        var lecture = await _context.Lectures
+            .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
+
+        if (lecture == null)
+            throw new KeyNotFoundException("Lecture not found");
+
+        if (user.CompletedLectures.Any(l => l.Id == lectureId))
+            return false; // Already completed
+
+        user.CompletedLectures.Add(lecture);
+        await _context.SaveChangesAsync(ct);
+
+        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+
+        return true;
+    }
+
+    public async Task<bool> MarkLectureAsIncompletedAsync(Guid userId, Guid lectureId, CancellationToken ct)
+    {
+        var user = await _context.Users
+            .Include(u => u.CompletedLectures)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user == null)
+            throw new KeyNotFoundException("User not found");
+
+        var lecture = await _context.Lectures
+            .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
+
+        if (lecture == null)
+            throw new KeyNotFoundException("Lecture not found");
+
+        var completedLecture = user.CompletedLectures.FirstOrDefault(l => l.Id == lectureId);
+        if (completedLecture == null)
+            return false; // Not completed
+
+        user.CompletedLectures.Remove(completedLecture);
+        await _context.SaveChangesAsync(ct);
+
+        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+
+        return true;
+    }
+
+    public async Task RecalculateProgressAsync(Guid userId, Guid courseId, CancellationToken ct)
     {
         var progress = await _repo.GetByUserAndCourseAsync(userId, courseId, ct);
         if (progress == null)
-            throw new KeyNotFoundException("Course progress not found");
+            return;
+
+        var course = progress.Course;
+        if (course == null)
+            return;
+
+        var totalLectures = course.Lectures.Count;
+        var totalTasks = course.TaskItems.Count;
+        var totalItems = totalLectures + totalTasks;
+
+        if (totalItems == 0)
+        {
+            progress.Percentage = 0;
+            await _repo.UpdateAsync(progress, ct);
+            return;
+        }
+
+        var completedLectures = await _repo.GetCompletedLectureIdsAsync(userId, courseId, ct);
+        var completedTasks = await _repo.GetCompletedTaskIdsAsync(userId, courseId, ct);
+
+        var completedItems = completedLectures.Count + completedTasks.Count;
+        var percentage = (int)Math.Round((double)completedItems / totalItems * 100);
 
         progress.Percentage = Math.Clamp(percentage, 0, 100);
-        
+
         if (progress.Percentage == 100 && progress.CompletedAt == null)
         {
             progress.CompletedAt = DateTime.UtcNow;
+            _logger.LogInformation("User {UserId} completed course {CourseId}", userId, courseId);
+        }
+        else if (progress.Percentage < 100)
+        {
+            progress.CompletedAt = null; // Reset completion if user uncompletes items
         }
 
         await _repo.UpdateAsync(progress, ct);
     }
 
-    public async Task CompleteCourseAsync(Guid userId, Guid courseId, CancellationToken ct)
+    private async Task<CourseProgressDto> MapToDtoAsync(CourseProgress progress, CancellationToken ct)
     {
-        await UpdateProgressAsync(userId, courseId, 100, ct);
-    }
+        var completedLectureIds = await _repo.GetCompletedLectureIdsAsync(progress.UserId, progress.CourseId, ct);
+        var completedTaskIds = await _repo.GetCompletedTaskIdsAsync(progress.UserId, progress.CourseId, ct);
 
-    private static CourseProgressDto MapToDto(CourseProgress progress)
-    {
+        var totalLectures = progress.Course?.Lectures.Count ?? 0;
+        var totalTasks = progress.Course?.TaskItems.Count ?? 0;
+
         return new CourseProgressDto
         {
             Id = progress.Id,
@@ -75,7 +224,13 @@ public class CourseProgressService : ICourseProgressService
             CourseName = progress.Course?.Name,
             Percentage = progress.Percentage,
             StartedAt = progress.StartedAt,
-            CompletedAt = progress.CompletedAt
+            CompletedAt = progress.CompletedAt,
+            TotalLectures = totalLectures,
+            CompletedLecturesCount = completedLectureIds.Count,
+            CompletedLectureIds = completedLectureIds.ToList(),
+            TotalTasks = totalTasks,
+            CompletedTasksCount = completedTaskIds.Count,
+            CompletedTaskIds = completedTaskIds.ToList()
         };
     }
 }
