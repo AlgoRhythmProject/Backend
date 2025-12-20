@@ -1,12 +1,11 @@
 ﻿using AlgoRhythm.Shared.Dtos.CodeAnalysis;
-using AlgoRhythm.Shared.Models.Common;
 using CodeAnalyzer.Interfaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 
 namespace CodeAnalyzer.Services
 {
@@ -126,7 +125,7 @@ namespace CodeAnalyzer.Services
             var lineIndex = text.Lines.GetLineFromPosition(position).LineNumber;
             var lineStart = text.Lines[lineIndex].Start;
             var typedText = text.GetSubText(TextSpan.FromBounds(lineStart, position)).ToString();
-            var lastWordMatch = System.Text.RegularExpressions.Regex.Match(typedText.TrimEnd(), @"(\w+)$");
+            var lastWordMatch = Regex.Match(typedText.TrimEnd(), @"(\w+)$");
             var lastWord = lastWordMatch.Success ? lastWordMatch.Value : "";
 
             return (lastWord, isDot);
@@ -147,8 +146,6 @@ namespace CodeAnalyzer.Services
             }
 
             return [];
-            // fallback - manual completions
-            //return await GetManualCompletions(document, position);
         }
 
         /// <summary>
@@ -200,7 +197,6 @@ namespace CodeAnalyzer.Services
             return 50;
         }
 
-       
         private static string GetKindDescription(ImmutableArray<string> tags)
         {
             foreach (var tag in tags)
@@ -213,7 +209,7 @@ namespace CodeAnalyzer.Services
         }
 
 
-        private IEnumerable<CompletionItemDto> ApplyFiltersAndSorting(IEnumerable<CompletionItemDto> items, string lastWord, bool isDot)
+        private static IEnumerable<CompletionItemDto> ApplyFiltersAndSorting(IEnumerable<CompletionItemDto> items, string lastWord, bool isDot)
         {
             return items
                 .Where(i => string.IsNullOrEmpty(lastWord) || i.Label.Contains(lastWord, StringComparison.OrdinalIgnoreCase))
@@ -235,91 +231,45 @@ namespace CodeAnalyzer.Services
                 .Distinct()
                 .Where(k => string.IsNullOrEmpty(filter) || k.StartsWith(filter, StringComparison.OrdinalIgnoreCase));
 
-            return keywords.Select(k => new CompletionItemDto
+            return [.. keywords.Select(k => new CompletionItemDto
             {
                 Label = k!,
                 Kind = (int)CompletionItemKind.Keyword,
                 InsertText = k!,
                 Detail = "keyword",
                 SortText = $"9000_{k}"
-            }).ToArray();
+            })];
         }
-
-        //private async Task<CompletionItemDto[]> GetManualCompletions(Document document, int position)
-        //{
-        //    var semanticModel = await document.GetSemanticModelAsync();
-        //    var syntaxRoot = await document.GetSyntaxRootAsync();
-        //    if (semanticModel == null || syntaxRoot == null) return Array.Empty<CompletionItemDto>();
-
-        //    var token = syntaxRoot.FindToken(position);
-        //    var items = new List<CompletionItemDto>();
-
-        //    // Member access
-        //    var tokenLeft = syntaxRoot.FindToken(Math.Max(0, position - 1));
-        //    if (tokenLeft.IsKind(SyntaxKind.DotToken))
-        //    {
-        //        var memberAccess = tokenLeft.Parent as MemberAccessExpressionSyntax;
-        //        if (memberAccess != null)
-        //        {
-        //            var type = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-        //            if (type != null)
-        //            {
-        //                var members = semanticModel.LookupSymbols(position, container: type, includeReducedExtensionMethods: true);
-        //                items.AddRange(members
-        //                    .Where(s => !s.IsImplicitlyDeclared && s.IsDefinition)
-        //                    .Select(s => new CompletionItemDto
-        //                    {
-        //                        Label = s.Name,
-        //                        Kind = SymbolKindToCompletionKind(s.Kind),
-        //                        Detail = s.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-        //                        InsertText = s.Name
-        //                    }));
-        //            }
-        //        }
-        //    }
-
-        //    // Local symbols
-        //    var symbols = semanticModel.LookupSymbols(position).Take(50);
-        //    items.AddRange(symbols.Select(s => new CompletionItemDto
-        //    {
-        //        Label = s.Name,
-        //        Kind = SymbolKindToCompletionKind(s.Kind),
-        //        Detail = s.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-        //        InsertText = s.Name
-        //    }));
-
-        //    return items.ToArray();
-        //}
 
         /// <summary>
         /// Maps Roslyn SymbolKind to Monaco Editor CompletionItemKind.
         /// </summary>
         private static readonly Dictionary<string, CompletionItemKind> RoslynTagToMonacoKind = new(StringComparer.OrdinalIgnoreCase)
         {
-            // Typy
+            // Types
             { "Class", CompletionItemKind.Class },
-            { "Structure", CompletionItemKind.Struct }, // Roslyn: "Structure" -> Monaco: Struct
+            { "Structure", CompletionItemKind.Struct }, 
             { "Interface", CompletionItemKind.Interface },
             { "Enum", CompletionItemKind.Enum },
-            { "Delegate", CompletionItemKind.Interface }, // Delegate często pasuje ikoną do interfejsu lub klasy
+            { "Delegate", CompletionItemKind.Interface }, 
             { "Module", CompletionItemKind.Module },
     
-            // Członkowie
+            // Members
             { "Method", CompletionItemKind.Method },
-            { "ExtensionMethod", CompletionItemKind.Method }, // Roslyn ma osobny tag dla extension methods
+            { "ExtensionMethod", CompletionItemKind.Method }, 
             { "Field", CompletionItemKind.Field },
             { "Property", CompletionItemKind.Property },
             { "Event", CompletionItemKind.Event },
             { "Constant", CompletionItemKind.Constant },
     
-            // Zmienne i parametry
+            // Vars and params
             { "Local", CompletionItemKind.Variable },
             { "Parameter", CompletionItemKind.Variable },
             { "RangeVariable", CompletionItemKind.Variable },
     
-            // Inne
+            // Others
             { "Keyword", CompletionItemKind.Keyword },
-            { "Namespace", CompletionItemKind.Module }, // W Monaco Namespace to zazwyczaj Module
+            { "Namespace", CompletionItemKind.Module }, 
             { "Label", CompletionItemKind.Text },
             { "Operator", CompletionItemKind.Operator }
         };
