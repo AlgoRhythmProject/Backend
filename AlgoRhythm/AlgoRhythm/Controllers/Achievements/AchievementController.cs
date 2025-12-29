@@ -85,6 +85,22 @@ public class AchievementController : ControllerBase
     }
 
     /// <summary>
+    /// Get earned achievements for current user (completed only)
+    /// </summary>
+    [HttpGet("my-earned")]
+    [ProducesResponseType(typeof(IEnumerable<EarnedAchievementDto>), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetMyEarnedAchievements(CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var achievements = await _service.GetEarnedAchievementsAsync(userId, ct);
+        return Ok(achievements);
+    }
+
+    /// <summary>
     /// Manually refresh achievement progress (useful for testing)
     /// </summary>
     [HttpPost("refresh")]
@@ -104,6 +120,133 @@ public class AchievementController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing achievements for user {UserId}", userId);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // ==================== ADMIN ENDPOINTS ====================
+
+    /// <summary>
+    /// Create a new achievement (Admin only)
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(AchievementDto), 201)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> CreateAchievement(
+        [FromBody] CreateAchievementDto request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var achievement = await _service.CreateAchievementAsync(request, ct);
+            return CreatedAtAction(
+                nameof(GetAchievementById),
+                new { id = achievement.Id },
+                achievement);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating achievement");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Update an existing achievement (Admin only)
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(AchievementDto), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> UpdateAchievement(
+        Guid id,
+        [FromBody] UpdateAchievementDto request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var achievement = await _service.UpdateAchievementAsync(id, request, ct);
+            if (achievement == null)
+                return NotFound(new { error = "Achievement not found" });
+
+            return Ok(achievement);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating achievement {AchievementId}", id);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Delete an achievement (Admin only)
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> DeleteAchievement(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var success = await _service.DeleteAchievementAsync(id, ct);
+            if (!success)
+                return NotFound(new { error = "Achievement not found" });
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting achievement {AchievementId}", id);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Recalculate achievements for a specific user (Admin only)
+    /// </summary>
+    [HttpPost("admin/recalculate/{userId:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> RecalculateUserAchievements(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            await _service.CheckAndUpdateAchievementsAsync(userId, ct);
+            return Ok(new { message = $"Achievements recalculated for user {userId}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recalculating achievements for user {UserId}", userId);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Initialize achievements for a specific user (Admin only)
+    /// </summary>
+    [HttpPost("admin/initialize/{userId:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> InitializeUserAchievements(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            await _service.InitializeAchievementsForUserAsync(userId, ct);
+            return Ok(new { message = $"Achievements initialized for user {userId}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error initializing achievements for user {UserId}", userId);
             return BadRequest(new { error = ex.Message });
         }
     }

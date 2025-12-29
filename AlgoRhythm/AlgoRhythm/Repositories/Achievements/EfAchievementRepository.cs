@@ -43,7 +43,10 @@ public class EfAchievementRepository : IAchievementRepository
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var achievement = await _context.Achievements.FindAsync(new object[] { id }, ct);
+        var achievement = await _context.Achievements
+            .Include(a => a.Requirements)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        
         if (achievement != null)
         {
             _context.Achievements.Remove(achievement);
@@ -59,6 +62,15 @@ public class EfAchievementRepository : IAchievementRepository
             .Include(ua => ua.RequirementProgresses)
                 .ThenInclude(rp => rp.Requirement)
             .Where(ua => ua.UserId == userId)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IEnumerable<UserAchievement>> GetEarnedUserAchievementsAsync(Guid userId, CancellationToken ct = default)
+    {
+        return await _context.UserAchievements
+            .Include(ua => ua.Achievement)
+            .Where(ua => ua.UserId == userId && ua.IsCompleted)
+            .OrderByDescending(ua => ua.EarnedAt)
             .ToListAsync(ct);
     }
 

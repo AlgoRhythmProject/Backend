@@ -190,6 +190,142 @@ public class AchievementService : IAchievementService
         }
     }
 
+    public async Task<IEnumerable<EarnedAchievementDto>> GetEarnedAchievementsAsync(Guid userId, CancellationToken ct = default)
+    {
+        var earnedAchievements = await _achievementRepo.GetEarnedUserAchievementsAsync(userId, ct);
+        
+        return earnedAchievements.Select(ua => new EarnedAchievementDto
+        {
+            Id = ua.Achievement.Id,
+            Name = ua.Achievement.Name,
+            Description = ua.Achievement.Description,
+            IconPath = ua.Achievement.IconPath
+        });
+    }
+
+    public async Task<AchievementDto> CreateAchievementAsync(CreateAchievementDto dto, CancellationToken ct = default)
+    {
+        var achievement = new Achievement
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            IconPath = dto.IconPath,
+            Requirements = dto.Requirements.Select(r => new Requirement
+            {
+                Description = r.Description,
+                Condition = new RequirementCondition
+                {
+                    Type = Enum.Parse<RequirementType>(r.Type),
+                    TargetValue = r.TargetValue,
+                    TargetId = r.TargetId
+                }
+            }).ToList()
+        };
+
+        var created = await _achievementRepo.CreateAsync(achievement, ct);
+        
+        _logger.LogInformation("Created achievement {AchievementId}: {AchievementName}", created.Id, created.Name);
+        
+        return MapToDto(created);
+    }
+
+    public async Task<AchievementDto?> UpdateAchievementAsync(Guid id, UpdateAchievementDto dto, CancellationToken ct = default)
+    {
+        var achievement = await _achievementRepo.GetByIdAsync(id, ct);
+        if (achievement == null)
+            return null;
+
+        // Update basic properties
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+            achievement.Name = dto.Name;
+        
+        if (dto.Description != null)
+            achievement.Description = dto.Description;
+        
+        if (dto.IconPath != null)
+            achievement.IconPath = dto.IconPath;
+
+        // Update requirements if provided
+        if (dto.Requirements != null)
+        {
+            // Remove requirements marked for deletion
+            var requirementsToDelete = dto.Requirements
+                .Where(r => r.Id.HasValue && r.ShouldDelete)
+                .Select(r => r.Id!.Value)
+                .ToHashSet();
+
+            achievement.Requirements = achievement.Requirements
+                .Where(r => !requirementsToDelete.Contains(r.Id))
+                .ToList();
+
+            // Update existing or add new requirements
+            foreach (var reqDto in dto.Requirements.Where(r => !r.ShouldDelete))
+            {
+                if (reqDto.Id.HasValue)
+                {
+                    // Update existing
+                    var existing = achievement.Requirements.FirstOrDefault(r => r.Id == reqDto.Id.Value);
+                    if (existing != null)
+                    {
+                        if (reqDto.Description != null)
+                            existing.Description = reqDto.Description;
+                        
+                        if (reqDto.Type != null || reqDto.TargetValue.HasValue || reqDto.TargetId.HasValue)
+                        {
+                            var condition = existing.Condition ?? new RequirementCondition();
+                            
+                            if (reqDto.Type != null)
+                                condition.Type = Enum.Parse<RequirementType>(reqDto.Type);
+                            
+                            if (reqDto.TargetValue.HasValue)
+                                condition.TargetValue = reqDto.TargetValue.Value;
+                            
+                            if (reqDto.TargetId.HasValue)
+                                condition.TargetId = reqDto.TargetId;
+                        
+                            existing.Condition = condition;
+                        }
+                    }
+                }
+                else if (reqDto.Type != null)
+                {
+                    // Add new
+                    var newRequirement = new Requirement
+                    {
+                        AchievementId = achievement.Id,
+                        Description = reqDto.Description,
+                        Condition = new RequirementCondition
+                        {
+                            Type = Enum.Parse<RequirementType>(reqDto.Type),
+                            TargetValue = reqDto.TargetValue ?? 1,
+                            TargetId = reqDto.TargetId
+                        }
+                    };
+                    achievement.Requirements.Add(newRequirement);
+                }
+            }
+        }
+
+        await _achievementRepo.UpdateAsync(achievement, ct);
+        
+        _logger.LogInformation("Updated achievement {AchievementId}: {AchievementName}", achievement.Id, achievement.Name);
+        
+        return MapToDto(achievement);
+    }
+
+    public async Task<bool> DeleteAchievementAsync(Guid id, CancellationToken ct = default)
+    {
+        var achievement = await _achievementRepo.GetByIdAsync(id, ct);
+        if (achievement == null)
+            return false;
+
+        await _achievementRepo.DeleteAsync(id, ct);
+        
+        _logger.LogInformation("Deleted achievement {AchievementId}: {AchievementName}", id, achievement.Name);
+        
+        return true;
+    }
+
     private AchievementDto MapToDto(Achievement achievement)
     {
         return new AchievementDto

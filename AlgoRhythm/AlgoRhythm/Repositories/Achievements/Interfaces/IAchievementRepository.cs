@@ -11,6 +11,7 @@ public interface IAchievementRepository
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     
     Task<IEnumerable<UserAchievement>> GetUserAchievementsAsync(Guid userId, CancellationToken ct = default);
+    Task<IEnumerable<UserAchievement>> GetEarnedUserAchievementsAsync(Guid userId, CancellationToken ct = default);
     Task<UserAchievement?> GetUserAchievementAsync(Guid userId, Guid achievementId, CancellationToken ct = default);
     Task<UserAchievement> CreateUserAchievementAsync(UserAchievement userAchievement, CancellationToken ct = default);
     Task UpdateUserAchievementAsync(UserAchievement userAchievement, CancellationToken ct = default);
