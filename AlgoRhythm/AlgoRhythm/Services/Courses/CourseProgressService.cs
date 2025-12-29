@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Data;
 using AlgoRhythm.Repositories.Courses.Interfaces;
+using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
 using AlgoRhythm.Shared.Models.Courses;
@@ -13,15 +14,18 @@ public class CourseProgressService : ICourseProgressService
     private readonly ICourseProgressRepository _repo;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CourseProgressService> _logger;
+    private readonly IAchievementService _achievementService;
 
     public CourseProgressService(
         ICourseProgressRepository repo, 
         ApplicationDbContext context,
-        ILogger<CourseProgressService> logger)
+        ILogger<CourseProgressService> logger,
+        IAchievementService achievementService)
     {
         _repo = repo;
         _context = context;
         _logger = logger;
+        _achievementService = achievementService;
     }
 
     public async Task<IEnumerable<CourseProgressDto>> GetByUserIdAsync(Guid userId, CancellationToken ct)
@@ -106,6 +110,16 @@ public class CourseProgressService : ICourseProgressService
         }
 
         await _context.SaveChangesAsync(ct);
+
+        // Check achievements after lecture completion change
+        try
+        {
+            await _achievementService.CheckAndUpdateAchievementsAsync(userId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update achievements after lecture completion");
+        }
 
         // Przelicz postęp kursu
         await RecalculateProgressAsync(userId, lecture.CourseId, ct);

@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.CodeExecutor.Interfaces;
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Services.Submissions.Interfaces;
@@ -20,6 +21,7 @@ public class SubmissionService : ISubmissionService
     private readonly UserManager<User> _userManager;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ICodeParser _codeParser;
+    private readonly IAchievementService _achievementService;
 
     public SubmissionService(
         ISubmissionRepository submissions,
@@ -28,7 +30,8 @@ public class SubmissionService : ISubmissionService
         IConfiguration config,
         UserManager<User> userManager,
         IServiceScopeFactory scopeFactory,
-        ICodeParser codeParser
+        ICodeParser codeParser,
+        IAchievementService achievementService
     )
     {
         _submissionRepository = submissions;
@@ -37,6 +40,7 @@ public class SubmissionService : ISubmissionService
         _userManager = userManager;
         _scopeFactory = scopeFactory;
         _codeParser = codeParser;
+        _achievementService = achievementService;
     }
 
     public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequestDto request, CancellationToken ct = default)
@@ -226,7 +230,7 @@ public class SubmissionService : ISubmissionService
 
         await submissionRepo.SaveChangesAsync(CancellationToken.None);
 
-        // ✅ NOWE - Przelicz postęp kursów po submission
+        // Count courseProgress and achievements if solved
         if (submission.IsSolved)
         {
             try
@@ -234,8 +238,10 @@ public class SubmissionService : ISubmissionService
                 using var progressScope = _scopeFactory.CreateScope();
                 var courseProgressService = progressScope.ServiceProvider
                     .GetRequiredService<ICourseProgressService>();
+                var achievementService = progressScope.ServiceProvider
+                    .GetRequiredService<IAchievementService>();
 
-                // Znajdź wszystkie kursy zawierające ten task
+                // Find all courses with this task
                 var courses = task.Courses;
                 foreach (var course in courses)
                 {
@@ -248,11 +254,19 @@ public class SubmissionService : ISubmissionService
                         "Recalculated progress for user {UserId} in course {CourseId} after completing task {TaskId}",
                         submission.UserId, course.Id, task.Id);
                 }
+
+                // Update Achievements
+                await achievementService.CheckAndUpdateAchievementsAsync(
+                    submission.UserId, 
+                    CancellationToken.None);
+                
+                logger.LogInformation(
+                    "Updated achievements for user {UserId} after completing task {TaskId}",
+                    submission.UserId, task.Id);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to recalculate course progress after submission");
-                // Don't throw - submission was already saved
+                logger.LogError(ex, "Failed to update progress/achievements after submission");
             }
         }
     }

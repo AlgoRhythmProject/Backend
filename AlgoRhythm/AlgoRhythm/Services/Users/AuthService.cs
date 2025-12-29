@@ -1,6 +1,7 @@
-﻿using AlgoRhythm.Services.Users.Interfaces;
-using AlgoRhythm.Services.Users.Exceptions;
+﻿using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.Courses.Interfaces;
+using AlgoRhythm.Services.Users.Exceptions;
+using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Dtos.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -18,7 +19,8 @@ public class AuthService : IAuthService
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
     private readonly ICourseProgressService _courseProgressService;
-    
+    private readonly IAchievementService _achievementService;
+
     // Simple in-memory rate limiting
     private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
     private static readonly TimeSpan _emailCooldown = TimeSpan.FromMinutes(1);
@@ -28,13 +30,16 @@ public class AuthService : IAuthService
         IEmailSender emailSender,
         IConfiguration config,
         ILogger<AuthService> logger,
-        ICourseProgressService courseProgressService)
+        ICourseProgressService courseProgressService,
+        IAchievementService achievementService)
+
     {
         _userManager = userManager;
         _emailSender = emailSender;
         _config = config;
         _logger = logger;
         _courseProgressService = courseProgressService;
+        _achievementService = achievementService;
     }
 
     public async Task RegisterAsync(RegisterRequest request)
@@ -88,6 +93,18 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialize course progress for user: {UserId}", user.Id);
+            // Don't throw - user was created successfully
+        }
+
+        // Initialize achievements for all achievements
+        try
+        {
+            await _achievementService.InitializeAchievementsForUserAsync(user.Id, CancellationToken.None);
+            _logger.LogInformation("Initialized achievements for new user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize achievements for user: {UserId}", user.Id);
             // Don't throw - user was created successfully
         }
 

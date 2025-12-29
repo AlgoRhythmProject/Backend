@@ -1,5 +1,7 @@
 using AlgoRhythm.Clients;
 using AlgoRhythm.Data;
+using AlgoRhythm.Repositories.Achievements;
+using AlgoRhythm.Repositories.Achievements.Interfaces;
 using AlgoRhythm.Repositories.Common;
 using AlgoRhythm.Repositories.Common.Interfaces;
 using AlgoRhythm.Repositories.Courses;
@@ -8,19 +10,24 @@ using AlgoRhythm.Repositories.Submissions;
 using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
-using AlgoRhythm.Services.Submissions;
+using AlgoRhythm.Services.Achievements;
+using AlgoRhythm.Services.Achievements.Interfaces;
+using AlgoRhythm.Services.Blob;
+using AlgoRhythm.Services.Blob.Interfaces;
 using AlgoRhythm.Services.CodeExecutor;
 using AlgoRhythm.Services.CodeExecutor.Interfaces;
 using AlgoRhythm.Services.Common;
 using AlgoRhythm.Services.Common.Interfaces;
 using AlgoRhythm.Services.Courses;
 using AlgoRhythm.Services.Courses.Interfaces;
+using AlgoRhythm.Services.Submissions;
 using AlgoRhythm.Services.Submissions.Interfaces;
 using AlgoRhythm.Services.Tasks;
 using AlgoRhythm.Services.Tasks.Interfaces;
 using AlgoRhythm.Services.Users;
 using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Models.Users;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,9 +35,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
-using Azure.Storage.Blobs;
-using AlgoRhythm.Services.Blob.Interfaces;
-using AlgoRhythm.Services.Blob;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +103,7 @@ builder.Services.AddScoped<ICourseProgressRepository, EfCourseProgressRepository
 builder.Services.AddScoped<ITagRepository, EfTagRepository>();
 builder.Services.AddScoped<ICommentRepository, EfCommentRepository>();
 builder.Services.AddScoped<IHintRepository, EfHintRepository>();
+builder.Services.AddScoped<IAchievementRepository, EfAchievementRepository>();
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -111,6 +116,7 @@ builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IHintService, HintService>();
+builder.Services.AddScoped<IAchievementService, AchievementService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 

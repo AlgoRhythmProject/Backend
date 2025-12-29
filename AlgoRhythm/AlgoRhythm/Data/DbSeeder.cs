@@ -4,6 +4,7 @@ using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using AlgoRhythm.Shared.Models.Achievements;
 
 namespace AlgoRhythm.Data;
 
@@ -21,6 +22,7 @@ public static class DbSeeder
 
         var users = await SeedUsersAsync(userManager);
         await SeedContentAsync(context, users);
+        await SeedAchievements(context); // Add this line
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
@@ -1386,6 +1388,234 @@ Output: -1",
 
         await context.SaveChangesAsync();
         Console.WriteLine("SeedContentAsync completed successfully!");
+    }
+
+    private static async Task SeedAchievements(ApplicationDbContext context)
+    {
+        if (context.Achievements.Any())
+            return;
+
+        var achievements = new List<Achievement>
+        {
+            // Task completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "First Steps",
+                Description = "Complete your first 5 programming tasks",
+                IconPath = "/icons/achievements/first-steps.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Problem Solver",
+                Description = "Complete 10 programming tasks",
+                IconPath = "/icons/achievements/problem-solver.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Code Master",
+                Description = "Complete 15 programming tasks",
+                IconPath = "/icons/achievements/code-master.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Lecture completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Eager Learner",
+                Description = "Complete your first 5 lectures",
+                IconPath = "/icons/achievements/eager-learner.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Knowledge Seeker",
+                Description = "Complete 10 lectures",
+                IconPath = "/icons/achievements/knowledge-seeker.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Scholar",
+                Description = "Complete 15 lectures",
+                IconPath = "/icons/achievements/scholar.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Course completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Course Completer",
+                Description = "Complete your first course",
+                IconPath = "/icons/achievements/course-completer.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 1 course",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 1
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
+                Description = "Complete 3 courses",
+                IconPath = "/icons/achievements/dedicated-student.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 3 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 3
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Graduate",
+                Description = "Complete 5 courses",
+                IconPath = "/icons/achievements/graduate.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+
+            // Combined achievement
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Well Rounded",
+                Description = "Complete 10 tasks, 10 lectures, and 2 courses",
+                IconPath = "/icons/achievements/well-rounded.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 2 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 2
+                        }
+                    }
+                }
+            }
+        };
+
+        await context.Achievements.AddRangeAsync(achievements);
+        await context.SaveChangesAsync();
     }
 }
 
