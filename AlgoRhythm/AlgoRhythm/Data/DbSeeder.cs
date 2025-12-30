@@ -1392,7 +1392,7 @@ Output: -1",
 
     private static async Task SeedAchievements(ApplicationDbContext context)
     {
-        if (context.Achievements.Any())
+        if (await context.Achievements.AnyAsync())
             return;
 
         var achievements = new List<Achievement>
