@@ -102,16 +102,10 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
+            var ipAddress = GetIpAddress();
             var authResponse = await _auth.VerifyEmailAsync(req);
 
-            // Set JWT in HTTP-only cookie (automatic login)
-            Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = authResponse.ExpiresUtc
-            });
+            SetTokenCookies(authResponse.Token, authResponse.ExpiresUtc, authResponse.RefreshToken, authResponse.RefreshTokenExpiresUtc);
 
             return Ok(authResponse);
         }
@@ -143,15 +137,10 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
+            var ipAddress = GetIpAddress();
             var authResponse = await _auth.LoginAsync(req);
 
-            Response.Cookies.Append("JWT", authResponse.Token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = authResponse.ExpiresUtc
-            });
+            SetTokenCookies(authResponse.Token, authResponse.ExpiresUtc, authResponse.RefreshToken, authResponse.RefreshTokenExpiresUtc);
 
             return Ok(authResponse);
         }
@@ -173,6 +162,79 @@ public class AuthenticationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during login");
+            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
+        }
+    }
+
+    /// <summary>
+    /// Refreshes JWT access token using refresh token.
+    /// </summary>
+    [HttpPost("refresh-token")]
+    [ProducesResponseType(typeof(RefreshTokenResponseDto), 200)]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    public async Task<IActionResult> RefreshToken()
+    {
+        try
+        {
+            var refreshToken = Request.Cookies["RefreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new ErrorResponse("MISSING_TOKEN", "Refresh token is required."));
+            }
+
+            var ipAddress = GetIpAddress();
+            var response = await _auth.RefreshTokenAsync(refreshToken, ipAddress);
+
+            SetTokenCookies(response.AccessToken, response.AccessTokenExpiresUtc, response.RefreshToken, response.RefreshTokenExpiresUtc);
+
+            return Ok(response);
+        }
+        catch (InvalidRefreshTokenException ex)
+        {
+            _logger.LogWarning(ex, "Invalid refresh token");
+            return Unauthorized(new ErrorResponse("INVALID_REFRESH_TOKEN", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during token refresh");
+            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
+        }
+    }
+
+    /// <summary>
+    /// Revokes refresh token (logout from specific device).
+    /// </summary>
+    [HttpPost("revoke-token")]
+    [Authorize]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    public async Task<IActionResult> RevokeToken()
+    {
+        try
+        {
+            var refreshToken = Request.Cookies["RefreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new ErrorResponse("MISSING_TOKEN", "Refresh token is required."));
+            }
+
+            var ipAddress = GetIpAddress();
+            await _auth.RevokeTokenAsync(refreshToken, ipAddress);
+
+            Response.Cookies.Delete("JWT");
+            Response.Cookies.Delete("RefreshToken");
+
+            return Ok(new { message = "Token revoked successfully." });
+        }
+        catch (InvalidRefreshTokenException ex)
+        {
+            _logger.LogWarning(ex, "Invalid refresh token during revocation");
+            return BadRequest(new ErrorResponse("INVALID_REFRESH_TOKEN", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during token revocation");
             return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred. Please try again later."));
         }
     }
@@ -299,7 +361,6 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-
     /// <summary>
     /// Updates user profile information (first name, last name, email).
     /// Requires authentication. If email is changed, user will need to verify the new email.
@@ -358,11 +419,53 @@ public class AuthenticationController : ControllerBase
     public IActionResult Logout()
     {
         Response.Cookies.Delete("JWT");
-        _logger.LogInformation("User logged out (JWT cookie deleted)");
+        Response.Cookies.Delete("RefreshToken");
+        _logger.LogInformation("User logged out (JWT and refresh token cookies deleted)");
         return Ok(new { message = "Logged out successfully." });
     }
-}
 
+    // Helper methods
+    private void SetTokenCookies(string accessToken, DateTime accessTokenExpires, string refreshToken, DateTime refreshTokenExpires)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict
+        };
+
+        // Set access token cookie
+        var accessCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = accessTokenExpires
+        };
+        Response.Cookies.Append("JWT", accessToken, accessCookieOptions);
+
+        // Set refresh token cookie
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = refreshTokenExpires
+        };
+        Response.Cookies.Append("RefreshToken", refreshToken, refreshCookieOptions);
+    }
+
+    private string GetIpAddress()
+    {
+        // Get IP address from X-Forwarded-For header or connection
+        if (Request.Headers.ContainsKey("X-Forwarded-For"))
+        {
+            return Request.Headers["X-Forwarded-For"].ToString().Split(',')[0].Trim();
+        }
+
+        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+}
 
 /// <summary>
 /// Standardized error response for API

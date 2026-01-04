@@ -35,4 +35,5 @@ public class User : IdentityUser<Guid>
     public ICollection<CourseProgress> CourseProgresses { get; set; } = new List<CourseProgress>();
     public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

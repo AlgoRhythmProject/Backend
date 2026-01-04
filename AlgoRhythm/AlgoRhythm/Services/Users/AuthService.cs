@@ -1,14 +1,17 @@
-﻿using AlgoRhythm.Services.Achievements.Interfaces;
+﻿using AlgoRhythm.Data;
+using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Services.Users.Exceptions;
 using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Dtos.Users;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
-using User = AlgoRhythm.Shared.Models.Users.User;
 
 namespace AlgoRhythm.Services.Users;
 
@@ -20,6 +23,7 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly ICourseProgressService _courseProgressService;
     private readonly IAchievementService _achievementService;
+    private readonly ApplicationDbContext _context;
 
     // Simple in-memory rate limiting
     private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
@@ -31,7 +35,8 @@ public class AuthService : IAuthService
         IConfiguration config,
         ILogger<AuthService> logger,
         ICourseProgressService courseProgressService,
-        IAchievementService achievementService)
+        IAchievementService achievementService,
+        ApplicationDbContext context)
 
     {
         _userManager = userManager;
@@ -40,6 +45,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _courseProgressService = courseProgressService;
         _achievementService = achievementService;
+        _context = context;
     }
 
     public async Task RegisterAsync(RegisterRequest request)
@@ -214,9 +220,10 @@ public class AuthService : IAuthService
             throw new InvalidOperationException($"Failed to set new password: {errors}");
         }
 
-        // Reset security stamp
+        // Reset security stamp and revoke all refresh tokens
         user.SecurityStamp = Guid.NewGuid().ToString();
         await _userManager.UpdateAsync(user);
+        await RevokeAllUserTokensAsync(user.Id, "Password reset");
 
         _logger.LogInformation("Password reset successfully for user: {Email}", user.Email);
     }
@@ -248,6 +255,9 @@ public class AuthService : IAuthService
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new InvalidOperationException($"Failed to change password: {errors}");
         }
+
+        // Revoke all refresh tokens after password change
+        await RevokeAllUserTokensAsync(userId, "Password changed");
 
         _logger.LogInformation("Password changed successfully for user: {UserId}", userId);
     }
@@ -398,7 +408,7 @@ public class AuthService : IAuthService
         if (user.EmailConfirmed)
         {
             _logger.LogInformation("Email already verified for user: {Email}", user.Email);
-            return await GenerateAuthResponseAsync(user);
+            return await GenerateAuthResponseAsync(user, "unknown");
         }
 
         // Verify code (stored in SecurityStamp temporarily)
@@ -415,21 +425,21 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
 
-        return await GenerateAuthResponseAsync(user);
+        return await GenerateAuthResponseAsync(user, "unknown");
     }
 
-    private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
+    private async Task<AuthResponse> GenerateAuthResponseAsync(User user, string ipAddress)
     {
         var roles = await _userManager.GetRolesAsync(user);
 
-        // Create JWT - USE ENVIRONMENT VARIABLE
+        // Create JWT Access Token
         var key = _config["Jwt:Key"] 
             ?? Environment.GetEnvironmentVariable("JWT_KEY") 
             ?? throw new InvalidOperationException("JWT key is not configured.");
         
         var issuer = _config["Jwt:Issuer"] ?? "AlgoRhythm.Api";
         var audience = _config["Jwt:Audience"] ?? "AlgoRhythm.Client";
-        var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "60");
+        var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "15"); // Short-lived access token
 
         var claims = new List<Claim>
         {
@@ -456,6 +466,9 @@ public class AuthService : IAuthService
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
+        // Generate Refresh Token
+        var refreshToken = await GenerateRefreshTokenAsync(user.Id, ipAddress);
+
         var userDto = new UserDto(
             user.Id,
             user.Email!,
@@ -464,7 +477,39 @@ public class AuthService : IAuthService
             user.CreatedAt
         );
 
-        return new AuthResponse(tokenString, expires, userDto);
+        return new AuthResponse(
+            tokenString, 
+            expires, 
+            userDto, 
+            refreshToken.Token, 
+            refreshToken.ExpiresAt
+        );
+    }
+
+    private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId, string ipAddress)
+    {
+        var refreshToken = new RefreshToken
+        {
+            UserId = userId,
+            Token = GenerateSecureRandomToken(),
+            ExpiresAt = DateTime.UtcNow.AddDays(7), // Long-lived refresh token
+            CreatedByIp = ipAddress
+        };
+
+        _context.Set<RefreshToken>().Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Refresh token generated for user: {UserId}", userId);
+
+        return refreshToken;
+    }
+
+    private static string GenerateSecureRandomToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -491,7 +536,127 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User logged in successfully: {Email}", user.Email);
 
-        return await GenerateAuthResponseAsync(user);
+        return await GenerateAuthResponseAsync(user, "unknown");
+    }
+
+    public async Task<RefreshTokenResponseDto> RefreshTokenAsync(string refreshToken, string ipAddress)
+    {
+        var token = await _context.Set<RefreshToken>()
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+        if (token == null || !token.IsActive)
+        {
+            _logger.LogWarning("Refresh token is invalid or expired");
+            throw new InvalidRefreshTokenException();
+        }
+
+        // Generate new refresh token and revoke old one
+        var newRefreshToken = await RotateRefreshTokenAsync(token, ipAddress);
+        
+        // Generate new access token
+        var user = token.User;
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var key = _config["Jwt:Key"] 
+            ?? Environment.GetEnvironmentVariable("JWT_KEY") 
+            ?? throw new InvalidOperationException("JWT key is not configured.");
+        
+        var issuer = _config["Jwt:Issuer"] ?? "AlgoRhythm.Api";
+        var audience = _config["Jwt:Audience"] ?? "AlgoRhythm.Client";
+        var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "15");
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString())
+        };
+
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        var keyBytes = Encoding.UTF8.GetBytes(key);
+        var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
+
+        var expires = DateTime.UtcNow.AddMinutes(minutes);
+        var jwtToken = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: expires,
+            signingCredentials: creds);
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+        _logger.LogInformation("Token refreshed successfully for user: {UserId}", user.Id);
+
+        return new RefreshTokenResponseDto(
+            tokenString,
+            expires,
+            newRefreshToken.Token,
+            newRefreshToken.ExpiresAt
+        );
+    }
+
+    private async Task<RefreshToken> RotateRefreshTokenAsync(RefreshToken token, string ipAddress)
+    {
+        var newRefreshToken = new RefreshToken
+        {
+            UserId = token.UserId,
+            Token = GenerateSecureRandomToken(),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = ipAddress
+        };
+
+        // Revoke old token
+        token.RevokedAt = DateTime.UtcNow;
+        token.RevokedByIp = ipAddress;
+        token.ReplacedByToken = newRefreshToken.Token;
+
+        _context.Set<RefreshToken>().Add(newRefreshToken);
+        await _context.SaveChangesAsync();
+
+        return newRefreshToken;
+    }
+
+    public async Task RevokeTokenAsync(string refreshToken, string ipAddress)
+    {
+        var token = await _context.Set<RefreshToken>()
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+        if (token == null || !token.IsActive)
+        {
+            _logger.LogWarning("Attempt to revoke invalid or expired refresh token");
+            throw new InvalidRefreshTokenException();
+        }
+
+        // Revoke token
+        token.RevokedAt = DateTime.UtcNow;
+        token.RevokedByIp = ipAddress;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Refresh token revoked for user: {UserId}", token.UserId);
+    }
+
+    private async Task RevokeAllUserTokensAsync(Guid userId, string reason)
+    {
+        var tokens = await _context.Set<RefreshToken>()
+            .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+            .ToListAsync();
+
+        foreach (var token in tokens)
+        {
+            token.RevokedAt = DateTime.UtcNow;
+            token.RevokedByIp = reason;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("All refresh tokens revoked for user: {UserId}. Reason: {Reason}", userId, reason);
     }
 
     public async Task<UserDto> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDto request)

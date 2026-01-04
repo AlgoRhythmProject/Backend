@@ -7,7 +7,6 @@ using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 namespace AlgoRhythm.Data;
 
@@ -17,6 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     // Custom tables
     public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     
     // Achievements
     public DbSet<Achievement> Achievements { get; set; } = null!;
@@ -61,6 +61,17 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
         builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
         builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+
+        // Configure RefreshToken
+        builder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<RefreshToken>()
+            .HasIndex(rt => rt.Token)
+            .IsUnique();
 
         // TPH (Table-Per-Hierarchy) dla LectureContent
         builder.Entity<LectureContent>()

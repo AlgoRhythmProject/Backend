@@ -7,5 +7,7 @@ public record LoginRequest(string Email, string Password);
 public record AuthResponse(
     string Token,
     DateTime ExpiresUtc,
-    UserDto User
+    UserDto User,
+    string RefreshToken,
+    DateTime RefreshTokenExpiresUtc
 );

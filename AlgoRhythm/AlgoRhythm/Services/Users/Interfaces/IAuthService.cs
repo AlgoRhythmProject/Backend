@@ -12,4 +12,6 @@ public interface IAuthService
     Task ChangePasswordAsync(Guid userId, ChangePasswordDto request);
     Task ResendVerificationCodeAsync(ResendVerificationCodeDto request);
     Task<UserDto> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDto request);
+    Task<RefreshTokenResponseDto> RefreshTokenAsync(string refreshToken, string ipAddress);
+    Task RevokeTokenAsync(string refreshToken, string ipAddress);
 }
