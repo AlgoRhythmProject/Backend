@@ -11,4 +11,7 @@ public interface ICourseProgressService
     Task<bool> MarkLectureAsCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct);
     Task<bool> MarkLectureAsIncompletedAsync(Guid userId, Guid lectureId, CancellationToken ct);
     Task RecalculateProgressAsync(Guid userId, Guid courseId, CancellationToken ct);
+    Task<bool> IsLectureCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct);
+    Task<HashSet<Guid>> GetCompletedLectureIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
+    Task<HashSet<Guid>> GetCompletedTaskIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
 }

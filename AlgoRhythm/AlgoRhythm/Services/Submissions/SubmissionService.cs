@@ -10,6 +10,7 @@ using AlgoRhythm.Shared.Models.Submissions;
 using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlgoRhythm.Services.Submissions;
 
@@ -230,39 +231,64 @@ public class SubmissionService : ISubmissionService
 
         await submissionRepo.SaveChangesAsync(CancellationToken.None);
 
-        // Count courseProgress and achievements if solved
         if (submission.IsSolved)
         {
             try
             {
                 using var progressScope = _scopeFactory.CreateScope();
-                var courseProgressService = progressScope.ServiceProvider
-                    .GetRequiredService<ICourseProgressService>();
-                var achievementService = progressScope.ServiceProvider
-                    .GetRequiredService<IAchievementService>();
+                var dbContext = progressScope.ServiceProvider.GetRequiredService<AlgoRhythm.Data.ApplicationDbContext>();
+                var courseProgressService = progressScope.ServiceProvider.GetRequiredService<ICourseProgressService>();
+                var achievementService = progressScope.ServiceProvider.GetRequiredService<IAchievementService>();
 
-                // Find all courses with this task
-                var courses = task.Courses;
-                foreach (var course in courses)
+                var user = await dbContext.Users
+                    .Include(u => u.CompletedTasks)
+                    .FirstOrDefaultAsync(u => u.Id == submission.UserId, CancellationToken.None);
+
+                if (user != null)
                 {
-                    await courseProgressService.RecalculateProgressAsync(
+                    if (!user.CompletedTasks.Any(t => t.Id == task.Id))
+                    {
+                        var taskWithCourses = await dbContext.TaskItems
+                            .Include(t => t.Courses)
+                            .FirstOrDefaultAsync(t => t.Id == task.Id, CancellationToken.None);
+
+                        if (taskWithCourses != null)
+                        {
+                            user.CompletedTasks.Add(taskWithCourses);
+                            await dbContext.SaveChangesAsync(CancellationToken.None);
+                            
+                            logger.LogInformation(
+                                "Marked task {TaskId} as completed for user {UserId}",
+                                task.Id, submission.UserId);
+
+                            foreach (var course in taskWithCourses.Courses)
+                            {
+                                await courseProgressService.RecalculateProgressAsync(
+                                    submission.UserId, 
+                                    course.Id, 
+                                    CancellationToken.None);
+                                
+                                logger.LogInformation(
+                                    "Recalculated progress for user {UserId} in course {CourseId} after completing task {TaskId}",
+                                    submission.UserId, course.Id, task.Id);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        logger.LogInformation(
+                            "Task {TaskId} already completed by user {UserId}",
+                            task.Id, submission.UserId);
+                    }
+
+                    await achievementService.CheckAndUpdateAchievementsAsync(
                         submission.UserId, 
-                        course.Id, 
                         CancellationToken.None);
                     
                     logger.LogInformation(
-                        "Recalculated progress for user {UserId} in course {CourseId} after completing task {TaskId}",
-                        submission.UserId, course.Id, task.Id);
+                        "Updated achievements for user {UserId} after completing task {TaskId}",
+                        submission.UserId, task.Id);
                 }
-
-                // Update Achievements
-                await achievementService.CheckAndUpdateAchievementsAsync(
-                    submission.UserId, 
-                    CancellationToken.None);
-                
-                logger.LogInformation(
-                    "Updated achievements for user {UserId} after completing task {TaskId}",
-                    submission.UserId, task.Id);
             }
             catch (Exception ex)
             {

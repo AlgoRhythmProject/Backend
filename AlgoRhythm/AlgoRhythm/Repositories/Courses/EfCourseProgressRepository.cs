@@ -118,4 +118,12 @@ public class EfCourseProgressRepository : ICourseProgressRepository
             .Union(manuallyCompleted)
             .ToHashSet();
     }
+
+    public async Task<bool> IsLectureCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct)
+    {
+        return await _db.Users
+            .Where(u => u.Id == userId)
+            .SelectMany(u => u.CompletedLectures)
+            .AnyAsync(l => l.Id == lectureId, ct);
+    }
 }

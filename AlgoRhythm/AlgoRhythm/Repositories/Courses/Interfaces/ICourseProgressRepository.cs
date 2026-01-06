@@ -12,4 +12,5 @@ public interface ICourseProgressRepository
     Task DeleteAsync(Guid id, CancellationToken ct);
     Task<HashSet<Guid>> GetCompletedLectureIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
     Task<HashSet<Guid>> GetCompletedTaskIdsAsync(Guid userId, Guid courseId, CancellationToken ct);
+    Task<bool> IsLectureCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct);
 }

@@ -247,4 +247,19 @@ public class CourseProgressService : ICourseProgressService
             CompletedTaskIds = completedTaskIds.ToList()
         };
     }
+
+    public async Task<bool> IsLectureCompletedAsync(Guid userId, Guid lectureId, CancellationToken ct)
+    {
+        return await _repo.IsLectureCompletedAsync(userId, lectureId, ct);
+    }
+
+    public async Task<HashSet<Guid>> GetCompletedLectureIdsAsync(Guid userId, Guid courseId, CancellationToken ct)
+    {
+        return await _repo.GetCompletedLectureIdsAsync(userId, courseId, ct);
+    }
+
+    public async Task<HashSet<Guid>> GetCompletedTaskIdsAsync(Guid userId, Guid courseId, CancellationToken ct)
+    {
+        return await _repo.GetCompletedTaskIdsAsync(userId, courseId, ct);
+    }
 }

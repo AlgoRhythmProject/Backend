@@ -183,4 +183,57 @@ public class CourseProgressController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Check if a specific lecture is completed
+    /// </summary>
+    [HttpGet("lecture/{lectureId:guid}/is-completed")]
+    [ProducesResponseType(typeof(LectureCompletionDto), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> IsLectureCompleted(Guid lectureId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var isCompleted = await _service.IsLectureCompletedAsync(userId, lectureId, ct);
+        
+        return Ok(new LectureCompletionDto
+        {
+            LectureId = lectureId,
+            IsCompleted = isCompleted
+        });
+    }
+
+    /// <summary>
+    /// Get all completed lecture IDs for a specific course
+    /// </summary>
+    [HttpGet("course/{courseId:guid}/completed-lectures")]
+    [ProducesResponseType(typeof(HashSet<Guid>), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetCompletedLectureIds(Guid courseId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedLectureIds = await _service.GetCompletedLectureIdsAsync(userId, courseId, ct);
+        return Ok(completedLectureIds);
+    }
+
+    /// <summary>
+    /// Get all completed task IDs for a specific course
+    /// </summary>
+    [HttpGet("course/{courseId:guid}/completed-tasks")]
+    [ProducesResponseType(typeof(HashSet<Guid>), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetCompletedTaskIds(Guid courseId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedTaskIds = await _service.GetCompletedTaskIdsAsync(userId, courseId, ct);
+        return Ok(completedTaskIds);
+    }
 }
