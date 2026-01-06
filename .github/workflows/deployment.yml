@@ -2,6 +2,8 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 env:
   REGISTRY: ghcr.io
 jobs:
@@ -37,3 +39,25 @@ jobs:
     # Push code executor image
     - name: Push code executor
       run: docker push ${{ env.REGISTRY }}/algorhythmproject/backend/code-executor:latest
+
+    # Deploy pushed images
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Deploy to Azure Container Apps (backend server)
+      run: |
+        az containerapp update \
+          --name backend \
+          --resource-group algorhythm-app \
+          --image ${{ env.REGISTRY }}/algorhythmproject/backend/algorhythm-backend:latest
+
+    - name: Deploy to Azure Container Apps (code executor)
+      run: |
+        az containerapp update \
+          --name code-executor \
+          --resource-group algorhythm-app \
+          --image ${{ env.REGISTRY }}/algorhythmproject/backend/code-executor:latest
