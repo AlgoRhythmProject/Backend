@@ -982,6 +982,113 @@ Output: -1",
             Difficulty = Difficulty.Easy
         };
 
+        // Add hints after creating tasks and before test cases
+
+        // --- HINTS ---
+        var hint1 = new Hint
+        {
+            TaskItem = task1,
+            Content = "Use the + operator (shift and = ) to add two numbers together and return the result.",
+            Order = 1
+        };
+
+        var hint2 = new Hint
+        {
+            TaskItem = task2,
+            Content = "Use the ternary operator: return (a > b) ? a : b; or a simple if-else statement.",
+            Order = 1
+        };
+
+        var hint3 = new Hint
+        {
+            TaskItem = task3,
+            Content = "Create a character array from the string, reverse it using a loop with two pointers (start and end), then convert back to string.",
+            Order = 1
+        };
+
+        var hint4 = new Hint
+        {
+            TaskItem = task4,
+            Content = "Use a Dictionary<int, int> to store numbers you've seen. For each number, check if (target - number) exists in the dictionary.",
+            Order = 1
+        };
+
+        var hint5 = new Hint
+        {
+            TaskItem = task5,
+            Content = "Use a Stack<char>. Push opening brackets onto the stack. When you see a closing bracket, pop from stack and check if they match.",
+            Order = 1
+        };
+
+        var hint6 = new Hint
+        {
+            TaskItem = task6,
+            Content = "Start from the end of both arrays and work backwards. Compare elements and place the larger one at the end of nums1.",
+            Order = 1
+        };
+
+        var hint7 = new Hint
+        {
+            TaskItem = task7,
+            Content = "Use a Queue<TreeNode> for BFS (Breadth-First Search). Process nodes level by level, keeping track of the current level size.",
+            Order = 1
+        };
+
+        var hint8 = new Hint
+        {
+            TaskItem = task8,
+            Content = "For each character, expand around it treating it as the center of a palindrome. Check both odd-length (single center) and even-length (two centers) palindromes.",
+            Order = 1
+        };
+
+        var hint9 = new Hint
+        {
+            TaskItem = task9,
+            Content = "Use two queues. For Push, add to queue1. For Pop, move all elements except the last from queue1 to queue2, then swap the queues.",
+            Order = 1
+        };
+
+        var hint10 = new Hint
+        {
+            TaskItem = task10,
+            Content = "Place each positive number at its correct index (number n goes to index n-1). Then scan the array to find the first index where the number doesn't match.",
+            Order = 1
+        };
+
+        var hint11 = new Hint
+        {
+            TaskItem = task11,
+            Content = "A valid tree must have exactly n-1 edges and be fully connected. Use DFS or BFS to check connectivity, and verify edge count.",
+            Order = 1
+        };
+
+        var hint12 = new Hint
+        {
+            TaskItem = task12,
+            Content = "Use dynamic programming. Create an array dp where dp[i] represents the minimum coins needed for amount i. For each amount, try all coin denominations.",
+            Order = 1
+        };
+
+        var hint13 = new Hint
+        {
+            TaskItem = task13,
+            Content = "Carefully trace through each loop iteration, keeping track of variable values at each step.",
+            Order = 1
+        };
+
+        var hint14 = new Hint
+        {
+            TaskItem = task14,
+            Content = "Check if the array index is within valid bounds (0 to array.Length - 1) before accessing elements.",
+            Order = 1
+        };
+
+        await context.Hints.AddRangeAsync(
+            hint1, hint2, hint3, hint4, hint5, hint6, hint7,
+            hint8, hint9, hint10, hint11, hint12, hint13, hint14
+        );
+
+
         // --- TEST CASES ---
         var test1 = new TestCase
         {
