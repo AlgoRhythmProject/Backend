@@ -439,13 +439,14 @@ public class AuthService : IAuthService
         
         var issuer = _config["Jwt:Issuer"] ?? "AlgoRhythm.Api";
         var audience = _config["Jwt:Audience"] ?? "AlgoRhythm.Client";
-        var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "15"); // Short-lived access token
+        var minutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "15");
 
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
-            new(ClaimTypes.NameIdentifier, user.Id.ToString())
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new("security_stamp", user.SecurityStamp ?? string.Empty)
         };
 
         foreach (var role in roles)
@@ -570,7 +571,8 @@ public class AuthService : IAuthService
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
-            new(ClaimTypes.NameIdentifier, user.Id.ToString())
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new("security_stamp", user.SecurityStamp ?? string.Empty)
         };
 
         foreach (var role in roles)

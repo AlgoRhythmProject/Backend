@@ -34,6 +34,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -158,6 +159,32 @@ builder.Services.AddAuthentication(options =>
                 context.Token = context.Request.Cookies["JWT"];
             }
             return Task.CompletedTask;
+        },
+
+        // Validate security stamp on token validation
+        OnTokenValidated = async context =>
+        {
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+            var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            {
+                var user = await userManager.FindByIdAsync(userId.ToString());
+                
+                if (user == null)
+                {
+                    // User deleted
+                    context.Fail("User not found");
+                    return;
+                }
+
+                var securityStampClaim = context.Principal?.FindFirst("security_stamp")?.Value;
+                if (!string.IsNullOrEmpty(securityStampClaim) && securityStampClaim != user.SecurityStamp)
+                {
+                    context.Fail("Security stamp has changed. Please login again.");
+                    return;
+                }
+            }
         }
     };
 
@@ -168,7 +195,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 });
 
