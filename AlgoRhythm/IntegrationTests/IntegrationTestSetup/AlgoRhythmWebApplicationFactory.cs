@@ -20,6 +20,7 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Environment.SetEnvironmentVariable("JWT_KEY", TestConstants.TestJwtKey);
+        Environment.SetEnvironmentVariable("FRONTEND_URL", "http://localhost:5173");
 
         builder.UseEnvironment("Testing");
 
