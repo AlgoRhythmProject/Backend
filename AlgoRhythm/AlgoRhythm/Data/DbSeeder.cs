@@ -163,25 +163,25 @@ public static class DbSeeder
         await context.Courses.AddRangeAsync(course1, course2, course3);
 
         // --- LECTURES FOR COURSE 1 (C# Programming Fundamentals) ---
-        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1 };
-        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1 };
-        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1 };
-        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1 };
-        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1 };
+        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1, IsPublished = true };
+        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1, IsPublished = true };
+        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1, IsPublished = true };
+        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1, IsPublished = true };
+        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1, IsPublished = true };
 
         // --- LECTURES FOR COURSE 2 (Data Structures Essentials) ---
-        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2 };
-        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2 };
-        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2 };
-        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2 };
-        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2 };
-        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2 };
+        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2, IsPublished = true };
+        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2, IsPublished = true };
+        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2, IsPublished = true };
+        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2, IsPublished = true };
+        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2, IsPublished = true };
+        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2, IsPublished = true };
 
         // --- LECTURES FOR COURSE 3 (Advanced Algorithms) ---
-        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3 };
-        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3 };
-        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3 };
-        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3 };
+        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3, IsPublished = true };
+        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3, IsPublished = true };
+        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3, IsPublished = true };
+        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3, IsPublished = true };
 
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
@@ -694,6 +694,7 @@ int Fibonacci(int n)
             Title = "Sum of Two Numbers",
             Description = "Write a function that returns the sum of two integers. This is a simple warm-up exercise to get familiar with basic C# syntax and the testing environment.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Sum(int a, int b) 
@@ -709,6 +710,7 @@ int Fibonacci(int n)
             Title = "Find Maximum",
             Description = "Given two integers, return the larger one. If they are equal, return either value.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Max(int a, int b) 
@@ -729,6 +731,7 @@ Example:
 Input: ""hello""
 Output: ""olleh""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string Reverse(string s) 
@@ -750,6 +753,7 @@ Input: nums = [2,7,11,15], target = 9
 Output: [0,1]
 Explanation: nums[0] + nums[1] = 2 + 7 = 9",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int[] TwoSum(int[] nums, int target) 
@@ -775,6 +779,7 @@ Output: true
 Input: ""([)]""
 Output: false",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool IsValid(string s) 
@@ -795,6 +800,7 @@ Example:
 Input: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
 Output: [1,2,2,3,5,6]",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public void Merge(int[] nums1, int m, int[] nums2, int n) 
@@ -814,6 +820,7 @@ Example:
 Input: root = [3,9,20,null,null,15,7]
 Output: [[3],[9,20],[15,7]]",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public IList<IList<int>> LevelOrder(TreeNode root) 
@@ -838,6 +845,7 @@ Output: ""bab"" (Note: ""aba"" is also a valid answer)
 Input: s = ""cbbd""
 Output: ""bb""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string LongestPalindrome(string s) 
@@ -859,6 +867,7 @@ Implement the MyStack class:
 - int Top() Returns the element on the top of the stack
 - bool Empty() Returns true if the stack is empty, false otherwise",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class MyStack 
 {
     public MyStack() 
@@ -905,6 +914,7 @@ Output: 2
 Input: nums = [7,8,9,11,12]
 Output: 1",
             Difficulty = Difficulty.Hard,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int FirstMissingPositive(int[] nums) 
@@ -932,6 +942,7 @@ Output: true
 Input: n = 5, edges = [[0,1], [1,2], [2,3], [1,3], [1,4]]
 Output: false",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool ValidTree(int n, int[][] edges) 
@@ -957,6 +968,7 @@ Output: 3 (11 = 5 + 5 + 1)
 Input: coins = [2], amount = 3
 Output: -1",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int CoinChange(int[] coins, int amount) 
@@ -972,14 +984,16 @@ Output: -1",
         {
             Title = "Guess the Output: Loops",
             Description = "Look at the following C# code and choose the correct output.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
 
         var task14 = new InteractiveTaskItem
         {
             Title = "Spot the Bug: Array Access",
             Description = "Identify the bug in the given code snippet.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
 
         // Add hints after creating tasks and before test cases
