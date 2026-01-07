@@ -15,7 +15,7 @@ jobs:
     permissions: 
       id-token: write
       contents: read
-      packages: write # DODANE: Wymagane, aby móc wysyłać obrazy do GHCR
+      packages: write 
 
     steps:
       - name: Checkout to the branch
@@ -43,5 +43,6 @@ jobs:
                   
           imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}     
           dockerfilePath: AlgoRhythm/Dockerfile 
+
 
 
