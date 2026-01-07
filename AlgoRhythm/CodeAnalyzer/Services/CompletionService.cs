@@ -1,10 +1,8 @@
 ﻿using AlgoRhythm.Shared.Dtos.CodeAnalysis;
-using AlgoRhythm.Shared.Models.Common;
 using CodeAnalyzer.Interfaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
@@ -32,12 +30,12 @@ namespace CodeAnalyzer.Services
             [CompletionItemKind.Constructor] = 90,
             [CompletionItemKind.Property] = 90,
             [CompletionItemKind.Field] = 60,
-            [CompletionItemKind.Variable] = 85,     
+            [CompletionItemKind.Variable] = 85,
             [CompletionItemKind.Class] = 75,
             [CompletionItemKind.Struct] = 70,
             [CompletionItemKind.Interface] = 70,
             [CompletionItemKind.Enum] = 65,
-            [CompletionItemKind.Module] = 40,       
+            [CompletionItemKind.Module] = 40,
             [CompletionItemKind.Keyword] = 95
         };
 
@@ -52,12 +50,12 @@ namespace CodeAnalyzer.Services
             [CompletionItemKind.Constructor] = "(constructor)",
             [CompletionItemKind.Property] = "(property)",
             [CompletionItemKind.Field] = "(field)",
-            [CompletionItemKind.Variable] = "(variable)",  
+            [CompletionItemKind.Variable] = "(variable)",
             [CompletionItemKind.Class] = "(class)",
             [CompletionItemKind.Struct] = "(struct)",
             [CompletionItemKind.Interface] = "(interface)",
             [CompletionItemKind.Enum] = "(enum)",
-            [CompletionItemKind.Module] = "(namespace)",  
+            [CompletionItemKind.Module] = "(namespace)",
             [CompletionItemKind.Keyword] = "(keyword)",
             [CompletionItemKind.Event] = "(event)",
             [CompletionItemKind.TypeParameter] = "(type parameter)"
@@ -65,8 +63,8 @@ namespace CodeAnalyzer.Services
 
 
         public CompletionService(
-            ISessionManager sessionManager, 
-            IDocumentService documentService, 
+            ISessionManager sessionManager,
+            IDocumentService documentService,
             ILogger<CompletionService> logger)
         {
             _sessionManager = sessionManager;
@@ -108,10 +106,10 @@ namespace CodeAnalyzer.Services
         private static int CalculatePosition(Document document, int line, int column)
         {
             var roslynLine = line + DocumentService.TemplateLineCount;
-            var text = document.GetTextAsync().Result; 
-            
-            if (roslynLine >= text.Lines.Count) return text.Length; 
-            
+            var text = document.GetTextAsync().Result;
+
+            if (roslynLine >= text.Lines.Count) return text.Length;
+
             return text.Lines[roslynLine].Start + column;
         }
 
@@ -148,8 +146,6 @@ namespace CodeAnalyzer.Services
             }
 
             return [];
-            // fallback - manual completions
-            //return await GetManualCompletions(document, position);
         }
 
         /// <summary>
@@ -201,7 +197,6 @@ namespace CodeAnalyzer.Services
             return 50;
         }
 
-       
         private static string GetKindDescription(ImmutableArray<string> tags)
         {
             foreach (var tag in tags)
@@ -253,15 +248,15 @@ namespace CodeAnalyzer.Services
         {
             // Types
             { "Class", CompletionItemKind.Class },
-            { "Structure", CompletionItemKind.Struct }, 
+            { "Structure", CompletionItemKind.Struct },
             { "Interface", CompletionItemKind.Interface },
             { "Enum", CompletionItemKind.Enum },
-            { "Delegate", CompletionItemKind.Interface }, 
+            { "Delegate", CompletionItemKind.Interface },
             { "Module", CompletionItemKind.Module },
     
             // Members
             { "Method", CompletionItemKind.Method },
-            { "ExtensionMethod", CompletionItemKind.Method }, 
+            { "ExtensionMethod", CompletionItemKind.Method },
             { "Field", CompletionItemKind.Field },
             { "Property", CompletionItemKind.Property },
             { "Event", CompletionItemKind.Event },
@@ -274,7 +269,7 @@ namespace CodeAnalyzer.Services
     
             // Others
             { "Keyword", CompletionItemKind.Keyword },
-            { "Namespace", CompletionItemKind.Module }, 
+            { "Namespace", CompletionItemKind.Module },
             { "Label", CompletionItemKind.Text },
             { "Operator", CompletionItemKind.Operator }
         };
