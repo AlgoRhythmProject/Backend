@@ -41,8 +41,7 @@ jobs:
           containerAppName: backend
           resourceGroup: myapp-rg
                   
-          imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}
-                
-          buildArguments: |
-            BP_SET_PROJECT_PATH=AlgoRhythm.csproj
+          imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}     
+          dockerfilePath: AlgoRhythm/Dockerfile 
+
 
