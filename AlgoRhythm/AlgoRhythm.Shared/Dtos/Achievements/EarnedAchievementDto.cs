@@ -1,8 +1,9 @@
 namespace AlgoRhythm.Shared.Dtos.Achievements;
 
-public class AchievementInputDto
+public class EarnedAchievementDto
 {
-    public required string Name { get; set; }
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
     public string? Description { get; set; }
     public string? IconPath { get; set; }
 }

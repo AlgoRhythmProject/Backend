@@ -4,6 +4,7 @@ using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using AlgoRhythm.Shared.Models.Achievements;
 
 namespace AlgoRhythm.Data;
 
@@ -21,6 +22,7 @@ public static class DbSeeder
 
         var users = await SeedUsersAsync(userManager);
         await SeedContentAsync(context, users);
+        await SeedAchievements(context); // Add this line
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
@@ -161,25 +163,25 @@ public static class DbSeeder
         await context.Courses.AddRangeAsync(course1, course2, course3);
 
         // --- LECTURES FOR COURSE 1 (C# Programming Fundamentals) ---
-        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1 };
-        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1 };
-        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1 };
-        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1 };
-        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1 };
+        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1, IsPublished = true };
+        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1, IsPublished = true };
+        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1, IsPublished = true };
+        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1, IsPublished = true };
+        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1, IsPublished = true };
 
         // --- LECTURES FOR COURSE 2 (Data Structures Essentials) ---
-        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2 };
-        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2 };
-        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2 };
-        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2 };
-        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2 };
-        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2 };
+        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2, IsPublished = true };
+        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2, IsPublished = true };
+        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2, IsPublished = true };
+        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2, IsPublished = true };
+        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2, IsPublished = true };
+        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2, IsPublished = true };
 
         // --- LECTURES FOR COURSE 3 (Advanced Algorithms) ---
-        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3 };
-        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3 };
-        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3 };
-        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3 };
+        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3, IsPublished = true };
+        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3, IsPublished = true };
+        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3, IsPublished = true };
+        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3, IsPublished = true };
 
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
@@ -692,6 +694,7 @@ int Fibonacci(int n)
             Title = "Sum of Two Numbers",
             Description = "Write a function that returns the sum of two integers. This is a simple warm-up exercise to get familiar with basic C# syntax and the testing environment.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Sum(int a, int b) 
@@ -707,6 +710,7 @@ int Fibonacci(int n)
             Title = "Find Maximum",
             Description = "Given two integers, return the larger one. If they are equal, return either value.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Max(int a, int b) 
@@ -727,6 +731,7 @@ Example:
 Input: ""hello""
 Output: ""olleh""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string Reverse(string s) 
@@ -748,6 +753,7 @@ Input: nums = [2,7,11,15], target = 9
 Output: [0,1]
 Explanation: nums[0] + nums[1] = 2 + 7 = 9",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int[] TwoSum(int[] nums, int target) 
@@ -773,6 +779,7 @@ Output: true
 Input: ""([)]""
 Output: false",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool IsValid(string s) 
@@ -793,6 +800,7 @@ Example:
 Input: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
 Output: [1,2,2,3,5,6]",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public void Merge(int[] nums1, int m, int[] nums2, int n) 
@@ -812,6 +820,7 @@ Example:
 Input: root = [3,9,20,null,null,15,7]
 Output: [[3],[9,20],[15,7]]",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public IList<IList<int>> LevelOrder(TreeNode root) 
@@ -836,6 +845,7 @@ Output: ""bab"" (Note: ""aba"" is also a valid answer)
 Input: s = ""cbbd""
 Output: ""bb""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string LongestPalindrome(string s) 
@@ -857,6 +867,7 @@ Implement the MyStack class:
 - int Top() Returns the element on the top of the stack
 - bool Empty() Returns true if the stack is empty, false otherwise",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class MyStack 
 {
     public MyStack() 
@@ -903,6 +914,7 @@ Output: 2
 Input: nums = [7,8,9,11,12]
 Output: 1",
             Difficulty = Difficulty.Hard,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int FirstMissingPositive(int[] nums) 
@@ -930,6 +942,7 @@ Output: true
 Input: n = 5, edges = [[0,1], [1,2], [2,3], [1,3], [1,4]]
 Output: false",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool ValidTree(int n, int[][] edges) 
@@ -955,6 +968,7 @@ Output: 3 (11 = 5 + 5 + 1)
 Input: coins = [2], amount = 3
 Output: -1",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int CoinChange(int[] coins, int amount) 
@@ -970,15 +984,124 @@ Output: -1",
         {
             Title = "Guess the Output: Loops",
             Description = "Look at the following C# code and choose the correct output.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
 
         var task14 = new InteractiveTaskItem
         {
             Title = "Spot the Bug: Array Access",
             Description = "Identify the bug in the given code snippet.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
+
+        // Add hints after creating tasks and before test cases
+
+        // --- HINTS ---
+        var hint1 = new Hint
+        {
+            TaskItem = task1,
+            Content = "Use the + operator (shift and = ) to add two numbers together and return the result.",
+            Order = 1
+        };
+
+        var hint2 = new Hint
+        {
+            TaskItem = task2,
+            Content = "Use the ternary operator: return (a > b) ? a : b; or a simple if-else statement.",
+            Order = 1
+        };
+
+        var hint3 = new Hint
+        {
+            TaskItem = task3,
+            Content = "Create a character array from the string, reverse it using a loop with two pointers (start and end), then convert back to string.",
+            Order = 1
+        };
+
+        var hint4 = new Hint
+        {
+            TaskItem = task4,
+            Content = "Use a Dictionary<int, int> to store numbers you've seen. For each number, check if (target - number) exists in the dictionary.",
+            Order = 1
+        };
+
+        var hint5 = new Hint
+        {
+            TaskItem = task5,
+            Content = "Use a Stack<char>. Push opening brackets onto the stack. When you see a closing bracket, pop from stack and check if they match.",
+            Order = 1
+        };
+
+        var hint6 = new Hint
+        {
+            TaskItem = task6,
+            Content = "Start from the end of both arrays and work backwards. Compare elements and place the larger one at the end of nums1.",
+            Order = 1
+        };
+
+        var hint7 = new Hint
+        {
+            TaskItem = task7,
+            Content = "Use a Queue<TreeNode> for BFS (Breadth-First Search). Process nodes level by level, keeping track of the current level size.",
+            Order = 1
+        };
+
+        var hint8 = new Hint
+        {
+            TaskItem = task8,
+            Content = "For each character, expand around it treating it as the center of a palindrome. Check both odd-length (single center) and even-length (two centers) palindromes.",
+            Order = 1
+        };
+
+        var hint9 = new Hint
+        {
+            TaskItem = task9,
+            Content = "Use two queues. For Push, add to queue1. For Pop, move all elements except the last from queue1 to queue2, then swap the queues.",
+            Order = 1
+        };
+
+        var hint10 = new Hint
+        {
+            TaskItem = task10,
+            Content = "Place each positive number at its correct index (number n goes to index n-1). Then scan the array to find the first index where the number doesn't match.",
+            Order = 1
+        };
+
+        var hint11 = new Hint
+        {
+            TaskItem = task11,
+            Content = "A valid tree must have exactly n-1 edges and be fully connected. Use DFS or BFS to check connectivity, and verify edge count.",
+            Order = 1
+        };
+
+        var hint12 = new Hint
+        {
+            TaskItem = task12,
+            Content = "Use dynamic programming. Create an array dp where dp[i] represents the minimum coins needed for amount i. For each amount, try all coin denominations.",
+            Order = 1
+        };
+
+        var hint13 = new Hint
+        {
+            TaskItem = task13,
+            Content = "Carefully trace through each loop iteration, keeping track of variable values at each step.",
+            Order = 1
+        };
+
+        var hint14 = new Hint
+        {
+            TaskItem = task14,
+            Content = "Check if the array index is within valid bounds (0 to array.Length - 1) before accessing elements.",
+            Order = 1
+        };
+
+        await context.Hints.AddRangeAsync(
+            hint1, hint2, hint3, hint4, hint5, hint6, hint7,
+            hint8, hint9, hint10, hint11, hint12, hint13, hint14
+        );
+
 
         // --- TEST CASES ---
         var test1 = new TestCase
@@ -1386,6 +1509,234 @@ Output: -1",
 
         await context.SaveChangesAsync();
         Console.WriteLine("SeedContentAsync completed successfully!");
+    }
+
+    private static async Task SeedAchievements(ApplicationDbContext context)
+    {
+        if (await context.Achievements.AnyAsync())
+            return;
+
+        var achievements = new List<Achievement>
+        {
+            // Task completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "First Steps",
+                Description = "Complete your first 5 programming tasks",
+                IconPath = "/icons/achievements/first-steps.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Problem Solver",
+                Description = "Complete 10 programming tasks",
+                IconPath = "/icons/achievements/problem-solver.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Code Master",
+                Description = "Complete 15 programming tasks",
+                IconPath = "/icons/achievements/code-master.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Lecture completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Eager Learner",
+                Description = "Complete your first 5 lectures",
+                IconPath = "/icons/achievements/eager-learner.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Knowledge Seeker",
+                Description = "Complete 10 lectures",
+                IconPath = "/icons/achievements/knowledge-seeker.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Scholar",
+                Description = "Complete 15 lectures",
+                IconPath = "/icons/achievements/scholar.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Course completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Course Completer",
+                Description = "Complete your first course",
+                IconPath = "/icons/achievements/course-completer.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 1 course",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 1
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
+                Description = "Complete 3 courses",
+                IconPath = "/icons/achievements/dedicated-student.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 3 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 3
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Graduate",
+                Description = "Complete 5 courses",
+                IconPath = "/icons/achievements/graduate.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+
+            // Combined achievement
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Well Rounded",
+                Description = "Complete 10 tasks, 10 lectures, and 2 courses",
+                IconPath = "/icons/achievements/well-rounded.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 2 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 2
+                        }
+                    }
+                }
+            }
+        };
+
+        await context.Achievements.AddRangeAsync(achievements);
+        await context.SaveChangesAsync();
     }
 }
 

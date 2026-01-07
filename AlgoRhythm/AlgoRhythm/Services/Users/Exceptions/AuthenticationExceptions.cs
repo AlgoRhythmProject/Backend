@@ -85,3 +85,14 @@ public class TooManyRequestsException : Exception
     public TooManyRequestsException(string message, Exception innerException)
         : base(message, innerException) { }
 }
+
+public class InvalidRefreshTokenException : Exception
+{
+    public InvalidRefreshTokenException() : base("Invalid or expired refresh token.")
+    {
+    }
+
+    public InvalidRefreshTokenException(string message) : base(message)
+    {
+    }
+}

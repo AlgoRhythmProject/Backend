@@ -1,6 +1,8 @@
 ﻿using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.CodeExecutor.Interfaces;
+using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Services.Submissions.Interfaces;
 using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
@@ -8,6 +10,7 @@ using AlgoRhythm.Shared.Models.Submissions;
 using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlgoRhythm.Services.Submissions;
 
@@ -19,6 +22,7 @@ public class SubmissionService : ISubmissionService
     private readonly UserManager<User> _userManager;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ICodeParser _codeParser;
+    private readonly IAchievementService _achievementService;
 
     public SubmissionService(
         ISubmissionRepository submissions,
@@ -27,7 +31,8 @@ public class SubmissionService : ISubmissionService
         IConfiguration config,
         UserManager<User> userManager,
         IServiceScopeFactory scopeFactory,
-        ICodeParser codeParser
+        ICodeParser codeParser,
+        IAchievementService achievementService
     )
     {
         _submissionRepository = submissions;
@@ -36,6 +41,7 @@ public class SubmissionService : ISubmissionService
         _userManager = userManager;
         _scopeFactory = scopeFactory;
         _codeParser = codeParser;
+        _achievementService = achievementService;
     }
 
     public async Task<SubmissionResponseDto> CreateProgrammingSubmissionAsync(Guid userId, SubmitProgrammingRequestDto request, CancellationToken ct = default)
@@ -224,6 +230,71 @@ public class SubmissionService : ISubmissionService
         submission.Status = finalResults.ToSubmissionStatus();
 
         await submissionRepo.SaveChangesAsync(CancellationToken.None);
+
+        if (submission.IsSolved)
+        {
+            try
+            {
+                using var progressScope = _scopeFactory.CreateScope();
+                var dbContext = progressScope.ServiceProvider.GetRequiredService<AlgoRhythm.Data.ApplicationDbContext>();
+                var courseProgressService = progressScope.ServiceProvider.GetRequiredService<ICourseProgressService>();
+                var achievementService = progressScope.ServiceProvider.GetRequiredService<IAchievementService>();
+
+                var user = await dbContext.Users
+                    .Include(u => u.CompletedTasks)
+                    .FirstOrDefaultAsync(u => u.Id == submission.UserId, CancellationToken.None);
+
+                if (user != null)
+                {
+                    if (!user.CompletedTasks.Any(t => t.Id == task.Id))
+                    {
+                        var taskWithCourses = await dbContext.TaskItems
+                            .Include(t => t.Courses)
+                            .FirstOrDefaultAsync(t => t.Id == task.Id, CancellationToken.None);
+
+                        if (taskWithCourses != null)
+                        {
+                            user.CompletedTasks.Add(taskWithCourses);
+                            await dbContext.SaveChangesAsync(CancellationToken.None);
+                            
+                            logger.LogInformation(
+                                "Marked task {TaskId} as completed for user {UserId}",
+                                task.Id, submission.UserId);
+
+                            foreach (var course in taskWithCourses.Courses)
+                            {
+                                await courseProgressService.RecalculateProgressAsync(
+                                    submission.UserId, 
+                                    course.Id, 
+                                    CancellationToken.None);
+                                
+                                logger.LogInformation(
+                                    "Recalculated progress for user {UserId} in course {CourseId} after completing task {TaskId}",
+                                    submission.UserId, course.Id, task.Id);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        logger.LogInformation(
+                            "Task {TaskId} already completed by user {UserId}",
+                            task.Id, submission.UserId);
+                    }
+
+                    await achievementService.CheckAndUpdateAchievementsAsync(
+                        submission.UserId, 
+                        CancellationToken.None);
+                    
+                    logger.LogInformation(
+                        "Updated achievements for user {UserId} after completing task {TaskId}",
+                        submission.UserId, task.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to update progress/achievements after submission");
+            }
+        }
     }
 
     public async Task<SubmissionResponseDto?> GetSubmissionAsync(Guid submissionId, CancellationToken ct = default)

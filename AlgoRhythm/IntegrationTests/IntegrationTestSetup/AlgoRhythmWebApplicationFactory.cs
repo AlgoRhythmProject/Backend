@@ -58,7 +58,6 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 options.EnableSensitiveDataLogging(); 
             });
 
-            // Add mock CodeExecutor client
             services.AddSingleton(sp =>
             {
                 var http = _serviceFactory.CreateClient();

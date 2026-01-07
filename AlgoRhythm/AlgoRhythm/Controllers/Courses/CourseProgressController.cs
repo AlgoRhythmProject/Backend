@@ -1,4 +1,5 @@
 using AlgoRhythm.Services.Courses.Interfaces;
+using AlgoRhythm.Shared.Dtos.Courses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -19,7 +20,12 @@ public class CourseProgressController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Get all course progress for current user
+    /// </summary>
     [HttpGet("my-progress")]
+    [ProducesResponseType(typeof(IEnumerable<CourseProgressDto>), 200)]
+    [ProducesResponseType(401)]
     public async Task<IActionResult> GetMyProgress(CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -30,7 +36,13 @@ public class CourseProgressController : ControllerBase
         return Ok(progresses);
     }
 
+    /// <summary>
+    /// Get progress for specific course
+    /// </summary>
     [HttpGet("my-progress/{courseId:guid}")]
+    [ProducesResponseType(typeof(CourseProgressDto), 200)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(401)]
     public async Task<IActionResult> GetMyCourseProgress(Guid courseId, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -44,8 +56,15 @@ public class CourseProgressController : ControllerBase
         return Ok(progress);
     }
 
-    [HttpPost("start/{courseId:guid}")]
-    public async Task<IActionResult> StartCourse(Guid courseId, CancellationToken ct)
+    /// <summary>
+    /// Toggle lecture completion status (complete/uncomplete)
+    /// </summary>
+    [HttpPost("lecture/{lectureId:guid}/toggle")]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> ToggleLectureCompletion(Guid lectureId, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdClaim, out var userId))
@@ -53,18 +72,34 @@ public class CourseProgressController : ControllerBase
 
         try
         {
-            var progress = await _service.StartCourseAsync(userId, courseId, ct);
-            return Ok(progress);
+            var isCompleted = await _service.ToggleLectureCompletionAsync(userId, lectureId, ct);
+            return Ok(new 
+            { 
+                message = isCompleted ? "Lecture marked as completed" : "Lecture marked as incomplete",
+                isCompleted,
+                lectureId
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error starting course");
+            _logger.LogError(ex, "Error toggling lecture completion");
             return BadRequest(new { error = ex.Message });
         }
     }
 
-    [HttpPut("update/{courseId:guid}")]
-    public async Task<IActionResult> UpdateProgress(Guid courseId, [FromBody] int percentage, CancellationToken ct)
+    /// <summary>
+    /// Mark lecture as completed
+    /// </summary>
+    [HttpPost("lecture/{lectureId:guid}/complete")]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> MarkLectureAsCompleted(Guid lectureId, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdClaim, out var userId))
@@ -72,22 +107,33 @@ public class CourseProgressController : ControllerBase
 
         try
         {
-            await _service.UpdateProgressAsync(userId, courseId, percentage, ct);
-            return NoContent();
+            var result = await _service.MarkLectureAsCompletedAsync(userId, lectureId, ct);
+            
+            if (!result)
+                return Ok(new { message = "Lecture already completed", lectureId });
+
+            return Ok(new { message = "Lecture marked as completed", lectureId });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound(new { error = "Progress not found" });
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating progress");
+            _logger.LogError(ex, "Error marking lecture as completed");
             return BadRequest(new { error = ex.Message });
         }
     }
 
-    [HttpPost("complete/{courseId:guid}")]
-    public async Task<IActionResult> CompleteCourse(Guid courseId, CancellationToken ct)
+    /// <summary>
+    /// Mark lecture as incomplete
+    /// </summary>
+    [HttpPost("lecture/{lectureId:guid}/uncomplete")]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> MarkLectureAsIncomplete(Guid lectureId, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdClaim, out var userId))
@@ -95,17 +141,99 @@ public class CourseProgressController : ControllerBase
 
         try
         {
-            await _service.CompleteCourseAsync(userId, courseId, ct);
-            return NoContent();
+            var result = await _service.MarkLectureAsIncompletedAsync(userId, lectureId, ct);
+            
+            if (!result)
+                return Ok(new { message = "Lecture already incomplete", lectureId });
+
+            return Ok(new { message = "Lecture marked as incomplete", lectureId });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound(new { error = "Progress not found" });
+            return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error completing course");
+            _logger.LogError(ex, "Error marking lecture as incomplete");
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Manually recalculate course progress (useful after submission)
+    /// </summary>
+    [HttpPost("recalculate/{courseId:guid}")]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> RecalculateProgress(Guid courseId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        try
+        {
+            await _service.RecalculateProgressAsync(userId, courseId, ct);
+            return Ok(new { message = "Progress recalculated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recalculating progress");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Check if a specific lecture is completed
+    /// </summary>
+    [HttpGet("lecture/{lectureId:guid}/is-completed")]
+    [ProducesResponseType(typeof(LectureCompletionDto), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> IsLectureCompleted(Guid lectureId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var isCompleted = await _service.IsLectureCompletedAsync(userId, lectureId, ct);
+        
+        return Ok(new LectureCompletionDto
+        {
+            LectureId = lectureId,
+            IsCompleted = isCompleted
+        });
+    }
+
+    /// <summary>
+    /// Get all completed lecture IDs for a specific course
+    /// </summary>
+    [HttpGet("course/{courseId:guid}/completed-lectures")]
+    [ProducesResponseType(typeof(HashSet<Guid>), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetCompletedLectureIds(Guid courseId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedLectureIds = await _service.GetCompletedLectureIdsAsync(userId, courseId, ct);
+        return Ok(completedLectureIds);
+    }
+
+    /// <summary>
+    /// Get all completed task IDs for a specific course
+    /// </summary>
+    [HttpGet("course/{courseId:guid}/completed-tasks")]
+    [ProducesResponseType(typeof(HashSet<Guid>), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetCompletedTaskIds(Guid courseId, CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedTaskIds = await _service.GetCompletedTaskIdsAsync(userId, courseId, ct);
+        return Ok(completedTaskIds);
     }
 }

@@ -7,7 +7,6 @@ using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 namespace AlgoRhythm.Data;
 
@@ -17,6 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
     // Custom tables
     public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     
     // Achievements
     public DbSet<Achievement> Achievements { get; set; } = null!;
@@ -62,6 +62,17 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
         builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
 
+        // Configure RefreshToken
+        builder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<RefreshToken>()
+            .HasIndex(rt => rt.Token)
+            .IsUnique();
+
         // TPH (Table-Per-Hierarchy) dla LectureContent
         builder.Entity<LectureContent>()
             .HasDiscriminator<ContentType>(nameof(LectureContent.Type))
@@ -101,7 +112,39 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
         builder.Entity<Course>()
             .HasMany(c => c.TaskItems)
-            .WithMany(t => t.Courses); 
+            .WithMany(t => t.Courses);
+
+        // User <-> CompletedLectures
+        builder.Entity<User>()
+            .HasMany(u => u.CompletedLectures)
+            .WithMany()
+            .UsingEntity<Dictionary<string, object>>(
+                "UserCompletedLectures",
+                j => j.HasOne<Lecture>().WithMany().HasForeignKey("LectureId").OnDelete(DeleteBehavior.Cascade),
+                j => j.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade),
+                j =>
+                {
+                    j.HasKey("UserId", "LectureId");
+                    j.ToTable("UserCompletedLectures");
+                    j.HasIndex("UserId");
+                    j.HasIndex("LectureId");
+                });
+
+        //User <-> CompletedTasks
+        builder.Entity<User>()
+            .HasMany(u => u.CompletedTasks)
+            .WithMany()
+            .UsingEntity<Dictionary<string, object>>(
+                "UserCompletedTasks",
+                j => j.HasOne<TaskItem>().WithMany().HasForeignKey("TaskItemId").OnDelete(DeleteBehavior.Cascade),
+                j => j.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade),
+                j =>
+                {
+                    j.HasKey("UserId", "TaskItemId");
+                    j.ToTable("UserCompletedTasks");
+                    j.HasIndex("UserId");
+                    j.HasIndex("TaskItemId");
+                });
 
         // Disable cascade delete for conflicting relationships
         builder.Entity<TestResult>()

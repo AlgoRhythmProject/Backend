@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlgoRhythm.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251115231133_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251220165940_AddUserCompletedLecturesAndTasks")]
+    partial class AddUserCompletedLecturesAndTasks
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -266,8 +266,14 @@ namespace AlgoRhythm.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("LectureId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -281,6 +287,42 @@ namespace AlgoRhythm.Migrations
                     b.HasDiscriminator<int>("Type");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.ExecutionError", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("EndColumn")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EndLine")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorMessage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StartColumn")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StartLine")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TestResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TestResultId");
+
+                    b.ToTable("Errors");
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.Submission", b =>
@@ -767,6 +809,40 @@ namespace AlgoRhythm.Migrations
                     b.ToTable("TagTaskItem");
                 });
 
+            modelBuilder.Entity("UserCompletedLectures", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LectureId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserId", "LectureId");
+
+                    b.HasIndex("LectureId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCompletedLectures", (string)null);
+                });
+
+            modelBuilder.Entity("UserCompletedTasks", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TaskItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserId", "TaskItemId");
+
+                    b.HasIndex("TaskItemId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCompletedTasks", (string)null);
+                });
+
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.LecturePhoto", b =>
                 {
                     b.HasBaseType("AlgoRhythm.Shared.Models.Courses.LectureContent");
@@ -788,7 +864,7 @@ namespace AlgoRhythm.Migrations
                 {
                     b.HasBaseType("AlgoRhythm.Shared.Models.Courses.LectureContent");
 
-                    b.Property<string>("Text")
+                    b.Property<string>("HtmlContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -945,6 +1021,17 @@ namespace AlgoRhythm.Migrations
                         .IsRequired();
 
                     b.Navigation("Lecture");
+                });
+
+            modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.ExecutionError", b =>
+                {
+                    b.HasOne("AlgoRhythm.Shared.Models.Submissions.TestResult", "TestResult")
+                        .WithMany("Errors")
+                        .HasForeignKey("TestResultId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("TestResult");
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.Submission", b =>
@@ -1129,6 +1216,36 @@ namespace AlgoRhythm.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("UserCompletedLectures", b =>
+                {
+                    b.HasOne("AlgoRhythm.Shared.Models.Courses.Lecture", null)
+                        .WithMany()
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlgoRhythm.Shared.Models.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UserCompletedTasks", b =>
+                {
+                    b.HasOne("AlgoRhythm.Shared.Models.Tasks.TaskItem", null)
+                        .WithMany()
+                        .HasForeignKey("TaskItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlgoRhythm.Shared.Models.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Achievements.Achievement", b =>
                 {
                     b.Navigation("Requirements");
@@ -1156,6 +1273,11 @@ namespace AlgoRhythm.Migrations
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.Lecture", b =>
                 {
                     b.Navigation("Contents");
+                });
+
+            modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.TestResult", b =>
+                {
+                    b.Navigation("Errors");
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Tasks.TaskItem", b =>
