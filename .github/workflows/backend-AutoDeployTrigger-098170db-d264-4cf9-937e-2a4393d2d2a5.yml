@@ -1,24 +1,21 @@
 name: Trigger auto deployment for backend
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
     branches: 
       [ main ]
     paths:
     - '**'
     - '.github/workflows/backend-AutoDeployTrigger-098170db-d264-4cf9-937e-2a4393d2d2a5.yml'
-
-  # Allow manual trigger 
   workflow_dispatch:      
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
+      id-token: write
+      contents: read
+      packages: write # DODANE: Wymagane, aby móc wysyłać obrazy do GHCR
 
     steps:
       - name: Checkout to the branch
@@ -34,16 +31,17 @@ jobs:
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
         with:
+          # Ścieżka do katalogu z kodem aplikacji backendowej
           appSourcePath: ${{ github.workspace }}/AlgoRhythm
-          _dockerfilePathKey_: _dockerfilePath_
-          _targetLabelKey_: _targetLabel_
+          
           registryUrl: ghcr.io
           registryUsername: ${{ secrets.BACKEND_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.BACKEND_REGISTRY_PASSWORD }}
+          
           containerAppName: backend
           resourceGroup: myapp-rg
-          imageToBuild: ghcr.io/backend:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
-
-
+                  
+          imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}
+                
+          buildArguments: |
+            PROJECT=./Algorhythm/AlgoRhythm.csproj
