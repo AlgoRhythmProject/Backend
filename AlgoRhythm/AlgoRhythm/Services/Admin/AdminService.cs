@@ -123,4 +123,15 @@ public class AdminService : IAdminService
 
         _logger.LogInformation("Admin role revoked from user {UserId}. User role assigned.", userId);
     }
+
+    public async Task<bool> IsUserAdminAsync(Guid userId, CancellationToken ct)
+    {
+        var user = await _repo.GetUserByIdAsync(userId, ct);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"User with ID {userId} not found");
+        }
+
+        return await _repo.IsInRoleAsync(user, "Admin");
+    }
 }

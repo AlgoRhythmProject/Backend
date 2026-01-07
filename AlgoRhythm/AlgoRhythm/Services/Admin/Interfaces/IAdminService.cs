@@ -8,4 +8,5 @@ public interface IAdminService
     Task<UserWithRolesDto> GetUserWithRolesAsync(Guid userId, CancellationToken ct);
     Task AssignAdminRoleAsync(Guid userId, CancellationToken ct);
     Task RevokeAdminRoleAsync(Guid userId, CancellationToken ct);
+    Task<bool> IsUserAdminAsync(Guid userId, CancellationToken ct);
 }

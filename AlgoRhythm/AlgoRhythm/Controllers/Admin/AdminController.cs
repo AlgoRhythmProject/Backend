@@ -2,12 +2,12 @@ using AlgoRhythm.Services.Admin.Interfaces;
 using AlgoRhythm.Shared.Dtos.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AlgoRhythm.Controllers.Admin;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _service;
@@ -20,9 +20,37 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// Check if the current authenticated user is an admin (Available for all authenticated users)
+    /// </summary>
+    [HttpGet("is-admin")]
+    [Authorize]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> IsCurrentUserAdmin(CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { error = "Invalid user token" });
+        }
+
+        try
+        {
+            var isAdmin = await _service.IsUserAdminAsync(userId, ct);
+            return Ok(new { userId, isAdmin });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get all users in the system (Admin only)
     /// </summary>
     [HttpGet("users")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(IEnumerable<UserWithRolesDto>), 200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
@@ -36,6 +64,7 @@ public class AdminController : ControllerBase
     /// Get user details with roles (Admin only)
     /// </summary>
     [HttpGet("users/{userId:guid}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(UserWithRolesDto), 200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
@@ -57,6 +86,7 @@ public class AdminController : ControllerBase
     /// Assign Admin role to a user (Admin only)
     /// </summary>
     [HttpPost("users/{userId:guid}/assign-admin")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
@@ -84,6 +114,7 @@ public class AdminController : ControllerBase
     /// Revoke Admin role from a user (Admin only)
     /// </summary>
     [HttpPost("users/{userId:guid}/revoke-admin")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
