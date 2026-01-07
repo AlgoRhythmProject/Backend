@@ -62,7 +62,8 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
             services.AddSingleton(sp =>
             {
                 var http = _serviceFactory.CreateClient();
-                return new CodeExecutorClient(http);
+                var logger = sp.GetRequiredService<ILogger<CodeExecutorClient>>();
+                return new CodeExecutorClient(http, logger);
             });
 
             // Replace real EmailSender with mock implementation

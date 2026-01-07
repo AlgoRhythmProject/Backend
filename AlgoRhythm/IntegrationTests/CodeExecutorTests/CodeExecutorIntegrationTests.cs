@@ -7,6 +7,7 @@ using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using AlgoRhythm.Shared.Models.Submissions;
 using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Users;
+using Castle.Core.Logging;
 using IntegrationTests.IntegrationTestSetup;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ namespace IntegrationTests.CodeExecutorTests
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager; 
         private readonly IAuthService _authService;
+        private readonly ILogger _logger;
 
         public CodeExecutorIntegrationTests(AlgoRhythmTestFixture fixture)
         {

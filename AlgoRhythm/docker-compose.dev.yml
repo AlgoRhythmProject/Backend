@@ -75,6 +75,7 @@ services:
       - ../../Frontend/AlgoRhythm:/app:rw  # Mapowanie kodu do folderu roboczego w kontenerze
       - /app/node_modules               # Uzywa node_modules z kontenera, a nie z Windowsa
       - vite-cache:/app/.vite
+      - /app/dist
     environment:
       - CHOKIDAR_USEPOLLING=true        # Wymusza odswiezanie na Windows/Dockerze
       - VITE_HOST=0.0.0.0
@@ -120,7 +121,13 @@ services:
       - azurite_data:/data
     networks:
       - default
-
+  analyzer:
+    container_name: code_analyzer
+    build: 
+      context: .
+      dockerfile: ./CodeAnalyzer/Dockerfile
+    ports:
+    - "5095:8080"
 networks:
   internal_net:
     driver: bridge

@@ -47,6 +47,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<Submission> Submissions { get; set; } = null!;
     public DbSet<ProgrammingSubmission> ProgrammingSubmissions { get; set; } = null!;
     public DbSet<TestResult> TestResults { get; set; } = null!;
+    public DbSet<ExecutionError> Errors { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -54,7 +55,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
 
         // Rename tables
         builder.Entity<User>().ToTable("Users");
-        builder.Entity<Role>().ToTable("Roles"); // Teraz używa twojej klasy Role
+        builder.Entity<Role>().ToTable("Roles"); 
         builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
         builder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
         builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
@@ -106,6 +107,11 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         builder.Entity<TestResult>()
             .HasOne(tr => tr.TestCase)
             .WithMany(tc => tc.TestResults)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<TestResult>()
+            .HasMany(s => s.Errors)
+            .WithOne(e => e.TestResult)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<UserRequirementProgress>()
