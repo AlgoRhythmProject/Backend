@@ -44,4 +44,5 @@ jobs:
           imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}
                 
           buildArguments: |
-            PROJECT=./Algorhythm/AlgoRhythm.csproj
+            BP_SET_PROJECT_PATH=AlgoRhythm.csproj
+
