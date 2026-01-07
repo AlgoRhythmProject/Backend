@@ -99,10 +99,10 @@ Create a `.env` file in the root directory with the following variables:
 SA_PASSWORD=YourStrongPassword123!
 CONNECTION_STRING=Server=database;Database=AlgoRhythmDb;User Id=sa;Password=YourStrongPassword123!;Encrypt=False;TrustServerCertificate=True
 
-## JWT Authentication
+# JWT Authentication
 JWT_KEY=your-secret-jwt-key-here
 
-### SendGrid Email Service
+# SendGrid Email Service
 SENDGRID_API_KEY=your-sendgrid-api-key
 
 # Code Executor Service
