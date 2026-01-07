@@ -110,6 +110,8 @@ builder.Services.AddScoped<ICommentRepository, EfCommentRepository>();
 builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 builder.Services.AddScoped<IAchievementRepository, EfAchievementRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<ITestCaseRepository, EfTestCaseRepository>();
+
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -124,6 +126,8 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ITestCaseService, TestCaseService>();
+
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
