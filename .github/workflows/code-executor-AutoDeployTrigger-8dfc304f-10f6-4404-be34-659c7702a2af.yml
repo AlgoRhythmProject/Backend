@@ -35,15 +35,16 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}/CodeExecutor
-          _dockerfilePathKey_: _dockerfilePath_
+          dockerfilePath: CodeExecutor/Dockerfile 
           _targetLabelKey_: _targetLabel_
           registryUrl: ghcr.io
           registryUsername: ${{ secrets.CODEEXECUTOR_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.CODEEXECUTOR_REGISTRY_PASSWORD }}
           containerAppName: code-executor
           resourceGroup: algorhythm-app
-          imageToBuild: ghcr.io/code-executor:${{ github.sha }}
+          imageToBuild: ghcr.io/algorhythmproject/code-executor:${{ github.sha }}
           _buildArgumentsKey_: |
             _buildArgumentsValues_
+
 
 
