@@ -6,7 +6,7 @@ using AlgoRhythm.Services.Submissions.Interfaces;
 
 namespace AlgoRhythm.Controllers.Submissions;
 
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SubmissionsController(ISubmissionService submissions, ILogger<SubmissionsController> logger) : ControllerBase
@@ -14,8 +14,13 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
     private readonly ISubmissionService _submissions = submissions;
     private readonly ILogger<SubmissionsController> _logger = logger;
 
+    /// <summary>
+    /// Submits a programming task solution for evaluation.
+    /// </summary>
+    /// <param name="req">Submission request data</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Submission result with test results</returns>
     [HttpPost("programming")]
-    [Authorize]
     public async Task<IActionResult> SubmitProgramming([FromBody] SubmitProgrammingRequestDto req, CancellationToken ct)
     {
         try
@@ -39,8 +44,13 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
         }
     }
 
+    /// <summary>
+    /// Gets a submission by its ID.
+    /// </summary>
+    /// <param name="submissionId">The submission ID</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Submission details</returns>
     [HttpGet("{submissionId:guid}")]
-    [Authorize]
     public async Task<IActionResult> GetSubmission(Guid submissionId, CancellationToken ct)
     {
         var dto = await _submissions.GetSubmissionAsync(submissionId, ct);

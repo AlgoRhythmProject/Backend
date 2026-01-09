@@ -18,6 +18,11 @@ public class TagController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets all tags.
+    /// </summary>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of all tags</returns>
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
@@ -25,6 +30,12 @@ public class TagController : ControllerBase
         return Ok(tags);
     }
 
+    /// <summary>
+    /// Gets a tag by its ID.
+    /// </summary>
+    /// <param name="id">The tag ID</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Tag details</returns>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
@@ -35,6 +46,12 @@ public class TagController : ControllerBase
         return Ok(tag);
     }
 
+    /// <summary>
+    /// Gets a tag by its name.
+    /// </summary>
+    /// <param name="name">The tag name</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Tag details</returns>
     [HttpGet("by-name/{name}")]
     public async Task<IActionResult> GetByName(string name, CancellationToken ct)
     {
@@ -45,6 +62,12 @@ public class TagController : ControllerBase
         return Ok(tag);
     }
 
+    /// <summary>
+    /// Creates a new tag. Admin only.
+    /// </summary>
+    /// <param name="dto">Tag input data</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The created tag</returns>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] TagInputDto dto, CancellationToken ct)
@@ -65,6 +88,13 @@ public class TagController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Updates an existing tag. Admin only.
+    /// </summary>
+    /// <param name="id">The tag ID</param>
+    /// <param name="dto">Updated tag data</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] TagInputDto dto, CancellationToken ct)
@@ -89,6 +119,12 @@ public class TagController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Deletes a tag. Admin only.
+    /// </summary>
+    /// <param name="id">The tag ID</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
