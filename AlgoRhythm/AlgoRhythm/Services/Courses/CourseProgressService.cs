@@ -262,4 +262,28 @@ public class CourseProgressService : ICourseProgressService
     {
         return await _repo.GetCompletedTaskIdsAsync(userId, courseId, ct);
     }
+
+    public async Task<UserCompletedLecturesDto> GetAllCompletedLecturesAsync(Guid userId, CancellationToken ct)
+    {
+        var completedLectureIds = await _repo.GetAllCompletedLectureIdsAsync(userId, ct);
+
+        return new UserCompletedLecturesDto
+        {
+            UserId = userId,
+            CompletedLectureIds = completedLectureIds.ToList(),
+            TotalCompleted = completedLectureIds.Count
+        };
+    }
+
+    public async Task<UserCompletedTasksDto> GetAllCompletedTasksAsync(Guid userId, CancellationToken ct)
+    {
+        var completedTaskIds = await _repo.GetAllCompletedTaskIdsAsync(userId, ct);
+
+        return new UserCompletedTasksDto
+        {
+            UserId = userId,
+            CompletedTaskIds = completedTaskIds.ToList(),
+            TotalCompleted = completedTaskIds.Count
+        };
+    }
 }
