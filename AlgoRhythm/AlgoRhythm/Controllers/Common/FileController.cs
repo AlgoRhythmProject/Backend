@@ -6,6 +6,7 @@ using Azure;
 using System.Text.Encodings.Web;
 using System.Web;
 using AlgoRhythm.Services.Blob.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AlgoRhythm.Controllers.Common
 {
@@ -20,9 +21,12 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Uploads a file to blob (or azurite in dev)
+        /// Uploads a file to blob storage. Admin only.
         /// </summary>
+        /// <param name="file">The file to upload</param>
+        /// <returns>URL of the uploaded file</returns>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -57,9 +61,11 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Video preview for debugging, not visible in swagger (it does not support streaming)
-        /// url should be opened directly in browser to preview video
+        /// Video preview for debugging, not visible in swagger (it does not support streaming).
+        /// URL should be opened directly in browser to preview video.
         /// </summary>
+        /// <param name="path">Path to the video file</param>
+        /// <returns>HTML page with video player</returns>
         [HttpGet("preview_video")]
         [DevelopmentOnly]
         [ApiExplorerSettings(IgnoreApi = true)]
@@ -115,13 +121,14 @@ namespace AlgoRhythm.Controllers.Common
                     </div>
                 </body>
                 </html>
-            ");
+            ", "text/html");
         }
 
         /// <summary>
-        /// Endpoint for retrieving a file stream from blob
+        /// Retrieves a file stream from blob storage.
         /// </summary>
-        /// <param name="fileName">Name of a file inside blob</param>
+        /// <param name="fileName">Name of the file in blob storage</param>
+        /// <returns>File stream</returns>
         [HttpGet("get_file")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -153,9 +160,10 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Endpoint for retrieving video metadata needed for streaming
+        /// Retrieves video metadata needed for streaming.
         /// </summary>
-        /// <param name="fileName">Path to a file</param>
+        /// <param name="fileName">Path to the video file</param>
+        /// <returns>Video metadata</returns>
         [HttpGet("video_info")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -178,14 +186,14 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Deletes a file from blob
+        /// Deletes a file from blob storage. Admin only.
         /// </summary>
-        /// <param name="fileName">blob fileName</param>
-        /// <returns>true if the blob was succesfully deleted, false otherwise</returns>
+        /// <param name="fileName">Name of the file to delete</param>
+        /// <returns>True if the file was successfully deleted, false otherwise</returns>
         [HttpDelete("{fileName}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-
         public async Task<ActionResult<bool>> DeleteFile(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
