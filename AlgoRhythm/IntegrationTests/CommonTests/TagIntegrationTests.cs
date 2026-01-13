@@ -306,10 +306,10 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_AssignTagToTask_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for Task tag operations
         var tag = await AddTagToDb("TaskTag" + Guid.NewGuid());
 
-        // Endpoint is in TaskController, not TagController
+        // Endpoint is in TaskController, requires Admin
         var response = await _httpClient.PostAsync($"/api/task/{_testTaskId}/tags/{tag.Id}", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -326,10 +326,10 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_AssignTagToLecture_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for Lecture tag operations
         var tag = await AddTagToDb("LectureTag" + Guid.NewGuid());
 
-        // Endpoint is in LectureController, not TagController
+        // Endpoint is in LectureController, requires Admin
         var response = await _httpClient.PostAsync($"/api/lecture/{_testLectureId}/tags/{tag.Id}", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -346,7 +346,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task DELETE_RemoveTagFromTask_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for Task tag operations
         var tag = await AddTagToDb("TaskTagToRemove" + Guid.NewGuid());
 
         var task = await _dbContext.TaskItems
@@ -357,7 +357,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         _dbContext.ChangeTracker.Clear();
 
-        // Endpoint is in TaskController, not TagController
+        // Endpoint is in TaskController, requires Admin
         var response = await _httpClient.DeleteAsync($"/api/task/{_testTaskId}/tags/{tag.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -374,7 +374,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task DELETE_RemoveTagFromLecture_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for Lecture tag operations
         var tag = await AddTagToDb("LectureTagToRemove" + Guid.NewGuid());
 
         var lecture = await _dbContext.Lectures
@@ -385,7 +385,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         _dbContext.ChangeTracker.Clear();
 
-        // Endpoint is in LectureController, not TagController
+        // Endpoint is in LectureController, requires Admin
         var response = await _httpClient.DeleteAsync($"/api/lecture/{_testLectureId}/tags/{tag.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);

@@ -27,7 +27,7 @@ public static class DbSeeder
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
     {
-        string[] roleNames = { "Admin", "Student" };
+        string[] roleNames = { "Admin", "User" };
 
         foreach (var roleName in roleNames)
         {
@@ -95,7 +95,7 @@ public static class DbSeeder
                 var result = await userManager.CreateAsync(user, "Student123!");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(user, "Student");
+                    await userManager.AddToRoleAsync(user, "User");
                 }
             }
             users[key] = user;

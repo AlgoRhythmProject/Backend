@@ -66,6 +66,16 @@ public class EfCourseProgressRepository : ICourseProgressRepository
         }
     }
 
+    public async Task DeleteAllByCourseIdAsync(Guid courseId, CancellationToken ct)
+    {
+        var progresses = await _db.CourseProgresses
+            .Where(cp => cp.CourseId == courseId)
+            .ToListAsync(ct);
+
+        _db.CourseProgresses.RemoveRange(progresses);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<HashSet<Guid>> GetCompletedLectureIdsAsync(Guid userId, Guid courseId, CancellationToken ct)
     {
         var user = await _db.Users

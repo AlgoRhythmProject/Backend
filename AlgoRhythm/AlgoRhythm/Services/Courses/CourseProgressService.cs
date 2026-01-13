@@ -76,6 +76,46 @@ public class CourseProgressService : ICourseProgressService
         }
     }
 
+    /// <summary>
+    /// Inicjalizuje CourseProgress dla wszystkich użytkowników dla nowo utworzonego kursu
+    /// Wywoływane automatycznie przy tworzeniu kursu
+    /// </summary>
+    public async Task InitializeCourseForAllUsersAsync(Guid courseId, CancellationToken ct)
+    {
+        var allUsers = await _context.Users.ToListAsync(ct);
+        var existingProgresses = await _context.CourseProgresses
+            .Where(cp => cp.CourseId == courseId)
+            .Select(cp => cp.UserId)
+            .ToHashSetAsync(ct);
+
+        var progressesToAdd = new List<CourseProgress>();
+
+        foreach (var user in allUsers)
+        {
+            if (!existingProgresses.Contains(user.Id))
+            {
+                progressesToAdd.Add(new CourseProgress
+                {
+                    UserId = user.Id,
+                    CourseId = courseId,
+                    Percentage = 0,
+                    StartedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        if (progressesToAdd.Any())
+        {
+            await _context.CourseProgresses.AddRangeAsync(progressesToAdd, ct);
+            await _context.SaveChangesAsync(ct);
+            
+            _logger.LogInformation(
+                "Initialized course progress for {Count} users for course {CourseId}", 
+                progressesToAdd.Count, 
+                courseId);
+        }
+    }
+
     public async Task<bool> ToggleLectureCompletionAsync(Guid userId, Guid lectureId, CancellationToken ct)
     {
         var user = await _context.Users
@@ -285,5 +325,15 @@ public class CourseProgressService : ICourseProgressService
             CompletedTaskIds = completedTaskIds.ToList(),
             TotalCompleted = completedTaskIds.Count
         };
+    }
+
+    /// <summary>
+    /// Usuwa wszystkie rekordy CourseProgress dla danego kursu.
+    /// Wywoływane przy usuwaniu kursu.
+    /// </summary>
+    public async Task DeleteAllByCourseIdAsync(Guid courseId, CancellationToken ct)
+    {
+        await _repo.DeleteAllByCourseIdAsync(courseId, ct);
+        _logger.LogInformation("Deleted all course progress records for course {CourseId}", courseId);
     }
 }
