@@ -80,13 +80,15 @@ public class EfCourseProgressRepository : ICourseProgressRepository
     {
         var user = await _db.Users
             .Include(u => u.CompletedLectures)
+                .ThenInclude(l => l.Courses)
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
 
         if (user == null)
             return new HashSet<Guid>();
 
+        // Get all lectures that belong to this course
         var courseLectureIds = await _db.Lectures
-            .Where(l => l.CourseId == courseId)
+            .Where(l => l.Courses.Any(c => c.Id == courseId))
             .Select(l => l.Id)
             .ToListAsync(ct);
 

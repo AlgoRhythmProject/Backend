@@ -143,7 +143,6 @@ public class CourseService : ICourseService
             Lectures = course.Lectures?.OrderBy(l => l.CreatedAt).Select(l => new LectureDto
             {
                 Id = l.Id,
-                CourseId = l.CourseId,
                 Title = l.Title,
                 IsPublished = l.IsPublished,
                 CreatedAt = l.CreatedAt,
@@ -159,7 +158,8 @@ public class CourseService : ICourseService
                     Alt = c is LecturePhoto lp2 ? lp2.Alt : null,
                     Title = c is LecturePhoto lp3 ? lp3.Title : null
                 }).ToList() ?? [],
-                TagIds = l.Tags?.Select(t => t.Id).ToList() ?? []
+                TagIds = l.Tags?.Select(t => t.Id).ToList() ?? [],
+                CourseIds = l.Courses?.Select(c => c.Id).ToList() ?? []
             }).ToList() ?? [],
             TaskItemIds = course.TaskItems?.Select(t => t.Id).ToList() ?? []
         };

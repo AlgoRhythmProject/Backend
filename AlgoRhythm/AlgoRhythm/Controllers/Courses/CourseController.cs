@@ -3,11 +3,11 @@ using AlgoRhythm.Shared.Dtos.Courses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AlgoRhythm.Controllers;
+namespace AlgoRhythm.Controllers.Courses;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CourseController : ControllerBase
 {
     private readonly ICourseService _service;

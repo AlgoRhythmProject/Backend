@@ -126,6 +126,7 @@ public class CourseProgressService : ICourseProgressService
             throw new KeyNotFoundException("User not found");
 
         var lecture = await _context.Lectures
+            .Include(l => l.Courses)
             .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
 
         if (lecture == null)
@@ -161,8 +162,11 @@ public class CourseProgressService : ICourseProgressService
             _logger.LogError(ex, "Failed to update achievements after lecture completion");
         }
 
-        // Przelicz postęp kursu
-        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+        // Recalculate progress for all courses that contain this lecture
+        foreach (var course in lecture.Courses)
+        {
+            await RecalculateProgressAsync(userId, course.Id, ct);
+        }
 
         return isCompleted;
     }
@@ -177,6 +181,7 @@ public class CourseProgressService : ICourseProgressService
             throw new KeyNotFoundException("User not found");
 
         var lecture = await _context.Lectures
+            .Include(l => l.Courses)
             .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
 
         if (lecture == null)
@@ -188,7 +193,11 @@ public class CourseProgressService : ICourseProgressService
         user.CompletedLectures.Add(lecture);
         await _context.SaveChangesAsync(ct);
 
-        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+        // Recalculate progress for all courses that contain this lecture
+        foreach (var course in lecture.Courses)
+        {
+            await RecalculateProgressAsync(userId, course.Id, ct);
+        }
 
         return true;
     }
@@ -203,6 +212,7 @@ public class CourseProgressService : ICourseProgressService
             throw new KeyNotFoundException("User not found");
 
         var lecture = await _context.Lectures
+            .Include(l => l.Courses)
             .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
 
         if (lecture == null)
@@ -215,7 +225,11 @@ public class CourseProgressService : ICourseProgressService
         user.CompletedLectures.Remove(completedLecture);
         await _context.SaveChangesAsync(ct);
 
-        await RecalculateProgressAsync(userId, lecture.CourseId, ct);
+        // Recalculate progress for all courses that contain this lecture
+        foreach (var course in lecture.Courses)
+        {
+            await RecalculateProgressAsync(userId, course.Id, ct);
+        }
 
         return true;
     }

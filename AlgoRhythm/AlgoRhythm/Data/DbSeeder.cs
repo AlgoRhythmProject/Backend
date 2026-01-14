@@ -163,31 +163,54 @@ public static class DbSeeder
         await context.Courses.AddRangeAsync(course1, course2, course3);
 
         // --- LECTURES FOR COURSE 1 (C# Programming Fundamentals) ---
-        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1, IsPublished = true };
-        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1, IsPublished = true };
-        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1, IsPublished = true };
-        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1, IsPublished = true };
-        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1, IsPublished = true };
+        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", IsPublished = true };
+        var lec1_2 = new Lecture { Title = "Variables and Data Types", IsPublished = true };
+        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", IsPublished = true };
+        var lec1_4 = new Lecture { Title = "Functions and Methods", IsPublished = true };
+        var lec1_5 = new Lecture { Title = "Introduction to Arrays", IsPublished = true };
 
         // --- LECTURES FOR COURSE 2 (Data Structures Essentials) ---
-        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2, IsPublished = true };
-        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2, IsPublished = true };
-        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2, IsPublished = true };
-        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2, IsPublished = true };
-        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2, IsPublished = true };
-        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2, IsPublished = true };
+        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", IsPublished = true };
+        var lec2_2 = new Lecture { Title = "Two Pointer Technique", IsPublished = true };
+        var lec2_3 = new Lecture { Title = "Stack Fundamentals", IsPublished = true };
+        var lec2_4 = new Lecture { Title = "Queue Implementation", IsPublished = true };
+        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", IsPublished = true };
+        var lec2_6 = new Lecture { Title = "Binary Trees Basics", IsPublished = true };
 
         // --- LECTURES FOR COURSE 3 (Advanced Algorithms) ---
-        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3, IsPublished = true };
-        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3, IsPublished = true };
-        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3, IsPublished = true };
-        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3, IsPublished = true };
+        var lec3_1 = new Lecture { Title = "Graph Representation", IsPublished = true };
+        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", IsPublished = true };
+        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", IsPublished = true };
+        var lec3_4 = new Lecture { Title = "Divide and Conquer", IsPublished = true };
 
+        // Dodaj lectures do bazy
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
             lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
             lec3_1, lec3_2, lec3_3, lec3_4
         );
+        await context.SaveChangesAsync();
+
+        // Przypisz lectures do kursów (MANY-TO-MANY)
+        course1.Lectures.Add(lec1_1);
+        course1.Lectures.Add(lec1_2);
+        course1.Lectures.Add(lec1_3);
+        course1.Lectures.Add(lec1_4);
+        course1.Lectures.Add(lec1_5);
+
+        course2.Lectures.Add(lec2_1);
+        course2.Lectures.Add(lec2_2);
+        course2.Lectures.Add(lec2_3);
+        course2.Lectures.Add(lec2_4);
+        course2.Lectures.Add(lec2_5);
+        course2.Lectures.Add(lec2_6);
+
+        course3.Lectures.Add(lec3_1);
+        course3.Lectures.Add(lec3_2);
+        course3.Lectures.Add(lec3_3);
+        course3.Lectures.Add(lec3_4);
+
+        await context.SaveChangesAsync(); // Save many-to-many relationships
 
         // --- LECTURE CONTENT ---
 

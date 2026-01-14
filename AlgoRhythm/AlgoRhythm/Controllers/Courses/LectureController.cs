@@ -60,6 +60,7 @@ public class LectureController : ControllerBase
 
     /// <summary>
     /// Creates a new lecture. Admin only.
+    /// Lecture is created independently and can be assigned to courses later.
     /// </summary>
     /// <param name="dto">Lecture input data</param>
     /// <param name="ct">Cancellation token</param>
