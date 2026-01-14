@@ -111,7 +111,9 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Revoke Admin role from a user (Admin only)
+    /// Revoke Admin role from a user (Admin only).
+    /// If revoking from self, user will be logged out automatically.
+    /// Cannot revoke from the last admin.
     /// </summary>
     [HttpPost("users/{userId:guid}/revoke-admin")]
     [Authorize(Roles = "Admin")]
@@ -122,10 +124,40 @@ public class AdminController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> RevokeAdminRole(Guid userId, CancellationToken ct)
     {
+        var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserIdClaim) || !Guid.TryParse(currentUserIdClaim, out var currentUserId))
+        {
+            return Unauthorized(new { error = "Invalid user token" });
+        }
+
         try
         {
-            await _service.RevokeAdminRoleAsync(userId, ct);
-            return Ok(new { message = "Admin role revoked successfully", userId });
+            await _service.RevokeAdminRoleAsync(userId, currentUserId, ct);
+            
+            // Check if user is revoking their own admin role
+            bool isRevokingSelf = userId == currentUserId;
+            
+            if (isRevokingSelf)
+            {
+                // Clear JWT cookie to log out the user
+                Response.Cookies.Delete("JWT");
+                
+                _logger.LogInformation("User {UserId} revoked their own Admin role and has been logged out", userId);
+                
+                return Ok(new 
+                { 
+                    message = "Admin role revoked successfully. You have been logged out.",
+                    userId,
+                    loggedOut = true
+                });
+            }
+            
+            return Ok(new 
+            { 
+                message = "Admin role revoked successfully", 
+                userId,
+                loggedOut = false
+            });
         }
         catch (KeyNotFoundException ex)
         {
