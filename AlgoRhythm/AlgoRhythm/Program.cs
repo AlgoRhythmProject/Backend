@@ -12,6 +12,8 @@ using AlgoRhythm.Repositories.Submissions;
 using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Repositories.Users.Interfaces;
+using AlgoRhythm.Repositories.Users;
 using AlgoRhythm.Services.Achievements;
 using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.Admin;
@@ -111,6 +113,7 @@ builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 builder.Services.AddScoped<IAchievementRepository, EfAchievementRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<ITestCaseRepository, EfTestCaseRepository>();
+builder.Services.AddScoped<IUserStreakRepository, EfUserStreakRepository>();
 
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
@@ -127,6 +130,7 @@ builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ITestCaseService, TestCaseService>();
+builder.Services.AddScoped<IUserStreakService, UserStreakService>();
 
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();

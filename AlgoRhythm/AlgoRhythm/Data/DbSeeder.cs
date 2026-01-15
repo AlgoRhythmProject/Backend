@@ -22,7 +22,7 @@ public static class DbSeeder
 
         var users = await SeedUsersAsync(userManager);
         await SeedContentAsync(context, users);
-        await SeedAchievements(context); // Add this line
+        await SeedAchievements(context);
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
@@ -112,7 +112,7 @@ public static class DbSeeder
         if (await context.Courses.AnyAsync())
         {
             Console.WriteLine("Data already seeded, skipping...");
-            return; // Data already seeded
+            return;
         }
 
         Console.WriteLine("No existing data found, proceeding with seeding...");
@@ -134,6 +134,8 @@ public static class DbSeeder
 
         await context.Tags.AddRangeAsync(tagAlgo, tagIntro, tagCSharp, tagData, tagArrays, tagTrees,
             tagGraphs, tagStrings, tagDP, tagSorting, tagStack, tagQueue, tagLinkedList);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Tags saved successfully");
 
         // --- COURSES ---
         var course1 = new Course
@@ -161,15 +163,16 @@ public static class DbSeeder
         };
 
         await context.Courses.AddRangeAsync(course1, course2, course3);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Courses saved successfully");
 
-        // --- LECTURES FOR COURSE 1 (C# Programming Fundamentals) ---
+        // --- LECTURES ---
         var lec1_1 = new Lecture { Title = "Welcome to C# Programming", IsPublished = true };
         var lec1_2 = new Lecture { Title = "Variables and Data Types", IsPublished = true };
         var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", IsPublished = true };
         var lec1_4 = new Lecture { Title = "Functions and Methods", IsPublished = true };
         var lec1_5 = new Lecture { Title = "Introduction to Arrays", IsPublished = true };
 
-        // --- LECTURES FOR COURSE 2 (Data Structures Essentials) ---
         var lec2_1 = new Lecture { Title = "Arrays Deep Dive", IsPublished = true };
         var lec2_2 = new Lecture { Title = "Two Pointer Technique", IsPublished = true };
         var lec2_3 = new Lecture { Title = "Stack Fundamentals", IsPublished = true };
@@ -177,21 +180,42 @@ public static class DbSeeder
         var lec2_5 = new Lecture { Title = "Linked Lists Introduction", IsPublished = true };
         var lec2_6 = new Lecture { Title = "Binary Trees Basics", IsPublished = true };
 
-        // --- LECTURES FOR COURSE 3 (Advanced Algorithms) ---
         var lec3_1 = new Lecture { Title = "Graph Representation", IsPublished = true };
         var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", IsPublished = true };
         var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", IsPublished = true };
         var lec3_4 = new Lecture { Title = "Divide and Conquer", IsPublished = true };
 
-        // Dodaj lectures do bazy
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
             lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
             lec3_1, lec3_2, lec3_3, lec3_4
         );
         await context.SaveChangesAsync();
+        Console.WriteLine("Lectures saved successfully");
 
-        // Przypisz lectures do kursów (MANY-TO-MANY)
+        // --- LECTURE-TAG RELATIONSHIPS
+        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
+        lec1_2.Tags = new List<Tag> { tagCSharp };
+        lec1_3.Tags = new List<Tag> { tagCSharp };
+        lec1_4.Tags = new List<Tag> { tagCSharp };
+        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
+
+        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
+        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
+        lec2_3.Tags = new List<Tag> { tagStack, tagData };
+        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
+        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
+        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
+
+        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
+        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
+        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
+        lec3_4.Tags = new List<Tag> { tagAlgo };
+
+        await context.SaveChangesAsync();
+        Console.WriteLine("Lecture-Tag relationships saved successfully");
+
+        // --- COURSE-LECTURE RELATIONSHIPS (MANY-TO-MANY) ---
         course1.Lectures.Add(lec1_1);
         course1.Lectures.Add(lec1_2);
         course1.Lectures.Add(lec1_3);
@@ -210,11 +234,10 @@ public static class DbSeeder
         course3.Lectures.Add(lec3_3);
         course3.Lectures.Add(lec3_4);
 
-        await context.SaveChangesAsync(); // Save many-to-many relationships
+        await context.SaveChangesAsync();
+        Console.WriteLine("Course-Lecture relationships saved successfully");
 
         // --- LECTURE CONTENT ---
-
-        // Course 1 Content
         var content1_1 = new LectureText
         {
             Lecture = lec1_1,
@@ -576,7 +599,6 @@ bool isEmpty = stack.Count == 0;</code></pre>
             Type = ContentType.Text
         };
 
-        // Course 3 Content
         var content3_1 = new LectureText
         {
             Lecture = lec3_1,
@@ -688,28 +710,8 @@ int Fibonacci(int n)
             content2_1, content2_2, content2_3, content2_6,
             content3_1, content3_2
         );
-
-        // --- LECTURE-TAG RELATIONSHIPS ---
-        // Course 1 - C# Programming Fundamentals
-        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
-        lec1_2.Tags = new List<Tag> { tagCSharp };
-        lec1_3.Tags = new List<Tag> { tagCSharp };
-        lec1_4.Tags = new List<Tag> { tagCSharp };
-        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
-
-        // Course 2 - Data Structures Essentials
-        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
-        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
-        lec2_3.Tags = new List<Tag> { tagStack, tagData };
-        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
-        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
-        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
-
-        // Course 3 - Advanced Algorithms
-        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
-        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
-        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
-        lec3_4.Tags = new List<Tag> { tagAlgo };
+        await context.SaveChangesAsync();
+        Console.WriteLine("Lecture contents saved successfully");
 
         // --- PROGRAMMING TASKS ---
         var task1 = new ProgrammingTaskItem
@@ -1019,13 +1021,18 @@ Output: -1",
             IsPublished = true
         };
 
-        // Add hints after creating tasks and before test cases
+        await context.TaskItems.AddRangeAsync(
+            task1, task2, task3, task4, task5, task6, task7, task8,
+            task9, task10, task11, task12, task13, task14
+        );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Tasks saved successfully");
 
         // --- HINTS ---
         var hint1 = new Hint
         {
             TaskItem = task1,
-            Content = "Use the + operator (shift and = ) to add two numbers together and return the result.",
+            Content = "Use the + operator (shift and =) to add two numbers together and return the result.",
             Order = 1
         };
 
@@ -1124,7 +1131,8 @@ Output: -1",
             hint1, hint2, hint3, hint4, hint5, hint6, hint7,
             hint8, hint9, hint10, hint11, hint12, hint13, hint14
         );
-
+        await context.SaveChangesAsync();
+        Console.WriteLine("Hints saved successfully");
 
         // --- TEST CASES ---
         var test1 = new TestCase
@@ -1399,6 +1407,22 @@ Output: -1",
             IsVisible = false
         };
 
+        await context.TestCases.AddRangeAsync(
+            test1, test1_2, test1_3,
+            test2, test2_2, test2_3,
+            test3, test3_2, test3_3, test3_4,
+            test4, test4_2, test4_3,
+            test5, test5_2, test5_3, test5_4,
+            test6, test6_2,
+            test7, test7_2, test7_3,
+            test8, test8_2, test8_3,
+            test10, test10_2, test10_3,
+            test11, test11_2, test11_3,
+            test12, test12_2, test12_3
+        );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Test cases saved successfully");
+
         // --- TAG RELATIONS FOR TASKS ---
         task1.Tags = new List<Tag> { tagCSharp, tagIntro };
         task2.Tags = new List<Tag> { tagCSharp, tagIntro };
@@ -1415,68 +1439,18 @@ Output: -1",
         task13.Tags = new List<Tag> { tagIntro, tagCSharp };
         task14.Tags = new List<Tag> { tagIntro, tagArrays };
 
+        await context.SaveChangesAsync();
+        Console.WriteLine("Task-Tag relationships saved successfully");
+
         // --- COURSE-TASK RELATIONS ---
         course1.TaskItems = new List<TaskItem> { task1, task2, task4, task5, task6, task13, task14 };
         course2.TaskItems = new List<TaskItem> { task3, task7, task9 };
         course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12 };
 
-        // --- LECTURE-TAG RELATIONSHIPS ---
-        // Course 1 - C# Programming Fundamentals
-        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
-        lec1_2.Tags = new List<Tag> { tagCSharp };
-        lec1_3.Tags = new List<Tag> { tagCSharp };
-        lec1_4.Tags = new List<Tag> { tagCSharp };
-        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
-
-        // Course 2 - Data Structures Essentials
-        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
-        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
-        lec2_3.Tags = new List<Tag> { tagStack, tagData };
-        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
-        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
-        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
-
-        // Course 3 - Advanced Algorithms
-        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
-        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
-        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
-        lec3_4.Tags = new List<Tag> { tagAlgo };
-
-        // --- SAVE ALL ---
-        await context.Courses.AddRangeAsync(course1, course2, course3);
-        await context.Lectures.AddRangeAsync(
-            lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
-            lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
-            lec3_1, lec3_2, lec3_3, lec3_4
-        );
-        await context.LectureContents.AddRangeAsync(
-            content1_1, content1_2, content1_3, content1_5,
-            content2_1, content2_2, content2_3, content2_6,
-            content3_1, content3_2
-        );
-        await context.TaskItems.AddRangeAsync(
-            task1, task2, task3, task4, task5, task6, task7, task8,
-            task9, task10, task11, task12, task13, task14
-        );
-        await context.TestCases.AddRangeAsync(
-            test1, test1_2, test1_3,
-            test2, test2_2, test2_3,
-            test3, test3_2, test3_3, test3_4,
-            test4, test4_2, test4_3,
-            test5, test5_2, test5_3, test5_4,
-            test6, test6_2,
-            test7, test7_2, test7_3,
-            test8, test8_2, test8_3,
-            test10, test10_2, test10_3,
-            test11, test11_2, test11_3,
-            test12, test12_2, test12_3
-        );
-
         await context.SaveChangesAsync();
-        Console.WriteLine($"Saved all entities. Courses count: {await context.Courses.CountAsync()}");
+        Console.WriteLine("Course-Task relationships saved successfully");
 
         // --- COURSE PROGRESS ---
-        // John has progress in course1 (60%)
         var progress1 = new CourseProgress
         {
             UserId = users["john"].Id,
@@ -1486,7 +1460,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // Alice completed course1 (100%)
         var progress2 = new CourseProgress
         {
             UserId = users["alice"].Id,
@@ -1496,7 +1469,6 @@ Output: -1",
             CompletedAt = DateTime.UtcNow.AddDays(-5)
         };
 
-        // Alice started course2 (20%)
         var progress3 = new CourseProgress
         {
             UserId = users["alice"].Id,
@@ -1506,7 +1478,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // Mark has progress in course2 (45%)
         var progress4 = new CourseProgress
         {
             UserId = users["mark"].Id,
@@ -1516,7 +1487,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // John started course3 (15%)
         var progress5 = new CourseProgress
         {
             UserId = users["john"].Id,
@@ -1531,6 +1501,7 @@ Output: -1",
         );
 
         await context.SaveChangesAsync();
+        Console.WriteLine("Course progresses saved successfully");
         Console.WriteLine("SeedContentAsync completed successfully!");
     }
 
@@ -1752,6 +1723,103 @@ Output: -1",
                         {
                             Type = RequirementType.CompleteCourses,
                             TargetValue = 2
+                        }
+                    }
+                }
+            },
+
+            // Login streak achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Consistent Learner",
+                Description = "Log in for 5 consecutive days",
+                IconPath = "/icons/achievements/5-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 5 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
+                Description = "Log in for 10 consecutive days",
+                IconPath = "/icons/achievements/10-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 10 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Unstoppable",
+                Description = "Log in for 15 consecutive days",
+                IconPath = "/icons/achievements/15-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 15 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Marathon Runner",
+                Description = "Log in for 30 consecutive days",
+                IconPath = "/icons/achievements/30-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 30 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 30
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Century",
+                Description = "Log in for 100 consecutive days",
+                IconPath = "/icons/achievements/100-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 100 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 100
                         }
                     }
                 }

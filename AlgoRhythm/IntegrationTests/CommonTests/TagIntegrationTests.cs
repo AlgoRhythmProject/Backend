@@ -60,7 +60,6 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         var testLecture = new Lecture
         {
             Id = _testLectureId,
-            CourseId = _testCourseId,
             Title = "Test Lecture for Tags",
             IsPublished = true
         };

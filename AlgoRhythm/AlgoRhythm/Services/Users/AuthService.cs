@@ -24,6 +24,7 @@ public class AuthService : IAuthService
     private readonly ICourseProgressService _courseProgressService;
     private readonly IAchievementService _achievementService;
     private readonly ApplicationDbContext _context;
+    private readonly IUserStreakService _streakService;
 
     // Simple in-memory rate limiting
     private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
@@ -36,8 +37,8 @@ public class AuthService : IAuthService
         ILogger<AuthService> logger,
         ICourseProgressService courseProgressService,
         IAchievementService achievementService,
-        ApplicationDbContext context)
-
+        ApplicationDbContext context,
+        IUserStreakService streakService)
     {
         _userManager = userManager;
         _emailSender = emailSender;
@@ -46,6 +47,7 @@ public class AuthService : IAuthService
         _courseProgressService = courseProgressService;
         _achievementService = achievementService;
         _context = context;
+        _streakService = streakService;
     }
 
     public async Task RegisterAsync(RegisterRequest request)
@@ -76,7 +78,10 @@ public class AuthService : IAuthService
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            EmailConfirmed = false
+            EmailConfirmed = false,
+            CurrentStreak = 0,
+            LongestStreak = 0,
+            LastLoginDate = null
         };
 
         // Create user with password (Identity handles hashing)
@@ -298,38 +303,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        Thank you for registering at AlgoRhythm - a programming learning platform.
+Thank you for registering at AlgoRhythm - a programming learning platform.
 
-        To complete the registration process, please verify your email address by entering the verification code below:
+To complete the registration process, please verify your email address by entering the verification code below:
 
-        {code}
+{code}
 
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
+The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-        If you did not create this account, please ignore this message.
+If you did not create this account, please ignore this message.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
+<p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
 
-        <p>To complete the registration process, please verify your email address by entering the verification code below:</p>
+<p>To complete the registration process, please verify your email address by entering the verification code below:</p>
 
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+<p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+<p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-        <p>If you did not create this account, please ignore this message.</p>
+<p>If you did not create this account, please ignore this message.</p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -351,38 +356,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        We received a request to reset your password for your AlgoRhythm account.
+We received a request to reset your password for your AlgoRhythm account.
 
-        To reset your password, use the following verification code:
+To reset your password, use the following verification code:
 
-        {code}
+{code}
 
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
+The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-        If you did not request a password reset, please ignore this message and your password will remain unchanged.
+If you did not request a password reset, please ignore this message and your password will remain unchanged.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>We received a request to reset your password for your AlgoRhythm account.</p>
+<p>We received a request to reset your password for your AlgoRhythm account.</p>
 
-        <p>To reset your password, use the following verification code:</p>
+<p>To reset your password, use the following verification code:</p>
 
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+<p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+<p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-        <p>If you did not request a password reset, please ignore this message and your password will remain unchanged.</p>
+<p>If you did not request a password reset, please ignore this message and your password will remain unchanged.</p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -424,6 +429,17 @@ public class AuthService : IAuthService
         await _userManager.UpdateAsync(user);
 
         _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
+
+        // Update streak on first verification (counts as first login)
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(user.Id);
+            _logger.LogInformation("Login streak initialized for newly verified user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize login streak for user {UserId}", user.Id);
+        }
 
         return await GenerateAuthResponseAsync(user, "unknown");
     }
@@ -470,13 +486,7 @@ public class AuthService : IAuthService
         // Generate Refresh Token
         var refreshToken = await GenerateRefreshTokenAsync(user.Id, ipAddress);
 
-        var userDto = new UserDto(
-            user.Id,
-            user.Email!,
-            user.FirstName,
-            user.LastName,
-            user.CreatedAt
-        );
+        var userDto = MapToUserDto(user);
 
         return new AuthResponse(
             tokenString, 
@@ -533,6 +543,18 @@ public class AuthService : IAuthService
         {
             _logger.LogWarning("Login attempt with unverified email: {Email}", user.Email);
             throw new EmailNotVerifiedException();
+        }
+
+        // Update login streak
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(user.Id);
+            _logger.LogInformation("Login streak updated for user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update login streak for user {UserId}", user.Id);
+            // Don't throw - login should still succeed
         }
 
         _logger.LogInformation("User logged in successfully: {Email}", user.Email);
@@ -729,13 +751,7 @@ public class AuthService : IAuthService
         }
 
         // Return updated user data
-        return new UserDto(
-            user.Id,
-            user.Email!,
-            user.FirstName,
-            user.LastName,
-            user.CreatedAt
-        );
+        return MapToUserDto(user);
     }
 
     private async Task SendEmailChangeNotificationAsync(User user, string oldEmail)
@@ -744,40 +760,40 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        Your email address for your AlgoRhythm account has been successfully changed.
+Your email address for your AlgoRhythm account has been successfully changed.
 
-        Old email: {oldEmail}
-        New email: {user.Email}
+Old email: {oldEmail}
+New email: {user.Email}
 
-        If you did not make this change, please contact our support team immediately.
+If you did not make this change, please contact our support team immediately.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>Your email address for your AlgoRhythm account has been successfully changed.</p>
+<p>Your email address for your AlgoRhythm account has been successfully changed.</p>
 
-        <table style='margin: 20px 0;'>
-        <tr>
-            <td style='padding: 5px; font-weight: bold;'>Old email:</td>
-            <td style='padding: 5px;'>{oldEmail}</td>
-        </tr>
-        <tr>
-            <td style='padding: 5px; font-weight: bold;'>New email:</td>
-            <td style='padding: 5px;'>{user.Email}</td>
-        </tr>
-        </table>
+<table style='margin: 20px 0;'>
+<tr>
+    <td style='padding: 5px; font-weight: bold;'>Old email:</td>
+    <td style='padding: 5px;'>{oldEmail}</td>
+</tr>
+<tr>
+    <td style='padding: 5px; font-weight: bold;'>New email:</td>
+    <td style='padding: 5px;'>{user.Email}</td>
+</tr>
+</table>
 
-        <p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
+<p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -789,5 +805,21 @@ public class AuthService : IAuthService
             _logger.LogError(ex, "Failed to send email change notification to: {Email}", user.Email);
             // Don't throw - profile was already updated successfully
         }
+    }
+
+    private static UserDto MapToUserDto(User user)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            EmailConfirmed = user.EmailConfirmed,
+            CreatedAt = user.CreatedAt,
+            CurrentStreak = user.CurrentStreak,
+            LongestStreak = user.LongestStreak,
+            LastLoginDate = user.LastLoginDate
+        };
     }
 }
