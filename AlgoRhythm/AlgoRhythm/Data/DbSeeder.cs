@@ -1733,6 +1733,25 @@ Output: -1",
             {
                 Id = Guid.NewGuid(),
                 Name = "Consistent Learner",
+                Description = "Log in for 2 consecutive days",
+                IconPath = "/icons/achievements/2-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 2 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 2
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
                 Description = "Log in for 5 consecutive days",
                 IconPath = "/icons/achievements/5-day-streak.png",
                 Requirements = new List<Requirement>
@@ -1744,25 +1763,6 @@ Output: -1",
                         {
                             Type = RequirementType.LoginStreak,
                             TargetValue = 5
-                        }
-                    }
-                }
-            },
-            new Achievement
-            {
-                Id = Guid.NewGuid(),
-                Name = "Dedicated Student",
-                Description = "Log in for 10 consecutive days",
-                IconPath = "/icons/achievements/10-day-streak.png",
-                Requirements = new List<Requirement>
-                {
-                    new Requirement
-                    {
-                        Description = "Log in for 10 days in a row",
-                        Condition = new RequirementCondition
-                        {
-                            Type = RequirementType.LoginStreak,
-                            TargetValue = 10
                         }
                     }
                 }
