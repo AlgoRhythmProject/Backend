@@ -3,15 +3,15 @@ using VisualizerService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.WithOrigins("http://localhost:5173")
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
+        policy
+            .WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL")!)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -24,7 +24,6 @@ builder.Services.AddTransient<VisualAlgorithmRunner>();
 
 var app = builder.Build();
 
-
-app.UseCors();
+app.UseCors("AllowFrontend");
 app.MapHub<VisualizerHub>("/visualizerhub");
 app.Run();

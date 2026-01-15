@@ -19,8 +19,8 @@ namespace VisualizerService
         public async Task ExecuteVisualAsync(
             string code,
             string sessionId,
-            string startNodeId,
-            string? endNodeId,
+            Node? startNode,
+            Node? endNode,
             List<Node> nodes,
             List<Edge> edges,
             SessionState state)
@@ -38,10 +38,15 @@ namespace VisualizerService
             }
 
             await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "Compilation successful", ct);
-            await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "▶Starting algorithm...", ct);
+            await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "Starting algorithm...", ct);
 
             try
             {
+                if (result.AssemblyStream is null) {
+                    await _hubContext.Clients.Group(sessionId).SendAsync("CompilationError", "Unknown error", ct);
+                    return;
+                }
+
                 var assembly = Assembly.Load(result.AssemblyStream.ToArray());
                 var type = assembly.GetType("Solution");
 
@@ -60,25 +65,15 @@ namespace VisualizerService
 
                 var instance = Activator.CreateInstance(type);
 
-                var proxy = new SignalRGraphProxy(_hubContext, sessionId, startNodeId, endNodeId, nodes, edges, state);
+                var proxy = new SignalRGraphProxy(_hubContext, sessionId, startNode, endNode, nodes, edges, state);
 
                 var parameters = method.GetParameters();
 
-                if (parameters.Length == 0)
+                if (method.ReturnType == typeof(Task))
                 {
-                    if (method.ReturnType == typeof(Task))
-                        await (Task)method.Invoke(instance, null);
-                    else
-                        method.Invoke(instance, null);
+                    await (Task)method.Invoke(instance, parameters.Length > 0 ? [proxy] : null)!;
                 }
-                else
-                {
-                    if (method.ReturnType == typeof(Task))
-                        await (Task)method.Invoke(instance, [proxy]);
-                    else
-                        method.Invoke(instance, [proxy]);
-                }
-
+                    
                 await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "Algorithm completed", ct);
             }
             catch (TargetInvocationException ex) when (ex.InnerException is OperationCanceledException)

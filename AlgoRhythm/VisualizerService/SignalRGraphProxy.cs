@@ -12,15 +12,15 @@ namespace VisualizerService
         private readonly List<Node> _nodes;
         private readonly List<Edge> _edges;
 
-        public string StartNodeId { get; }
-        public string? EndNodeId { get; }
+        public Node? StartNode { get; }
+        public Node? EndNode { get; }
 
 
         public SignalRGraphProxy(
             IHubContext<VisualizerHub> hubContext, 
             string sessionId,
-            string startNodeId,
-            string? endNodeId,
+            Node? startNode,
+            Node? endNode,
             List<Node> nodes,
             List<Edge> edges,
             SessionState state
@@ -28,8 +28,8 @@ namespace VisualizerService
         {
             _hubContext = hubContext;
             _sessionId = sessionId;
-            StartNodeId = startNodeId;
-            EndNodeId = endNodeId;
+            StartNode = startNode;
+            EndNode = endNode;
             _nodes = nodes;
             _edges = edges;
             _state = state;
@@ -39,10 +39,22 @@ namespace VisualizerService
         {
             _state.CTS.Token.ThrowIfCancellationRequested();
             await _state.WaitIfPausedAsync();
-            return _edges.Where(e => e.From == nodeId)
-                            .Select(e => new Node { Id = e.From == nodeId ? e.To : e.From })
-                            .ToList();
-            
+
+            var neighborIds = _edges
+                .Where(e => e.From == nodeId)
+                .Select(e => e.To)
+                .ToList();
+
+            return neighborIds
+                .Select(id => {
+                    var originalNode = _nodes.FirstOrDefault(n => n.Id == id);
+                    return new Node
+                    {
+                        Id = id,
+                        Label = originalNode?.Label ?? string.Empty 
+                    };
+                })
+                .ToList();
         }
 
         private async Task SendAsync(string method, params object[] args)

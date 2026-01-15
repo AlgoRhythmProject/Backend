@@ -19,7 +19,7 @@ namespace VisualizerService
             await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
         }
 
-        public async Task StartAlgorithm(string sessionId, string code, List<Node> nodes, List<Edge> edges, string startNodeId, string endNodeId)
+        public async Task StartAlgorithm(string sessionId, string code, List<Node> nodes, List<Edge> edges, Node? startNode, Node? endNode)
         {
             StopAlgorithm(sessionId);
             await JoinSession(sessionId);
@@ -31,7 +31,7 @@ namespace VisualizerService
 
             try
             {
-                await _runner.ExecuteVisualAsync(code, sessionId, startNodeId, endNodeId, nodes, edges, newState);
+                await _runner.ExecuteVisualAsync(code, sessionId, startNode, endNode, nodes, edges, newState);
 
                 await Clients.Group(sessionId).SendAsync("ExecutionFinished");
             }

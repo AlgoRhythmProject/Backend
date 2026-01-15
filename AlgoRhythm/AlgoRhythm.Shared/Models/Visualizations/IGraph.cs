@@ -2,8 +2,8 @@
 {
     public interface IGraph
     {
-        string StartNodeId { get; }
-        string? EndNodeId { get; }
+        Node? StartNode { get; }
+        Node? EndNode { get; }
         Task SetNodeColor(string nodeId, string color);
         Task HighlightEdge(string fromId, string toId, string color);
         Task SetEdgeLabel(string fromId, string toId, string label);
