@@ -16,4 +16,7 @@ public static class TestConstants
     public const string TestSendGridApiKey = "TestApiKey";
     public const string TestSendGridFromName = "TestFromName";
     public const string TestSendGridFromEmail = "TestFromEmail";
+
+    // URLs
+    public const string TestFrontendUrl = "http://frontend:8888";
 }
