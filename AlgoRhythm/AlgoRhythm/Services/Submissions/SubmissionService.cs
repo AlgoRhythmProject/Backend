@@ -318,6 +318,67 @@ public class SubmissionService : ISubmissionService
         return MapToDto(submission, dtos);
     }
 
+    public async Task<IEnumerable<SubmissionResponseDto>> GetAllSubmissionsAsync(CancellationToken ct = default)
+    {
+        var submissions = await _submissionRepository.GetAllSubmissionsAsync(ct);
+        return submissions.Select(s => MapToDto(s, s.TestResults?.Select(tr => new TestResultDto
+        {
+            TestCaseId = tr.TestCaseId,
+            Passed = tr.Passed,
+            Points = tr.Points,
+            ExecutionTimeMs = tr.ExecutionTimeMs,
+            StdOut = tr.StdOut,
+            StdErr = tr.StdErr,
+            Errors = [.. tr.Errors.ToDto()]
+        }).ToList() ?? []));
+    }
+
+    public async Task<IEnumerable<SubmissionResponseDto>> GetSubmissionsByUserIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        var submissions = await _submissionRepository.GetSubmissionsByUserIdAsync(userId, ct);
+        return submissions.Select(s => MapToDto(s, s.TestResults?.Select(tr => new TestResultDto
+        {
+            TestCaseId = tr.TestCaseId,
+            Passed = tr.Passed,
+            Points = tr.Points,
+            ExecutionTimeMs = tr.ExecutionTimeMs,
+            StdOut = tr.StdOut,
+            StdErr = tr.StdErr,
+            Errors = [.. tr.Errors.ToDto()]
+        }).ToList() ?? []));
+    }
+
+    public async Task<IEnumerable<SubmissionResponseDto>> GetSubmissionsByUserAndTaskAsync(Guid userId, Guid taskId, CancellationToken ct = default)
+    {
+        var submissions = await _submissionRepository.GetSubmissionsByUserAndTaskAsync(userId, taskId, ct);
+        return submissions.Select(s => MapToDto(s, s.TestResults?.Select(tr => new TestResultDto
+        {
+            TestCaseId = tr.TestCaseId,
+            Passed = tr.Passed,
+            Points = tr.Points,
+            ExecutionTimeMs = tr.ExecutionTimeMs,
+            StdOut = tr.StdOut,
+            StdErr = tr.StdErr,
+            Errors = [.. tr.Errors.ToDto()]
+        }).ToList() ?? []));
+    }
+
+    public async Task<IEnumerable<SubmissionResponseDto>> GetRecentSubmissionsAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        var skip = (page - 1) * pageSize;
+        var submissions = await _submissionRepository.GetRecentSubmissionsAsync(skip, pageSize, ct);
+        return submissions.Select(s => MapToDto(s, s.TestResults?.Select(tr => new TestResultDto
+        {
+            TestCaseId = tr.TestCaseId,
+            Passed = tr.Passed,
+            Points = tr.Points,
+            ExecutionTimeMs = tr.ExecutionTimeMs,
+            StdOut = tr.StdOut,
+            StdErr = tr.StdErr,
+            Errors = [.. tr.Errors.ToDto()]
+        }).ToList() ?? []));
+    }
+
     private static SubmissionResponseDto MapToDto(ProgrammingSubmission submission, IReadOnlyList<TestResultDto> results)
     {
         return new SubmissionResponseDto
