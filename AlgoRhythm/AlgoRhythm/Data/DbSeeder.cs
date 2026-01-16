@@ -22,12 +22,16 @@ public static class DbSeeder
 
         var users = await SeedUsersAsync(userManager);
         await SeedContentAsync(context, users);
-        await SeedAchievements(context); // Add this line
+        await SeedAchievements(context); 
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
     {
-        string[] roleNames = { "Admin", "Student" };
+        var roleNames = typeof(Roles)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.FieldType == typeof(string))
+            .Select(f => (string)f.GetValue(null)!)
+            .ToArray();
 
         foreach (var roleName in roleNames)
         {

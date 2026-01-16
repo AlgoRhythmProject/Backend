@@ -14,9 +14,9 @@ public class LectureService : ILectureService
         _repo = repo;
     }
 
-    public async Task<IEnumerable<LectureDto>> GetAllAsync(CancellationToken ct)
+    public async Task<IEnumerable<LectureDto>> GetAllAsync(bool publishedOnly, CancellationToken ct)
     {
-        var lectures = await _repo.GetAllAsync(ct);
+        var lectures = await _repo.GetAllAsync(publishedOnly, ct);
         return lectures.Select(MapToDtoWithDetails);
     }
 

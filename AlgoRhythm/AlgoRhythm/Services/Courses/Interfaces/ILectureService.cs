@@ -4,7 +4,7 @@ namespace AlgoRhythm.Services.Courses.Interfaces;
 
 public interface ILectureService
 {
-    Task<IEnumerable<LectureDto>> GetAllAsync(CancellationToken ct);
+    Task<IEnumerable<LectureDto>> GetAllAsync(bool publishedOnly, CancellationToken ct);
     Task<IEnumerable<LectureDto>> GetByCourseIdAsync(Guid courseId, CancellationToken ct);
     Task<LectureDto?> GetByIdAsync(Guid id, CancellationToken ct);
     Task<LectureDto> CreateAsync(LectureInputDto dto, CancellationToken ct);

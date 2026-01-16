@@ -25,9 +25,9 @@ public class TaskController : ControllerBase
     }
 
     [HttpGet("with-courses")]
-    public async Task<ActionResult<IEnumerable<TaskWithCoursesDto>>> GetAllWithCourses(CancellationToken ct)
+    public async Task<ActionResult<IEnumerable<TaskWithCoursesDto>>> GetPublishedWithCourses(CancellationToken ct)
     {
-        var tasks = await _service.GetAllWithCoursesAsync(ct);
+        var tasks = await _service.GetPublishedWithCoursesAsync(ct);
         return Ok(tasks);
     }
 

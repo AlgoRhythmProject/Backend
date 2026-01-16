@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,17 @@ public class LectureController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<IEnumerable<LectureDto>>> GetAll(CancellationToken ct)
     {
-        var lectures = await _service.GetAllAsync(ct);
+        var lectures = await _service.GetAllAsync(publishedOnly: false, ct);
+        return Ok(lectures);
+    }
+
+    [HttpGet("published")]
+    public async Task<ActionResult<IEnumerable<LectureDto>>> GetAllPublished(CancellationToken ct) 
+    {
+        var lectures = await _service.GetAllAsync(publishedOnly: true, ct);
         return Ok(lectures);
     }
 

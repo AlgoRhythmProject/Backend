@@ -11,11 +11,12 @@ public class EfLectureRepository : ILectureRepository
     
     public EfLectureRepository(ApplicationDbContext db) => _db = db;
 
-    public async Task<IEnumerable<Lecture>> GetAllAsync(CancellationToken ct)
+    public async Task<IEnumerable<Lecture>> GetAllAsync(bool publishedOnly, CancellationToken ct)
     {
         return await _db.Lectures
             .Include(l => l.Contents.OrderBy(c => c.Order))
             .Include(l => l.Tags)
+            .Where(l => !publishedOnly || l.IsPublished)
             .OrderBy(l => l.CreatedAt)
             .ToListAsync(ct);
     }

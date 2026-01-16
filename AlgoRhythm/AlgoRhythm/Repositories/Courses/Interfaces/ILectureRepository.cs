@@ -4,7 +4,7 @@ namespace AlgoRhythm.Repositories.Courses.Interfaces;
 
 public interface ILectureRepository
 {
-    Task<IEnumerable<Lecture>> GetAllAsync(CancellationToken ct);
+    Task<IEnumerable<Lecture>> GetAllAsync(bool publishedOnly, CancellationToken ct);
     Task<IEnumerable<Lecture>> GetByCourseIdAsync(Guid courseId, CancellationToken ct);
     Task<Lecture?> GetByIdAsync(Guid id, CancellationToken ct);
     Task<Lecture?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct);
