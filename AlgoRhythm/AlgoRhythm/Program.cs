@@ -213,6 +213,35 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+})
+.AddGoogle(options =>
+{
+    var clientId = builder.Configuration["Authentication:Google:ClientId"] 
+        ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+    
+    var clientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
+        ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+
+    if (string.IsNullOrEmpty(clientId))
+    {
+        throw new InvalidOperationException(
+            "Google Client ID is not configured. " +
+            "Set it in User Secrets, appsettings, or GOOGLE_CLIENT_ID environment variable.");
+    }
+
+    if (string.IsNullOrEmpty(clientSecret))
+    {
+        throw new InvalidOperationException(
+            "Google Client Secret is not configured. " +
+            "Set it in User Secrets, appsettings, or GOOGLE_CLIENT_SECRET environment variable.");
+    }
+
+    options.ClientId = clientId;
+    options.ClientSecret = clientSecret;
+    
+    options.Scope.Add("email");
+    options.Scope.Add("profile");
+    options.SaveTokens = true;
 });
 
 builder.Services.AddControllers();
