@@ -99,6 +99,18 @@ public class LectureService : ILectureService
                 Type = ContentType.Photo
             };
         }
+        else if (dto.Type == "Video")
+        {
+            if (string.IsNullOrWhiteSpace(dto.FileName))
+                throw new ArgumentException("FileName is required for Video type content");
+
+            content = new LectureVideo
+            {
+                FileName = dto.FileName,
+                StreamUrl = dto.StreamUrl ?? string.Empty,
+                Type = ContentType.Video
+            };
+        }
         else
         {
             throw new ArgumentException($"Invalid content type: {dto.Type}");
@@ -143,6 +155,21 @@ public class LectureService : ILectureService
                 Alt = dto.Alt,
                 Title = dto.Title,
                 Type = ContentType.Photo,
+                Order = dto.Order
+            };
+        }
+        else if (dto.Type == "Video")
+        {
+            if (string.IsNullOrWhiteSpace(dto.FileName))
+                throw new ArgumentException("FileName is required for Video type content");
+
+            updatedContent = new LectureVideo
+            {
+                Id = contentId,
+                LectureId = lectureId,
+                FileName = dto.FileName,
+                StreamUrl = dto.StreamUrl ?? string.Empty,
+                Type = ContentType.Video,
                 Order = dto.Order
             };
         }
@@ -202,7 +229,11 @@ public class LectureService : ILectureService
             HtmlContent = content is LectureText text ? text.HtmlContent : null,
             Path = content is LecturePhoto photo ? photo.Path : null,
             Alt = content is LecturePhoto photo2 ? photo2.Alt : null,
-            Title = content is LecturePhoto photo3 ? photo3.Title : null
+            Title = content is LecturePhoto photo3 ? photo3.Title : null,
+            FileName = content is LectureVideo video ? video.FileName : null,
+            StreamUrl = content is LectureVideo video2 ? video2.StreamUrl : null,
+            FileSize = content is LectureVideo video3 ? video3.FileSize : null,
+            LastModified = content is LectureVideo video4 ? video4.LastModified : null
         };
     }
 }

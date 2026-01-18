@@ -61,6 +61,34 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
+        /// Retrieves a paginated list of files from blob storage. Admin only.
+        /// Returns only metadata - use get_file endpoint to download actual files.
+        /// </summary>
+        /// <param name="pageSize">Number of files per page (default: 50, max: 100)</param>
+        /// <param name="continuationToken">Token for next page (optional)</param>
+        /// <returns>List of file metadata with continuation token</returns>
+        [HttpGet("list")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ListFiles([FromQuery] int pageSize = 50, [FromQuery] string? continuationToken = null)
+        {
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            var (files, nextToken) = await _storageService.ListFilesAsync(pageSize, continuationToken);
+
+            return Ok(new
+            {
+                Files = files,
+                ContinuationToken = nextToken,
+                HasMore = nextToken != null
+            });
+        }
+
+        /// <summary>
         /// Video preview for debugging, not visible in swagger (it does not support streaming).
         /// URL should be opened directly in browser to preview video.
         /// </summary>
@@ -125,12 +153,14 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Retrieves a file stream from blob storage.
+        /// Retrieves a file stream from blob storage with range support for streaming.
+        /// Supports partial content requests for efficient video/audio streaming.
         /// </summary>
-        /// <param name="fileName">Name of the file in blob storage</param>
-        /// <returns>File stream</returns>
+        /// <param name="fileName">Name of the file in blob storage (with GUID prefix)</param>
+        /// <returns>File stream with range processing enabled</returns>
         [HttpGet("get_file")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status206PartialContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -140,7 +170,7 @@ namespace AlgoRhythm.Controllers.Common
 
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                return BadRequest("Path is required");
+                return BadRequest("fileName is required");
             }
 
             try
