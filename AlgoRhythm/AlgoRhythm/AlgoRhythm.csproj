@@ -33,6 +33,10 @@
   <ItemGroup>
     <ProjectReference Include="..\AlgoRhythm.Shared\AlgoRhythm.Shared.csproj" />
   </ItemGroup>
-	
-
+  <ItemGroup>
+	<Content Update="appsettings*.json">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+	</Content>
+  </ItemGroup>
 </Project>

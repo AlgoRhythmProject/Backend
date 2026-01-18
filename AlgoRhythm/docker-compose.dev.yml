@@ -49,11 +49,10 @@ services:
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
       AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
-      CODE_EXECUTOR_URL: http://executor:8080
+      CODE_EXECUTOR_URL: ${CODE_EXECUTOR_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID}
-      Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
     depends_on:
       database:
         condition: service_healthy
@@ -132,6 +131,18 @@ services:
       dockerfile: ./CodeAnalyzer/Dockerfile
     ports:
     - "5095:8080"
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL}
+
+  visualizer:
+    container_name: visualizer
+    build: 
+      context: .
+      dockerfile: ./VisualizerService/Dockerfile
+    ports:
+    - "5148:8080"
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL}
 networks:
   internal_net:
     driver: bridge

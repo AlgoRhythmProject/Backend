@@ -12,6 +12,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace AlgoRhythm.Services.Users;
 
@@ -957,7 +958,7 @@ This is an automated message, please do not reply.";
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var tokenInfo = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(json);
+            var tokenInfo = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
 
             if (tokenInfo == null)
             {

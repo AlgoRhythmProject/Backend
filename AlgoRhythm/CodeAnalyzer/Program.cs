@@ -9,15 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.WithOrigins("http://localhost:5173") 
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
+        policy
+            .WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL")!)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
-builder.Services.AddSignalR();
 
 builder.Services.AddSingleton<IReferenceProvider, RuntimeReferenceProvider>();
 builder.Services.AddSingleton<HostServices>(_ =>
@@ -33,7 +33,7 @@ builder.Services.AddSingleton<IDiagnosticService, DiagnosticService>();
 
 var app = builder.Build();
 
-app.UseCors();
+app.UseCors("AllowFrontend");
 app.MapHub<RoslynHub>("/roslynhub");
 
 app.Run();
