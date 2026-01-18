@@ -7,6 +7,7 @@ using System.Text.Encodings.Web;
 using System.Web;
 using AlgoRhythm.Services.Blob.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using AlgoRhythm.Shared.Models.Users;
 
 namespace AlgoRhythm.Controllers.Common
 {
@@ -26,7 +27,7 @@ namespace AlgoRhythm.Controllers.Common
         /// <param name="file">The file to upload</param>
         /// <returns>URL of the uploaded file</returns>
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]

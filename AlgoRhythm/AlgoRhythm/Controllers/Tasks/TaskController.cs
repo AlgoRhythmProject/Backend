@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Services.Tasks.Interfaces;
 using AlgoRhythm.Shared.Dtos.Tasks;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +24,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>List of all tasks</returns>
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<IEnumerable<TaskDto>>> GetAll(CancellationToken ct)
     {
         var tasks = await _service.GetAllAsync(ct);
@@ -35,9 +37,9 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>List of tasks with course information</returns>
     [HttpGet("with-courses")]
-    public async Task<ActionResult<IEnumerable<TaskWithCoursesDto>>> GetAllWithCourses(CancellationToken ct)
+    public async Task<ActionResult<IEnumerable<TaskWithCoursesDto>>> GetPublishedWithCourses(CancellationToken ct)
     {
-        var tasks = await _service.GetAllWithCoursesAsync(ct);
+        var tasks = await _service.GetPublishedWithCoursesAsync(ct);
         return Ok(tasks);
     }
 
@@ -76,7 +78,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created task</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<TaskDto>> Create([FromBody] TaskInputDto dto, CancellationToken ct)
     {
         try
@@ -98,7 +100,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] TaskInputDto dto, CancellationToken ct)
     {
         try
@@ -123,7 +125,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, ct);
@@ -138,7 +140,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("{taskId:guid}/tags/{tagId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> AddTag(Guid taskId, Guid tagId, CancellationToken ct)
     {
         await _service.AddTagAsync(taskId, tagId, ct);
@@ -153,7 +155,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{taskId:guid}/tags/{tagId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveTag(Guid taskId, Guid tagId, CancellationToken ct)
     {
         await _service.RemoveTagAsync(taskId, tagId, ct);
@@ -168,7 +170,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("{taskId:guid}/hints/{hintId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> AddHint(Guid taskId, Guid hintId, CancellationToken ct)
     {
         await _service.AddHintAsync(taskId, hintId, ct);
@@ -183,7 +185,7 @@ public class TaskController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{taskId:guid}/hints/{hintId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveHint(Guid taskId, Guid hintId, CancellationToken ct)
     {
         await _service.RemoveHintAsync(taskId, hintId, ct);

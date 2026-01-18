@@ -23,15 +23,20 @@ public class EfTaskRepository : ITaskRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<TaskItem>> GetPublishedAsync(CancellationToken ct)
+    public async Task<IEnumerable<TaskItem>> GetPublishedAsync(bool includeCourses, CancellationToken ct)
     {
-        return await _db.Set<TaskItem>()
+        IQueryable<TaskItem> query = _db.Set<TaskItem>()
             .Include(t => t.Tags)
-            .Include(t => t.Courses.Where(c => c.IsPublished))
             .Include(t => t.Hints)
             .Where(t => t.IsPublished && !t.IsDeleted)
-            .OrderBy(t => t.CreatedAt)
-            .ToListAsync(ct);
+            .OrderBy(t => t.CreatedAt);
+
+        if (includeCourses)
+        {
+            query = query.Include(t => t.Courses.Where(c => c.IsPublished));
+        }
+
+        return await query.ToListAsync(ct);
     }
 
     public async Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken ct)

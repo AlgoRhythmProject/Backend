@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,9 +24,17 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>List of all lectures</returns>
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<IEnumerable<LectureDto>>> GetAll(CancellationToken ct)
     {
-        var lectures = await _service.GetAllAsync(ct);
+        var lectures = await _service.GetAllAsync(publishedOnly: false, ct);
+        return Ok(lectures);
+    }
+
+    [HttpGet("published")]
+    public async Task<ActionResult<IEnumerable<LectureDto>>> GetAllPublished(CancellationToken ct) 
+    {
+        var lectures = await _service.GetAllAsync(publishedOnly: true, ct);
         return Ok(lectures);
     }
 
@@ -66,7 +75,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created lecture</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<LectureDto>> Create([FromBody] LectureInputDto dto, CancellationToken ct)
     {
         var created = await _service.CreateAsync(dto, ct);
@@ -81,7 +90,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] LectureInputDto dto, CancellationToken ct)
     {
         try
@@ -102,7 +111,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, ct);
@@ -117,7 +126,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("{lectureId:guid}/tags/{tagId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> AddTag(Guid lectureId, Guid tagId, CancellationToken ct)
     {
         await _service.AddTagAsync(lectureId, tagId, ct);
@@ -132,7 +141,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{lectureId:guid}/tags/{tagId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveTag(Guid lectureId, Guid tagId, CancellationToken ct)
     {
         await _service.RemoveTagAsync(lectureId, tagId, ct);
@@ -160,7 +169,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created content</returns>
     [HttpPost("{lectureId:guid}/contents")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<LectureContentDto>> AddContent(Guid lectureId, [FromBody] LectureContentInputDto dto, CancellationToken ct)
     {
         try
@@ -204,7 +213,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{lectureId:guid}/contents/{contentId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> UpdateContent(Guid lectureId, Guid contentId, [FromBody] LectureContentInputDto dto, CancellationToken ct)
     {
         try
@@ -230,7 +239,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{lectureId:guid}/contents/{contentId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveContent(Guid lectureId, Guid contentId, CancellationToken ct)
     {
         await _service.RemoveContentAsync(lectureId, contentId, ct);
@@ -245,7 +254,7 @@ public class LectureController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPatch("{lectureId:guid}/contents/swap-order")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> SwapContentOrder(Guid lectureId, [FromBody] ChangeContentOrderDto dto, CancellationToken ct)
     {
         try

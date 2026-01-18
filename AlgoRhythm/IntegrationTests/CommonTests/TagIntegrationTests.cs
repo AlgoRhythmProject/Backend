@@ -399,11 +399,11 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     }
 
     [Fact]
-    public async Task GET_WithoutAuth_Returns200()
+    public async Task GET_Without_Returns401()
     {
         _httpClient.DefaultRequestHeaders.Authorization = null;
         var response = await _httpClient.GetAsync("/api/tag");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

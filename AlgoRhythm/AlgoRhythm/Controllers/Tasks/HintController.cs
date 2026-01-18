@@ -1,11 +1,13 @@
 using AlgoRhythm.Services.Tasks.Interfaces;
 using AlgoRhythm.Shared.Dtos.Tasks;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AlgoRhythm.Controllers.Tasks;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class HintController : ControllerBase
 {
@@ -54,7 +56,7 @@ public class HintController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created hint</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] HintInputDto dto, CancellationToken ct)
     {
         try
@@ -77,7 +79,7 @@ public class HintController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] HintInputDto dto, CancellationToken ct)
     {
         try
@@ -103,7 +105,7 @@ public class HintController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, ct);

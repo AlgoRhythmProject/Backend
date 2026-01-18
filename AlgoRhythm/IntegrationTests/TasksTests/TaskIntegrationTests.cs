@@ -148,15 +148,14 @@ namespace IntegrationTests.TasksTests
             await AddTaskToDb("Task 1", true);
             await AddTaskToDb("Task 2", false);
 
-            var response = await _httpClient.GetAsync(_controllerRoute);
+            var response = await _httpClient.GetAsync(_controllerRoute + "/published");
 
             response.EnsureSuccessStatusCode();
             var tasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>();
 
             Assert.NotNull(tasks);
-            Assert.True(tasks.Count >= 2);
             Assert.Contains(tasks, t => t.Title == "Task 1");
-            Assert.Contains(tasks, t => t.Title == "Task 2");
+            Assert.True(tasks.All(t => t.IsPublished));
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Courses.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +24,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>List of all courses</returns>
     [HttpGet]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<IEnumerable<CourseSummaryDto>>> GetAll(CancellationToken ct)
     {
         var courses = await _service.GetAllAsync(ct);
@@ -64,7 +66,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created course</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<CourseDto>> Create([FromBody] CourseInputDto dto, CancellationToken ct)
     {
         var created = await _service.CreateAsync(dto, ct);
@@ -79,7 +81,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] CourseInputDto dto, CancellationToken ct)
     {
         try
@@ -100,7 +102,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, ct);
@@ -115,7 +117,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("{courseId:guid}/tasks/{taskId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> AddTask(Guid courseId, Guid taskId, CancellationToken ct)
     {
         await _service.AddTaskToCourseAsync(courseId, taskId, ct);
@@ -130,7 +132,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{courseId:guid}/tasks/{taskId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveTask(Guid courseId, Guid taskId, CancellationToken ct)
     {
         await _service.RemoveTaskFromCourseAsync(courseId, taskId, ct);
@@ -145,7 +147,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("{courseId:guid}/lectures/{lectureId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> AddLecture(Guid courseId, Guid lectureId, CancellationToken ct)
     {
         await _service.AddLectureToCourseAsync(courseId, lectureId, ct);
@@ -160,7 +162,7 @@ public class CourseController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{courseId:guid}/lectures/{lectureId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> RemoveLecture(Guid courseId, Guid lectureId, CancellationToken ct)
     {
         await _service.RemoveLectureFromCourseAsync(courseId, lectureId, ct);

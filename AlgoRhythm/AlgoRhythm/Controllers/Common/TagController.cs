@@ -1,11 +1,13 @@
 using AlgoRhythm.Services.Common.Interfaces;
 using AlgoRhythm.Shared.Dtos.Common;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AlgoRhythm.Controllers.Common;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TagController : ControllerBase
 {
@@ -69,7 +71,7 @@ public class TagController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created tag</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] TagInputDto dto, CancellationToken ct)
     {
         try
@@ -96,7 +98,7 @@ public class TagController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] TagInputDto dto, CancellationToken ct)
     {
         try
@@ -126,7 +128,7 @@ public class TagController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _service.DeleteAsync(id, ct);

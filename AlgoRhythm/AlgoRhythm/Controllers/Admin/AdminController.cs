@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Admin.Interfaces;
 using AlgoRhythm.Shared.Dtos.Admin;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -50,7 +51,7 @@ public class AdminController : ControllerBase
     /// Get all users in the system (Admin only)
     /// </summary>
     [HttpGet("users")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(IEnumerable<UserWithRolesDto>), 200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
@@ -64,7 +65,7 @@ public class AdminController : ControllerBase
     /// Get user details with roles (Admin only)
     /// </summary>
     [HttpGet("users/{userId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(UserWithRolesDto), 200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
@@ -86,7 +87,7 @@ public class AdminController : ControllerBase
     /// Assign Admin role to a user (Admin only)
     /// </summary>
     [HttpPost("users/{userId:guid}/assign-admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
@@ -116,7 +117,7 @@ public class AdminController : ControllerBase
     /// Cannot revoke from the last admin.
     /// </summary>
     [HttpPost("users/{userId:guid}/revoke-admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]

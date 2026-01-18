@@ -7,6 +7,7 @@ using System.Security.Claims;
 namespace AlgoRhythm.Controllers.Common;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class CommentController : ControllerBase
 {
@@ -55,7 +56,6 @@ public class CommentController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>The created comment</returns>
     [HttpPost]
-    [Authorize]
     public async Task<IActionResult> Create([FromBody] CommentInputDto dto, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -82,7 +82,6 @@ public class CommentController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
-    [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] string content, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -116,7 +115,6 @@ public class CommentController : ControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

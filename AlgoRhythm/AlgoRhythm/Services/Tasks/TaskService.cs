@@ -14,7 +14,7 @@ public class TaskService : ITaskService
         _repo = repo;
     }
 
-    // GET -------------------------------------
+    #region Get
 
     public async Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct)
     {
@@ -22,15 +22,15 @@ public class TaskService : ITaskService
         return tasks.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<TaskWithCoursesDto>> GetAllWithCoursesAsync(CancellationToken ct)
+    public async Task<IEnumerable<TaskWithCoursesDto>> GetPublishedWithCoursesAsync(CancellationToken ct)
     {
-        var tasks = await _repo.GetAllAsync(ct);
+        var tasks = await _repo.GetPublishedAsync(includeCourses: true, ct);
         return tasks.Select(MapToWithCoursesDto);
     }
 
     public async Task<IEnumerable<TaskDto>> GetPublishedAsync(CancellationToken ct)
     {
-        var tasks = await _repo.GetPublishedAsync(ct);
+        var tasks = await _repo.GetPublishedAsync(includeCourses: false, ct);
         return tasks.Select(MapToDto);
     }
 
@@ -40,7 +40,9 @@ public class TaskService : ITaskService
         return task == null ? null : MapToDetailsDto(task);
     }
 
-    // CREATE ----------------------------------
+    #endregion
+
+    #region Create
 
     public async Task<TaskDto> CreateAsync(TaskInputDto dto, CancellationToken ct)
     {
@@ -78,7 +80,9 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    // UPDATE ----------------------------------
+    #endregion
+
+    #region Update
 
     public async Task UpdateAsync(Guid id, TaskInputDto dto, CancellationToken ct)
     {
@@ -108,7 +112,9 @@ public class TaskService : ITaskService
         await _repo.UpdateAsync(task, ct);
     }
 
-    // DELETE ----------------------------------
+    #endregion
+
+    #region Delete
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
@@ -135,7 +141,9 @@ public class TaskService : ITaskService
         await _repo.RemoveHintFromTaskAsync(taskId, hintId, ct);
     }
 
-    // MAPPING ---------------------------------
+    #endregion
+
+    #region Mapping
 
     private static TaskDto MapToDto(TaskItem task)
     {
@@ -207,6 +215,8 @@ public class TaskService : ITaskService
                 Name = c.Name
             }).ToList() ?? []
         };
+
+        #endregion
     }
 }
 

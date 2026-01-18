@@ -75,9 +75,23 @@ public class LectureIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     }
 
     [Fact]
-    public async Task GET_AllLectures_Returns200()
+    public async Task GET_AllPublishedLectures_Returns200()
     {
         await SetupAuthenticatedUser();
+
+        var response = await _httpClient.GetAsync("/api/lecture/published");
+
+        response.EnsureSuccessStatusCode();
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var lectures = JsonConvert.DeserializeObject<List<LectureDto>>(responseBody);
+
+        Assert.NotNull(lectures);
+    }
+
+    [Fact]
+    public async Task GET_All_AdminOnly_Returns200()
+    {
+        await SetupAuthenticatedAdmin();
 
         var response = await _httpClient.GetAsync("/api/lecture");
 
@@ -86,6 +100,16 @@ public class LectureIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         var lectures = JsonConvert.DeserializeObject<List<LectureDto>>(responseBody);
 
         Assert.NotNull(lectures);
+    }
+
+    [Fact]
+    public async Task GET_All_AdminOnly_Returns403_For_User()
+    {
+        await SetupAuthenticatedUser();
+
+        var response = await _httpClient.GetAsync("/api/lecture");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

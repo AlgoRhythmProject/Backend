@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Shared.Dtos.Achievements;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -130,7 +131,7 @@ public class AchievementController : ControllerBase
     /// Create a new achievement (Admin only)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(AchievementDto), 201)]
     [ProducesResponseType(400)]
     [ProducesResponseType(403)]
@@ -157,7 +158,7 @@ public class AchievementController : ControllerBase
     /// Update an existing achievement (Admin only)
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(AchievementDto), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(403)]
@@ -186,7 +187,7 @@ public class AchievementController : ControllerBase
     /// Delete an achievement (Admin only)
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(204)]
     [ProducesResponseType(403)]
     [ProducesResponseType(404)]
@@ -211,7 +212,7 @@ public class AchievementController : ControllerBase
     /// Recalculate achievements for a specific user (Admin only)
     /// </summary>
     [HttpPost("admin/recalculate/{userId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(200)]
     [ProducesResponseType(403)]
     [ProducesResponseType(404)]
@@ -233,7 +234,7 @@ public class AchievementController : ControllerBase
     /// Initialize achievements for a specific user (Admin only)
     /// </summary>
     [HttpPost("admin/initialize/{userId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(200)]
     [ProducesResponseType(403)]
     [ProducesResponseType(404)]

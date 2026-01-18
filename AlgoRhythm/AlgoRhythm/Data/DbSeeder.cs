@@ -27,7 +27,11 @@ public static class DbSeeder
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
     {
-        string[] roleNames = { "Admin", "User" };
+        var roleNames = typeof(Roles)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.FieldType == typeof(string))
+            .Select(f => (string)f.GetValue(null)!)
+            .ToArray();
 
         foreach (var roleName in roleNames)
         {
@@ -62,7 +66,7 @@ public static class DbSeeder
             var result = await userManager.CreateAsync(adminUser, "Admin123!");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                await userManager.AddToRoleAsync(adminUser, Roles.Admin);
             }
         }
         users["admin"] = adminUser;
@@ -95,7 +99,7 @@ public static class DbSeeder
                 var result = await userManager.CreateAsync(user, "Student123!");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(user, "User");
+                    await userManager.AddToRoleAsync(user, Roles.User);
                 }
             }
             users[key] = user;

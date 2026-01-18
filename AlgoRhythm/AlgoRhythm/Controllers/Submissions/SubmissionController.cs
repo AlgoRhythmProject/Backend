@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Services.Submissions.Interfaces;
+using AlgoRhythm.Shared.Models.Users;
 
 namespace AlgoRhythm.Controllers.Submissions;
 
@@ -62,7 +63,7 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
     /// Get all submissions (Admin only)
     /// </summary>
     [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(IEnumerable<SubmissionResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -138,7 +139,7 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
     [HttpGet("recent")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(IEnumerable<SubmissionResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
