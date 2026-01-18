@@ -6,6 +6,7 @@ using AlgoRhythm.Shared.Models.Courses;
 using AlgoRhythm.Shared.Models.Users;
 using IntegrationTests.IntegrationTestSetup;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
@@ -76,13 +77,13 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task GET_AllCourses_Returns200()
     {
-        await SetupAuthenticatedAdmin(); // DODAJ autoryzację
+        await SetupAuthenticatedAdmin();
 
         var response = await _httpClient.GetAsync("/api/course");
 
         response.EnsureSuccessStatusCode();
         var responseBody = await response.Content.ReadAsStringAsync();
-        var courses = JsonConvert.DeserializeObject<List<CourseDto>>(responseBody);
+        var courses = JsonConvert.DeserializeObject<List<CourseSummaryDto>>(responseBody);
 
         Assert.NotNull(courses);
     }
@@ -113,7 +114,7 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         response.EnsureSuccessStatusCode();
         var responseBody = await response.Content.ReadAsStringAsync();
-        var courses = JsonConvert.DeserializeObject<List<CourseDto>>(responseBody);
+        var courses = JsonConvert.DeserializeObject<List<CourseSummaryDto>>(responseBody);
 
         Assert.NotNull(courses);
         Assert.All(courses, c => Assert.True(c.IsPublished));
@@ -264,21 +265,29 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
             Description = "Has lectures"
         };
 
+        // Create lectures independently (many-to-many)
         var lecture1 = new Lecture
         {
             Title = "Lecture 1",
-            Course = course
+            IsPublished = true
         };
 
         var lecture2 = new Lecture
         {
             Title = "Lecture 2",
-            Course = course
+            IsPublished = true
         };
 
         await _dbContext.Courses.AddAsync(course);
         await _dbContext.Lectures.AddRangeAsync(lecture1, lecture2);
         await _dbContext.SaveChangesAsync();
+
+        // Assign lectures to course (many-to-many)
+        course.Lectures.Add(lecture1);
+        course.Lectures.Add(lecture2);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
 
         var response = await _httpClient.GetAsync($"/api/course/{course.Id}");
 
@@ -288,5 +297,126 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         Assert.NotNull(courseDto);
         Assert.True(courseDto.Lectures.Count >= 2);
+        Assert.Contains(courseDto.Lectures, l => l.Title == "Lecture 1");
+        Assert.Contains(courseDto.Lectures, l => l.Title == "Lecture 2");
+    }
+
+    [Fact]
+    public async Task POST_AddLectureToCourse_ValidIds_Returns204()
+    {
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
+        {
+            Name = "Course",
+            Description = "Test"
+        };
+
+        var lecture = new Lecture
+        {
+            Title = "Lecture to Add",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.Lectures.AddAsync(lecture);
+        await _dbContext.SaveChangesAsync();
+
+        var response = await _httpClient.PostAsync($"/api/course/{course.Id}/lectures/{lecture.Id}", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        _dbContext.ChangeTracker.Clear();
+        var updatedCourse = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstOrDefaultAsync(c => c.Id == course.Id);
+
+        Assert.NotNull(updatedCourse);
+        Assert.Contains(updatedCourse.Lectures, l => l.Id == lecture.Id);
+    }
+
+    [Fact]
+    public async Task DELETE_RemoveLectureFromCourse_ValidIds_Returns204()
+    {
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
+        {
+            Name = "Course",
+            Description = "Test"
+        };
+
+        var lecture = new Lecture
+        {
+            Title = "Lecture to Remove",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.Lectures.AddAsync(lecture);
+        await _dbContext.SaveChangesAsync();
+
+        // Add lecture to course
+        course.Lectures.Add(lecture);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        var response = await _httpClient.DeleteAsync($"/api/course/{course.Id}/lectures/{lecture.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        _dbContext.ChangeTracker.Clear();
+        var updatedCourse = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstOrDefaultAsync(c => c.Id == course.Id);
+
+        Assert.NotNull(updatedCourse);
+        Assert.DoesNotContain(updatedCourse.Lectures, l => l.Id == lecture.Id);
+    }
+
+    [Fact]
+    public async Task Lecture_CanBelongToMultipleCourses()
+    {
+        await SetupAuthenticatedAdmin();
+
+        var course1 = new Course { Name = "Course 1", Description = "Test" };
+        var course2 = new Course { Name = "Course 2", Description = "Test" };
+
+        var sharedLecture = new Lecture
+        {
+            Title = "Shared Lecture",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddRangeAsync(course1, course2);
+        await _dbContext.Lectures.AddAsync(sharedLecture);
+        await _dbContext.SaveChangesAsync();
+
+        // Add same lecture to both courses
+        course1.Lectures.Add(sharedLecture);
+        course2.Lectures.Add(sharedLecture);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        // Verify lecture is in both courses
+        var updatedCourse1 = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstAsync(c => c.Id == course1.Id);
+
+        var updatedCourse2 = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstAsync(c => c.Id == course2.Id);
+
+        Assert.Contains(updatedCourse1.Lectures, l => l.Id == sharedLecture.Id);
+        Assert.Contains(updatedCourse2.Lectures, l => l.Id == sharedLecture.Id);
+
+        // Verify lecture has both courses
+        var updatedLecture = await _dbContext.Lectures
+            .Include(l => l.Courses)
+            .FirstAsync(l => l.Id == sharedLecture.Id);
+
+        Assert.Equal(2, updatedLecture.Courses.Count);
     }
 }

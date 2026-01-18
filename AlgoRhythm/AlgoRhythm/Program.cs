@@ -12,6 +12,8 @@ using AlgoRhythm.Repositories.Submissions;
 using AlgoRhythm.Repositories.Submissions.Interfaces;
 using AlgoRhythm.Repositories.Tasks;
 using AlgoRhythm.Repositories.Tasks.Interfaces;
+using AlgoRhythm.Repositories.Users.Interfaces;
+using AlgoRhythm.Repositories.Users;
 using AlgoRhythm.Services.Achievements;
 using AlgoRhythm.Services.Achievements.Interfaces;
 using AlgoRhythm.Services.Admin;
@@ -111,6 +113,7 @@ builder.Services.AddScoped<IHintRepository, EfHintRepository>();
 builder.Services.AddScoped<IAchievementRepository, EfAchievementRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<ITestCaseRepository, EfTestCaseRepository>();
+builder.Services.AddScoped<IUserStreakRepository, EfUserStreakRepository>();
 
 
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
@@ -127,6 +130,7 @@ builder.Services.AddScoped<IHintService, HintService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ITestCaseService, TestCaseService>();
+builder.Services.AddScoped<IUserStreakService, UserStreakService>();
 
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
@@ -209,6 +213,35 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+})
+.AddGoogle(options =>
+{
+    var clientId = builder.Configuration["Authentication:Google:ClientId"] 
+        ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+    
+    var clientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
+        ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+
+    if (string.IsNullOrEmpty(clientId))
+    {
+        throw new InvalidOperationException(
+            "Google Client ID is not configured. " +
+            "Set it in User Secrets, appsettings, or GOOGLE_CLIENT_ID environment variable.");
+    }
+
+    if (string.IsNullOrEmpty(clientSecret))
+    {
+        throw new InvalidOperationException(
+            "Google Client Secret is not configured. " +
+            "Set it in User Secrets, appsettings, or GOOGLE_CLIENT_SECRET environment variable.");
+    }
+
+    options.ClientId = clientId;
+    options.ClientSecret = clientSecret;
+    
+    options.Scope.Add("email");
+    options.Scope.Add("profile");
+    options.SaveTokens = true;
 });
 
 builder.Services.AddControllers();

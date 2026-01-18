@@ -50,6 +50,10 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
       AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
       CODE_EXECUTOR_URL: http://executor:8080
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
     depends_on:
       database:
         condition: service_healthy
@@ -114,7 +118,7 @@ services:
     image: mcr.microsoft.com/azure-storage/azurite
     restart: unless-stopped
     ports:
-      - "10000:10000" # Blob Storage
+      - "10010:10000" # Blob Storage
     command: 'azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --location /data --debug /data/debug.log'
     volumes:
       # Lokalny folder do przechowywania danych Azurite

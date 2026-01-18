@@ -10,4 +10,5 @@ public interface IAdminRepository
     Task<bool> AddUserToRoleAsync(User user, string roleName);
     Task<bool> RemoveUserFromRoleAsync(User user, string roleName);
     Task<bool> IsInRoleAsync(User user, string roleName);
+    Task<int> GetAdminCountAsync(CancellationToken ct);
 }

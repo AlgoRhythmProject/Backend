@@ -50,5 +50,6 @@ public enum RequirementType
     CompleteCourses,
     CompleteSpecificCourse,
     CompleteSpecificTask,
-    CompleteSpecificLecture
+    CompleteSpecificLecture,
+    LoginStreak
 }

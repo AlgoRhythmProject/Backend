@@ -236,4 +236,36 @@ public class CourseProgressController : ControllerBase
         var completedTaskIds = await _service.GetCompletedTaskIdsAsync(userId, courseId, ct);
         return Ok(completedTaskIds);
     }
+
+    /// <summary>
+    /// Gets all completed lectures for the current user across all courses.
+    /// </summary>
+    [HttpGet("my-completed-lectures")]
+    [ProducesResponseType(typeof(UserCompletedLecturesDto), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetMyCompletedLectures(CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedLectures = await _service.GetAllCompletedLecturesAsync(userId, ct);
+        return Ok(completedLectures);
+    }
+
+    /// <summary>
+    /// Gets all completed tasks for the current user across all courses.
+    /// </summary>
+    [HttpGet("my-completed-tasks")]
+    [ProducesResponseType(typeof(UserCompletedTasksDto), 200)]
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetMyCompletedTasks(CancellationToken ct)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { error = "Invalid user ID in token" });
+
+        var completedTasks = await _service.GetAllCompletedTasksAsync(userId, ct);
+        return Ok(completedTasks);
+    }
 }

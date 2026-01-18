@@ -96,7 +96,7 @@ public class AdminService : IAdminService
             userId, string.Join(", ", currentRoles));
     }
 
-    public async Task RevokeAdminRoleAsync(Guid userId, CancellationToken ct)
+    public async Task RevokeAdminRoleAsync(Guid userId, Guid currentUserId, CancellationToken ct)
     {
         var user = await _repo.GetUserByIdAsync(userId, ct);
         if (user == null)
@@ -107,6 +107,14 @@ public class AdminService : IAdminService
         {
             _logger.LogInformation("User {UserId} is not an Admin", userId);
             throw new InvalidOperationException("User does not have Admin role");
+        }
+
+        // Check if this is the last admin
+        var adminCount = await _repo.GetAdminCountAsync(ct);
+        if (adminCount <= 1)
+        {
+            _logger.LogWarning("Attempt to revoke Admin role from the last admin user {UserId}", userId);
+            throw new InvalidOperationException("Cannot revoke Admin role from the last admin user");
         }
 
         // remove admin role

@@ -60,7 +60,6 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         var testLecture = new Lecture
         {
             Id = _testLectureId,
-            CourseId = _testCourseId,
             Title = "Test Lecture for Tags",
             IsPublished = true
         };
@@ -207,7 +206,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_Create_ValidInput_Returns201AndCreatedTag()
     {
-        await SetupAuthenticatedAdminUser(); // Admin required
+        await SetupAuthenticatedAdminUser();
         var inputDto = new TagInputDto
         {
             Name = "NewTag" + Guid.NewGuid(),
@@ -233,7 +232,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_Create_DuplicateName_Returns400()
     {
-        await SetupAuthenticatedAdminUser(); // Admin required
+        await SetupAuthenticatedAdminUser();
         var uniqueName = "DuplicateTag" + Guid.NewGuid();
         await AddTagToDb(uniqueName);
 
@@ -252,7 +251,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task PUT_Update_ValidInput_Returns204()
     {
-        await SetupAuthenticatedAdminUser(); // Admin required
+        await SetupAuthenticatedAdminUser();
         var tag = await AddTagToDb("OriginalTag" + Guid.NewGuid(), "Original Description");
         var updateDto = new TagInputDto
         {
@@ -275,7 +274,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task PUT_Update_InvalidId_Returns404()
     {
-        await SetupAuthenticatedAdminUser(); // Admin required
+        await SetupAuthenticatedAdminUser();
         var updateDto = new TagInputDto
         {
             Name = "UpdatedTag" + Guid.NewGuid(),
@@ -291,7 +290,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task DELETE_Delete_ValidId_Returns204()
     {
-        await SetupAuthenticatedAdminUser(); // Admin required
+        await SetupAuthenticatedAdminUser();
         var tag = await AddTagToDb("ToDelete" + Guid.NewGuid());
 
         var response = await _httpClient.DeleteAsync($"/api/tag/{tag.Id}");
@@ -306,10 +305,10 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_AssignTagToTask_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser(); 
         var tag = await AddTagToDb("TaskTag" + Guid.NewGuid());
 
-        // Endpoint is in TaskController, not TagController
+        // Endpoint is in TaskController, requires Admin
         var response = await _httpClient.PostAsync($"/api/task/{_testTaskId}/tags/{tag.Id}", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -326,10 +325,10 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_AssignTagToLecture_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser();
         var tag = await AddTagToDb("LectureTag" + Guid.NewGuid());
 
-        // Endpoint is in LectureController, not TagController
+        // Endpoint is in LectureController, requires Admin
         var response = await _httpClient.PostAsync($"/api/lecture/{_testLectureId}/tags/{tag.Id}", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -346,7 +345,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task DELETE_RemoveTagFromTask_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser();
         var tag = await AddTagToDb("TaskTagToRemove" + Guid.NewGuid());
 
         var task = await _dbContext.TaskItems
@@ -357,7 +356,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         _dbContext.ChangeTracker.Clear();
 
-        // Endpoint is in TaskController, not TagController
+        // Endpoint is in TaskController, requires Admin
         var response = await _httpClient.DeleteAsync($"/api/task/{_testTaskId}/tags/{tag.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -374,7 +373,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task DELETE_RemoveTagFromLecture_ValidIds_Returns204()
     {
-        await SetupAuthenticatedUser();
+        await SetupAuthenticatedAdminUser();
         var tag = await AddTagToDb("LectureTagToRemove" + Guid.NewGuid());
 
         var lecture = await _dbContext.Lectures
@@ -385,7 +384,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         _dbContext.ChangeTracker.Clear();
 
-        // Endpoint is in LectureController, not TagController
+        // Endpoint is in LectureController, requires Admin
         var response = await _httpClient.DeleteAsync($"/api/lecture/{_testLectureId}/tags/{tag.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -400,7 +399,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     }
 
     [Fact]
-    public async Task GET_WithoutAuth_Returns200() // GET endpoints are not protected
+    public async Task GET_WithoutAuth_Returns200()
     {
         _httpClient.DefaultRequestHeaders.Authorization = null;
         var response = await _httpClient.GetAsync("/api/tag");
@@ -410,7 +409,7 @@ public class TagIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     [Fact]
     public async Task POST_Create_WithoutAdminRole_Returns403()
     {
-        await SetupAuthenticatedUser(); // Regular user, not admin
+        await SetupAuthenticatedUser();
         var inputDto = new TagInputDto
         {
             Name = "NewTag" + Guid.NewGuid(),

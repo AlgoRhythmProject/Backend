@@ -24,6 +24,8 @@ public class AuthService : IAuthService
     private readonly ICourseProgressService _courseProgressService;
     private readonly IAchievementService _achievementService;
     private readonly ApplicationDbContext _context;
+    private readonly IUserStreakService _streakService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     // Simple in-memory rate limiting
     private static readonly Dictionary<string, DateTime> _lastEmailSent = new();
@@ -36,8 +38,9 @@ public class AuthService : IAuthService
         ILogger<AuthService> logger,
         ICourseProgressService courseProgressService,
         IAchievementService achievementService,
-        ApplicationDbContext context)
-
+        ApplicationDbContext context,
+        IUserStreakService streakService,
+        IHttpClientFactory httpClientFactory)
     {
         _userManager = userManager;
         _emailSender = emailSender;
@@ -46,6 +49,8 @@ public class AuthService : IAuthService
         _courseProgressService = courseProgressService;
         _achievementService = achievementService;
         _context = context;
+        _streakService = streakService;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task RegisterAsync(RegisterRequest request)
@@ -76,7 +81,10 @@ public class AuthService : IAuthService
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            EmailConfirmed = false
+            EmailConfirmed = false,
+            CurrentStreak = 0,
+            LongestStreak = 0,
+            LastLoginDate = null
         };
 
         // Create user with password (Identity handles hashing)
@@ -298,38 +306,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        Thank you for registering at AlgoRhythm - a programming learning platform.
+Thank you for registering at AlgoRhythm - a programming learning platform.
 
-        To complete the registration process, please verify your email address by entering the verification code below:
+To complete the registration process, please verify your email address by entering the verification code below:
 
-        {code}
+{code}
 
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
+The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-        If you did not create this account, please ignore this message.
+If you did not create this account, please ignore this message.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
+<p>Thank you for registering at AlgoRhythm - a programming learning platform.</p>
 
-        <p>To complete the registration process, please verify your email address by entering the verification code below:</p>
+<p>To complete the registration process, please verify your email address by entering the verification code below:</p>
 
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+<p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+<p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-        <p>If you did not create this account, please ignore this message.</p>
+<p>If you did not create this account, please ignore this message.</p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -351,38 +359,38 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        We received a request to reset your password for your AlgoRhythm account.
+We received a request to reset your password for your AlgoRhythm account.
 
-        To reset your password, use the following verification code:
+To reset your password, use the following verification code:
 
-        {code}
+{code}
 
-        The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
+The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).
 
-        If you did not request a password reset, please ignore this message and your password will remain unchanged.
+If you did not request a password reset, please ignore this message and your password will remain unchanged.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>We received a request to reset your password for your AlgoRhythm account.</p>
+<p>We received a request to reset your password for your AlgoRhythm account.</p>
 
-        <p>To reset your password, use the following verification code:</p>
+<p>To reset your password, use the following verification code:</p>
 
-        <p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
+<p style='font-size: 24px; font-weight: bold; letter-spacing: 2px;'>{code}</p>
 
-        <p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
+<p>The code is valid for 1 hour (until {expiryTime:HH:mm, dd.MM.yyyy}).</p>
 
-        <p>If you did not request a password reset, please ignore this message and your password will remain unchanged.</p>
+<p>If you did not request a password reset, please ignore this message and your password will remain unchanged.</p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -424,6 +432,17 @@ public class AuthService : IAuthService
         await _userManager.UpdateAsync(user);
 
         _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
+
+        // Update streak on first verification (counts as first login)
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(user.Id);
+            _logger.LogInformation("Login streak initialized for newly verified user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize login streak for user {UserId}", user.Id);
+        }
 
         return await GenerateAuthResponseAsync(user, "unknown");
     }
@@ -470,13 +489,7 @@ public class AuthService : IAuthService
         // Generate Refresh Token
         var refreshToken = await GenerateRefreshTokenAsync(user.Id, ipAddress);
 
-        var userDto = new UserDto(
-            user.Id,
-            user.Email!,
-            user.FirstName,
-            user.LastName,
-            user.CreatedAt
-        );
+        var userDto = MapToUserDto(user);
 
         return new AuthResponse(
             tokenString, 
@@ -533,6 +546,18 @@ public class AuthService : IAuthService
         {
             _logger.LogWarning("Login attempt with unverified email: {Email}", user.Email);
             throw new EmailNotVerifiedException();
+        }
+
+        // Update login streak
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(user.Id);
+            _logger.LogInformation("Login streak updated for user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update login streak for user {UserId}", user.Id);
+            // Don't throw - login should still succeed
         }
 
         _logger.LogInformation("User logged in successfully: {Email}", user.Email);
@@ -729,13 +754,7 @@ public class AuthService : IAuthService
         }
 
         // Return updated user data
-        return new UserDto(
-            user.Id,
-            user.Email!,
-            user.FirstName,
-            user.LastName,
-            user.CreatedAt
-        );
+        return MapToUserDto(user);
     }
 
     private async Task SendEmailChangeNotificationAsync(User user, string oldEmail)
@@ -744,40 +763,40 @@ public class AuthService : IAuthService
 
         var plain = $@"Hello {user.FirstName}!
 
-        Your email address for your AlgoRhythm account has been successfully changed.
+Your email address for your AlgoRhythm account has been successfully changed.
 
-        Old email: {oldEmail}
-        New email: {user.Email}
+Old email: {oldEmail}
+New email: {user.Email}
 
-        If you did not make this change, please contact our support team immediately.
+If you did not make this change, please contact our support team immediately.
 
-        Best regards,
-        AlgoRhythm Team
+Best regards,
+AlgoRhythm Team
 
-        ---
-        This is an automated message, please do not reply.";
+---
+This is an automated message, please do not reply.";
 
-                var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
+        var html = $@"<p>Hello <strong>{user.FirstName}</strong>!</p>
 
-        <p>Your email address for your AlgoRhythm account has been successfully changed.</p>
+<p>Your email address for your AlgoRhythm account has been successfully changed.</p>
 
-        <table style='margin: 20px 0;'>
-        <tr>
-            <td style='padding: 5px; font-weight: bold;'>Old email:</td>
-            <td style='padding: 5px;'>{oldEmail}</td>
-        </tr>
-        <tr>
-            <td style='padding: 5px; font-weight: bold;'>New email:</td>
-            <td style='padding: 5px;'>{user.Email}</td>
-        </tr>
-        </table>
+<table style='margin: 20px 0;'>
+<tr>
+    <td style='padding: 5px; font-weight: bold;'>Old email:</td>
+    <td style='padding: 5px;'>{oldEmail}</td>
+</tr>
+<tr>
+    <td style='padding: 5px; font-weight: bold;'>New email:</td>
+    <td style='padding: 5px;'>{user.Email}</td>
+</tr>
+</table>
 
-        <p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
+<p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
 
-        <p>Best regards,<br>AlgoRhythm Team</p>
+<p>Best regards,<br>AlgoRhythm Team</p>
 
-        <hr>
-        <p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
+<hr>
+<p style='font-size: 12px; color: #666;'>This is an automated message, please do not reply.</p>";
 
         try
         {
@@ -788,6 +807,200 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to send email change notification to: {Email}", user.Email);
             // Don't throw - profile was already updated successfully
+        }
+    }
+
+    private static UserDto MapToUserDto(User user)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            EmailConfirmed = user.EmailConfirmed,
+            CreatedAt = user.CreatedAt,
+            CurrentStreak = user.CurrentStreak,
+            LongestStreak = user.LongestStreak,
+            LastLoginDate = user.LastLoginDate
+        };
+    }
+
+    public async Task<AuthResponse> GoogleLoginAsync(GoogleAuthRequest request)
+    {
+        // Verify Google ID token
+        var googleUserInfo = await VerifyGoogleTokenAsync(request.IdToken);
+        
+        if (googleUserInfo == null)
+        {
+            _logger.LogWarning("Invalid Google ID token");
+            throw new InvalidOperationException("Invalid Google ID token");
+        }
+
+        // Find user by email or create new one
+        var user = await _userManager.FindByEmailAsync(googleUserInfo.Email);
+        
+        if (user == null)
+        {
+            // Create new user from Google account
+            user = new User
+            {
+                UserName = googleUserInfo.Email,
+                Email = googleUserInfo.Email,
+                FirstName = request.FirstName ?? googleUserInfo.FirstName ?? "User",
+                LastName = request.LastName ?? googleUserInfo.LastName ?? "User",
+                EmailConfirmed = googleUserInfo.EmailVerified,
+                CurrentStreak = 0,
+                LongestStreak = 0,
+                LastLoginDate = null
+            };
+
+            var result = await _userManager.CreateAsync(user);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to create user: {errors}");
+            }
+
+            // Add to default role
+            await _userManager.AddToRoleAsync(user, "User");
+
+            // Add Google login
+            var loginInfo = new UserLoginInfo("Google", googleUserInfo.GoogleId, "Google");
+            var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
+            if (!addLoginResult.Succeeded)
+            {
+                _logger.LogError("Failed to add Google login for user: {Email}", user.Email);
+            }
+
+            // Initialize course progress
+            try
+            {
+                await _courseProgressService.InitializeAllCoursesForUserAsync(user.Id, CancellationToken.None);
+                _logger.LogInformation("Initialized course progress for new Google user: {UserId}", user.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to initialize course progress for user: {UserId}", user.Id);
+            }
+
+            // Initialize achievements
+            try
+            {
+                await _achievementService.InitializeAchievementsForUserAsync(user.Id, CancellationToken.None);
+                _logger.LogInformation("Initialized achievements for new Google user: {UserId}", user.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to initialize achievements for user: {UserId}", user.Id);
+            }
+
+            _logger.LogInformation("New user created via Google login: {Email}", user.Email);
+        }
+        else
+        {
+            // Check if Google login is already linked
+            var logins = await _userManager.GetLoginsAsync(user);
+            if (!logins.Any(l => l.LoginProvider == "Google" && l.ProviderKey == googleUserInfo.GoogleId))
+            {
+                // Link Google account to existing user
+                var loginInfo = new UserLoginInfo("Google", googleUserInfo.GoogleId, "Google");
+                var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
+                if (!addLoginResult.Succeeded)
+                {
+                    _logger.LogError("Failed to link Google account for user: {Email}", user.Email);
+                }
+                else
+                {
+                    _logger.LogInformation("Google account linked to existing user: {Email}", user.Email);
+                }
+            }
+
+            // If email not confirmed yet but Google says it's verified, confirm it
+            if (!user.EmailConfirmed && googleUserInfo.EmailVerified)
+            {
+                user.EmailConfirmed = true;
+                await _userManager.UpdateAsync(user);
+                _logger.LogInformation("Email confirmed via Google for user: {Email}", user.Email);
+            }
+        }
+
+        // Update login streak
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(user.Id);
+            _logger.LogInformation("Login streak updated for Google user: {UserId}", user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update login streak for user {UserId}", user.Id);
+        }
+
+        _logger.LogInformation("User logged in via Google: {Email}", user.Email);
+
+        return await GenerateAuthResponseAsync(user, "unknown");
+    }
+
+    private async Task<GoogleUserInfo?> VerifyGoogleTokenAsync(string idToken)
+    {
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            
+            // Call Google's tokeninfo endpoint to verify the token
+            var response = await httpClient.GetAsync($"https://oauth2.googleapis.com/tokeninfo?id_token={idToken}");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Google token verification failed with status: {StatusCode}", response.StatusCode);
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var tokenInfo = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(json);
+
+            if (tokenInfo == null)
+            {
+                _logger.LogWarning("Failed to parse Google token response");
+                return null;
+            }
+
+            // Verify the token is for our app (optional but recommended)
+            var clientId = _config["Authentication:Google:ClientId"];
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                if (!tokenInfo.TryGetValue("aud", out var aud) || aud.GetString() != clientId)
+                {
+                    _logger.LogWarning("Google token audience mismatch");
+                    return null;
+                }
+            }
+
+            // Extract user info
+            var email = tokenInfo.TryGetValue("email", out var e) ? e.GetString() : null;
+            var emailVerified = tokenInfo.TryGetValue("email_verified", out var ev) && ev.GetString() == "true";
+            var googleId = tokenInfo.TryGetValue("sub", out var sub) ? sub.GetString() : null;
+            var givenName = tokenInfo.TryGetValue("given_name", out var gn) ? gn.GetString() : null;
+            var familyName = tokenInfo.TryGetValue("family_name", out var fn) ? fn.GetString() : null;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+            {
+                _logger.LogWarning("Google token missing required fields");
+                return null;
+            }
+
+            return new GoogleUserInfo(
+                email,
+                givenName,
+                familyName,
+                googleId,
+                emailVerified
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying Google token");
+            return null;
         }
     }
 }

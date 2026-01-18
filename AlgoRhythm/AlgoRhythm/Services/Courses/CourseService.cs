@@ -8,10 +8,12 @@ namespace AlgoRhythm.Services.Courses;
 public class CourseService : ICourseService
 {
     private readonly ICourseRepository _repo;
+    private readonly ICourseProgressService _progressService;
 
-    public CourseService(ICourseRepository repo)
+    public CourseService(ICourseRepository repo, ICourseProgressService progressService)
     {
         _repo = repo;
+        _progressService = progressService;
     }
 
     public async Task<IEnumerable<CourseSummaryDto>> GetAllAsync(CancellationToken ct)
@@ -42,6 +44,10 @@ public class CourseService : ICourseService
         };
 
         await _repo.CreateAsync(course, ct);
+        
+        // Initialize course progress for all existing users
+        await _progressService.InitializeCourseForAllUsersAsync(course.Id, ct);
+        
         return MapToDto(course);
     }
 
@@ -60,6 +66,10 @@ public class CourseService : ICourseService
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
+        // Delete all associated CourseProgress records first
+        await _progressService.DeleteAllByCourseIdAsync(id, ct);
+        
+        // Then delete the course
         await _repo.DeleteAsync(id, ct);
     }
 
@@ -133,7 +143,6 @@ public class CourseService : ICourseService
             Lectures = course.Lectures?.OrderBy(l => l.CreatedAt).Select(l => new LectureDto
             {
                 Id = l.Id,
-                CourseId = l.CourseId,
                 Title = l.Title,
                 IsPublished = l.IsPublished,
                 CreatedAt = l.CreatedAt,
@@ -149,7 +158,8 @@ public class CourseService : ICourseService
                     Alt = c is LecturePhoto lp2 ? lp2.Alt : null,
                     Title = c is LecturePhoto lp3 ? lp3.Title : null
                 }).ToList() ?? [],
-                TagIds = l.Tags?.Select(t => t.Id).ToList() ?? []
+                TagIds = l.Tags?.Select(t => t.Id).ToList() ?? [],
+                CourseIds = l.Courses?.Select(c => c.Id).ToList() ?? []
             }).ToList() ?? [],
             TaskItemIds = course.TaskItems?.Select(t => t.Id).ToList() ?? []
         };
