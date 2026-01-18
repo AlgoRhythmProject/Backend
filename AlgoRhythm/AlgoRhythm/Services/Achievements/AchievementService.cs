@@ -253,6 +253,7 @@ public class AchievementService : IAchievementService
             RequirementType.CompleteSpecificCourse => CheckSpecificCourseCompletion(condition, user),
             RequirementType.CompleteSpecificTask => CheckSpecificTaskCompletion(condition, user),
             RequirementType.CompleteSpecificLecture => CheckSpecificLectureCompletion(condition, user),
+            RequirementType.LoginStreak => user.CurrentStreak,
             _ => 0
         };
     }

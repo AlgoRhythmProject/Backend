@@ -73,6 +73,19 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasIndex(rt => rt.Token)
             .IsUnique();
 
+        // Configure CourseProgress cascade delete
+        builder.Entity<CourseProgress>()
+            .HasOne(cp => cp.Course)
+            .WithMany(c => c.CourseProgresses)
+            .HasForeignKey(cp => cp.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<CourseProgress>()
+            .HasOne(cp => cp.User)
+            .WithMany()
+            .HasForeignKey(cp => cp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // TPH (Table-Per-Hierarchy) dla LectureContent
         builder.Entity<LectureContent>()
             .HasDiscriminator<ContentType>(nameof(LectureContent.Type))
@@ -95,6 +108,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .WithOne(tc => tc.ProgrammingTaskItem)
             .HasForeignKey(tc => tc.ProgrammingTaskItemId)
             .OnDelete(DeleteBehavior.Cascade);
+            
         // Unique constraints
         builder.Entity<Tag>()
             .HasIndex(t => t.Name)
@@ -105,14 +119,19 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasMany(t => t.Tags)
             .WithMany(tag => tag.TaskItems); 
 
-
         builder.Entity<Lecture>()
             .HasMany(l => l.Tags)
             .WithMany(tag => tag.Lectures);
 
+        // Course <-> TaskItem (many-to-many)
         builder.Entity<Course>()
             .HasMany(c => c.TaskItems)
             .WithMany(t => t.Courses);
+
+        // Course <-> Lecture (many-to-many)
+        builder.Entity<Course>()
+            .HasMany(c => c.Lectures)
+            .WithMany(l => l.Courses);
 
         // User <-> CompletedLectures
         builder.Entity<User>()

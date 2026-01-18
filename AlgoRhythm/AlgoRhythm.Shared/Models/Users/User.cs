@@ -25,6 +25,11 @@ public class User : IdentityUser<Guid>
 
     public bool IsDeleted { get; set; } = false;
 
+    // Login streak tracking
+    public int CurrentStreak { get; set; } = 0;
+    public int LongestStreak { get; set; } = 0;
+    public DateTime? LastLoginDate { get; set; }
+
     public ICollection<Lecture> CompletedLectures { get; set; } = new List<Lecture>();
     
     public ICollection<TaskItem> CompletedTasks { get; set; } = new List<TaskItem>();

@@ -17,26 +17,25 @@ public class LectureService : ILectureService
     public async Task<IEnumerable<LectureDto>> GetAllAsync(CancellationToken ct)
     {
         var lectures = await _repo.GetAllAsync(ct);
-        return lectures.Select(MapToDtoWithDetails);
+        return lectures.Select(MapToDto);
     }
 
     public async Task<IEnumerable<LectureDto>> GetByCourseIdAsync(Guid courseId, CancellationToken ct)
     {
         var lectures = await _repo.GetByCourseIdAsync(courseId, ct);
-        return lectures.Select(MapToDtoWithDetails);
+        return lectures.Select(MapToDto);
     }
 
     public async Task<LectureDto?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         var lecture = await _repo.GetByIdWithDetailsAsync(id, ct);
-        return lecture == null ? null : MapToDtoWithDetails(lecture);
+        return lecture == null ? null : MapToDto(lecture);
     }
 
     public async Task<LectureDto> CreateAsync(LectureInputDto dto, CancellationToken ct)
     {
         var lecture = new Lecture
         {
-            CourseId = dto.CourseId,
             Title = dto.Title,
             IsPublished = dto.IsPublished
         };
@@ -79,34 +78,112 @@ public class LectureService : ILectureService
         if (dto.Type == "Text")
         {
             if (string.IsNullOrWhiteSpace(dto.HtmlContent))
-                throw new ArgumentException("HtmlContent is required for Text content type.");
+                throw new ArgumentException("HtmlContent is required for Text type content");
 
             content = new LectureText
             {
-                Type = ContentType.Text,
-                HtmlContent = dto.HtmlContent
+                HtmlContent = dto.HtmlContent,
+                Type = ContentType.Text
             };
         }
         else if (dto.Type == "Photo")
         {
             if (string.IsNullOrWhiteSpace(dto.Path))
-                throw new ArgumentException("Path is required for Photo content type.");
+                throw new ArgumentException("Path is required for Photo type content");
 
             content = new LecturePhoto
             {
-                Type = ContentType.Photo,
                 Path = dto.Path,
                 Alt = dto.Alt,
-                Title = dto.Title
+                Title = dto.Title,
+                Type = ContentType.Photo
+            };
+        }
+        else if (dto.Type == "Video")
+        {
+            if (string.IsNullOrWhiteSpace(dto.FileName))
+                throw new ArgumentException("FileName is required for Video type content");
+
+            content = new LectureVideo
+            {
+                FileName = dto.FileName,
+                StreamUrl = dto.StreamUrl ?? string.Empty,
+                Type = ContentType.Video
             };
         }
         else
         {
-            throw new ArgumentException($"Invalid content type: {dto.Type}. Must be 'Text' or 'Photo'.");
+            throw new ArgumentException($"Invalid content type: {dto.Type}");
         }
 
-        var created = await _repo.AddContentToLectureAsync(lectureId, content, ct);
-        return MapContentToDto(created);
+        var createdContent = await _repo.AddContentToLectureAsync(lectureId, content, ct);
+        return MapContentToDto(createdContent);
+    }
+
+    public async Task UpdateContentAsync(Guid lectureId, Guid contentId, LectureContentInputDto dto, CancellationToken ct)
+    {
+        var existingContent = await _repo.GetContentByIdAsync(contentId, ct);
+        if (existingContent == null || existingContent.LectureId != lectureId)
+            throw new KeyNotFoundException("Content not found in this lecture");
+
+        LectureContent updatedContent;
+
+        if (dto.Type == "Text")
+        {
+            if (string.IsNullOrWhiteSpace(dto.HtmlContent))
+                throw new ArgumentException("HtmlContent is required for Text type content");
+
+            updatedContent = new LectureText
+            {
+                Id = contentId,
+                LectureId = lectureId,
+                HtmlContent = dto.HtmlContent,
+                Type = ContentType.Text,
+                Order = dto.Order
+            };
+        }
+        else if (dto.Type == "Photo")
+        {
+            if (string.IsNullOrWhiteSpace(dto.Path))
+                throw new ArgumentException("Path is required for Photo type content");
+
+            updatedContent = new LecturePhoto
+            {
+                Id = contentId,
+                LectureId = lectureId,
+                Path = dto.Path,
+                Alt = dto.Alt,
+                Title = dto.Title,
+                Type = ContentType.Photo,
+                Order = dto.Order
+            };
+        }
+        else if (dto.Type == "Video")
+        {
+            if (string.IsNullOrWhiteSpace(dto.FileName))
+                throw new ArgumentException("FileName is required for Video type content");
+
+            updatedContent = new LectureVideo
+            {
+                Id = contentId,
+                LectureId = lectureId,
+                FileName = dto.FileName,
+                StreamUrl = dto.StreamUrl ?? string.Empty,
+                Type = ContentType.Video,
+                Order = dto.Order
+            };
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid content type: {dto.Type}");
+        }
+
+        await _repo.UpdateContentAsync(contentId, updatedContent, ct);
+    }
+
+    public async Task RemoveContentAsync(Guid lectureId, Guid contentId, CancellationToken ct)
+    {
+        await _repo.RemoveContentFromLectureAsync(lectureId, contentId, ct);
     }
 
     public async Task<LectureContentDto?> GetContentByIdAsync(Guid contentId, CancellationToken ct)
@@ -121,51 +198,6 @@ public class LectureService : ILectureService
         return contents.Select(MapContentToDto);
     }
 
-    public async Task UpdateContentAsync(Guid lectureId, Guid contentId, LectureContentInputDto dto, CancellationToken ct)
-    {
-        LectureContent content;
-
-        if (dto.Type == "Text")
-        {
-            if (string.IsNullOrWhiteSpace(dto.HtmlContent))
-                throw new ArgumentException("HtmlContent is required for Text content type.");
-
-            content = new LectureText
-            {
-                Id = contentId,
-                LectureId = lectureId,
-                Type = ContentType.Text,
-                HtmlContent = dto.HtmlContent
-            };
-        }
-        else if (dto.Type == "Photo")
-        {
-            if (string.IsNullOrWhiteSpace(dto.Path))
-                throw new ArgumentException("Path is required for Photo content type.");
-
-            content = new LecturePhoto
-            {
-                Id = contentId,
-                LectureId = lectureId,
-                Type = ContentType.Photo,
-                Path = dto.Path,
-                Alt = dto.Alt,
-                Title = dto.Title
-            };
-        }
-        else
-        {
-            throw new ArgumentException($"Invalid content type: {dto.Type}. Must be 'Text' or 'Photo'.");
-        }
-
-        await _repo.UpdateContentAsync(contentId, content, ct);
-    }
-
-    public async Task RemoveContentAsync(Guid lectureId, Guid contentId, CancellationToken ct)
-    {
-        await _repo.RemoveContentFromLectureAsync(lectureId, contentId, ct);
-    }
-
     public async Task SwapContentOrderAsync(Guid lectureId, Guid firstContentId, Guid secondContentId, CancellationToken ct)
     {
         await _repo.SwapContentOrderAsync(lectureId, firstContentId, secondContentId, ct);
@@ -176,26 +208,12 @@ public class LectureService : ILectureService
         return new LectureDto
         {
             Id = lecture.Id,
-            CourseId = lecture.CourseId,
             Title = lecture.Title,
             IsPublished = lecture.IsPublished,
             CreatedAt = lecture.CreatedAt,
-            Contents = [],
-            TagIds = []
-        };
-    }
-
-    private static LectureDto MapToDtoWithDetails(Lecture lecture)
-    {
-        return new LectureDto
-        {
-            Id = lecture.Id,
-            CourseId = lecture.CourseId,
-            Title = lecture.Title,
-            IsPublished = lecture.IsPublished,
-            CreatedAt = lecture.CreatedAt,
-            Contents = lecture.Contents?.OrderBy(c => c.Order).Select(MapContentToDto).ToList() ?? [],
-            TagIds = lecture.Tags?.Select(t => t.Id).ToList() ?? []
+            Contents = lecture.Contents?.OrderBy(c => c.Order).Select(MapContentToDto).ToList() ?? new List<LectureContentDto>(),
+            TagIds = lecture.Tags?.Select(t => t.Id).ToList() ?? new List<Guid>(),
+            CourseIds = lecture.Courses?.Select(c => c.Id).ToList() ?? new List<Guid>()
         };
     }
 
@@ -208,10 +226,14 @@ public class LectureService : ILectureService
             Type = content.Type.ToString(),
             Order = content.Order,
             CreatedAt = content.CreatedAt,
-            HtmlContent = content is LectureText lt ? lt.HtmlContent : null,
-            Path = content is LecturePhoto lp ? lp.Path : null,
-            Alt = content is LecturePhoto lp2 ? lp2.Alt : null,
-            Title = content is LecturePhoto lp3 ? lp3.Title : null
+            HtmlContent = content is LectureText text ? text.HtmlContent : null,
+            Path = content is LecturePhoto photo ? photo.Path : null,
+            Alt = content is LecturePhoto photo2 ? photo2.Alt : null,
+            Title = content is LecturePhoto photo3 ? photo3.Title : null,
+            FileName = content is LectureVideo video ? video.FileName : null,
+            StreamUrl = content is LectureVideo video2 ? video2.StreamUrl : null,
+            FileSize = content is LectureVideo video3 ? video3.FileSize : null,
+            LastModified = content is LectureVideo video4 ? video4.LastModified : null
         };
     }
 }

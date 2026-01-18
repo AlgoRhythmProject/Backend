@@ -1,4 +1,5 @@
-﻿using AlgoRhythm.Shared.Models.Courses;
+﻿using AlgoRhythm.Shared.Dtos.Common;
+using AlgoRhythm.Shared.Models.Courses;
 
 namespace AlgoRhythm.Services.Blob.Interfaces
 {
@@ -8,5 +9,6 @@ namespace AlgoRhythm.Services.Blob.Interfaces
         Task<string> UploadFileAsync(string identifier, Stream content, string contentType);
         Task<(Stream stream, string contentType)> GetFileAsync(string identifier);
         Task<bool> DeleteFileAsync(string identifier);
+        Task<(List<BlobFileInfo> files, string? continuationToken)> ListFilesAsync(int pageSize = 50, string? continuationToken = null);
     }
 }

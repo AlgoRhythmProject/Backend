@@ -53,6 +53,49 @@ namespace IntegrationTests.TasksTests
             return (token, user!);
         }
 
+        private async Task<(string token, User user)> SetupAuthenticatedAdminUser()
+        {
+            var userEmail = $"admin-{Guid.NewGuid()}@example.com";
+            var userPassword = "AdminPassword123!";
+
+            // Ensure Admin role exists
+            if (!await _roleManager.RoleExistsAsync("Admin"))
+            {
+                await _roleManager.CreateAsync(new Role
+                {
+                    Name = "Admin",
+                    NormalizedName = "ADMIN",
+                    Description = "Administrator with full access"
+                });
+            }
+
+            var user = new User
+            {
+                UserName = userEmail,
+                Email = userEmail,
+                FirstName = "Admin",
+                LastName = "User",
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(user, userPassword);
+            if (!result.Succeeded)
+            {
+                throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            var authService = _scope.ServiceProvider.GetRequiredService<IAuthService>();
+            var loginRequest = new AlgoRhythm.Shared.Dtos.Users.LoginRequest(userEmail, userPassword);
+            var authResponse = await authService.LoginAsync(loginRequest);
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authResponse.Token);
+
+            return (authResponse.Token, user);
+        }
+
         private async Task<TaskItem> AddTaskToDb(string title, bool isPublished = true, TaskType taskType = TaskType.Programming)
         {
             TaskItem task;
@@ -180,7 +223,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task POST_Create_ValidProgrammingTask_Returns201WithTask()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var taskInput = new TaskInputDto
             {
@@ -207,7 +250,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task POST_Create_ValidInteractiveTask_Returns201WithTask()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var taskInput = new TaskInputDto
             {
@@ -234,7 +277,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task POST_Create_InvalidTaskType_Returns400_BadRequest()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var taskInput = new TaskInputDto
             {
@@ -253,7 +296,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task PUT_Update_ExistingTask_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var task = await AddTaskToDb("Original Title");
 
@@ -280,7 +323,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task PUT_Update_NonExistingTask_Returns404_NotFound()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var updateDto = new TaskInputDto
             {
@@ -300,7 +343,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task PUT_Update_ChangeTaskType_Returns400_BadRequest()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var task = await AddTaskToDb("Programming Task", true, TaskType.Programming);
 
@@ -323,7 +366,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task DELETE_Delete_ExistingTask_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required
 
             var task = await AddTaskToDb("Task to Delete");
 
@@ -335,7 +378,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task POST_AddTag_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for tag operations
 
             var task = await AddTaskToDb("Task");
             var tagId = Guid.NewGuid();
@@ -348,7 +391,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task DELETE_RemoveTag_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for tag operations
 
             var task = await AddTaskToDb("Task");
             var tagId = Guid.NewGuid();
@@ -361,7 +404,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task POST_AddHint_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for hint operations
 
             var task = await AddTaskToDb("Task");
             var hintId = Guid.NewGuid();
@@ -374,7 +417,7 @@ namespace IntegrationTests.TasksTests
         [Fact]
         public async Task DELETE_RemoveHint_Returns204_NoContent()
         {
-            await SetupAuthenticatedUser();
+            await SetupAuthenticatedAdminUser(); // CHANGED: Admin required for hint operations
 
             var task = await AddTaskToDb("Task");
             var hintId = Guid.NewGuid();
