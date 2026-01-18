@@ -222,11 +222,16 @@ namespace AlgoRhythm.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("CourseProgresses");
                 });
@@ -235,9 +240,6 @@ namespace AlgoRhythm.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CourseId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -251,8 +253,6 @@ namespace AlgoRhythm.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
 
                     b.ToTable("Lectures");
                 });
@@ -594,6 +594,9 @@ namespace AlgoRhythm.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("CurrentStreak")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -608,6 +611,9 @@ namespace AlgoRhythm.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastLoginDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -617,6 +623,9 @@ namespace AlgoRhythm.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("LongestStreak")
+                        .HasColumnType("int");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -683,6 +692,21 @@ namespace AlgoRhythm.Migrations
                         .IsUnique();
 
                     b.ToTable("UserPreferences");
+                });
+
+            modelBuilder.Entity("CourseLecture", b =>
+                {
+                    b.Property<Guid>("CoursesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LecturesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("CoursesId", "LecturesId");
+
+                    b.HasIndex("LecturesId");
+
+                    b.ToTable("CourseLecture");
                 });
 
             modelBuilder.Entity("CourseTaskItem", b =>
@@ -1030,25 +1054,18 @@ namespace AlgoRhythm.Migrations
                         .IsRequired();
 
                     b.HasOne("AlgoRhythm.Shared.Models.Users.User", "User")
-                        .WithMany("CourseProgresses")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AlgoRhythm.Shared.Models.Users.User", null)
+                        .WithMany("CourseProgresses")
+                        .HasForeignKey("UserId1");
+
                     b.Navigation("Course");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.Lecture", b =>
-                {
-                    b.HasOne("AlgoRhythm.Shared.Models.Courses.Course", "Course")
-                        .WithMany("Lectures")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.LectureContent", b =>
@@ -1153,6 +1170,21 @@ namespace AlgoRhythm.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CourseLecture", b =>
+                {
+                    b.HasOne("AlgoRhythm.Shared.Models.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CoursesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlgoRhythm.Shared.Models.Courses.Lecture", null)
+                        .WithMany()
+                        .HasForeignKey("LecturesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CourseTaskItem", b =>
@@ -1316,8 +1348,6 @@ namespace AlgoRhythm.Migrations
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.Course", b =>
                 {
                     b.Navigation("CourseProgresses");
-
-                    b.Navigation("Lectures");
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.Lecture", b =>

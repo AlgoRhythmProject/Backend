@@ -6,8 +6,8 @@ using System.Security.Claims;
 
 namespace AlgoRhythm.Controllers.Common;
 
-[Authorize]
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class CommentController : ControllerBase
 {
@@ -20,6 +20,12 @@ public class CommentController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets all comments for a specific task.
+    /// </summary>
+    /// <param name="taskId">The ID of the task</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of comments for the task</returns>
     [HttpGet("task/{taskId:guid}")]
     public async Task<IActionResult> GetByTask(Guid taskId, CancellationToken ct)
     {
@@ -27,6 +33,12 @@ public class CommentController : ControllerBase
         return Ok(comments);
     }
 
+    /// <summary>
+    /// Gets a comment by its ID.
+    /// </summary>
+    /// <param name="id">The comment ID</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The comment details</returns>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
@@ -37,6 +49,12 @@ public class CommentController : ControllerBase
         return Ok(comment);
     }
 
+    /// <summary>
+    /// Creates a new comment for a task.
+    /// </summary>
+    /// <param name="dto">Comment input data</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The created comment</returns>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CommentInputDto dto, CancellationToken ct)
     {
@@ -56,6 +74,13 @@ public class CommentController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Updates an existing comment.
+    /// </summary>
+    /// <param name="id">The comment ID</param>
+    /// <param name="content">Updated comment content</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>No content on success</returns>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] string content, CancellationToken ct)
     {
@@ -83,6 +108,12 @@ public class CommentController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Deletes a comment.
+    /// </summary>
+    /// <param name="id">The comment ID</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {

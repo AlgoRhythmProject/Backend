@@ -424,6 +424,44 @@ public class AuthenticationController : ControllerBase
         return Ok(new { message = "Logged out successfully." });
     }
 
+    /// <summary>
+    /// Login or register using Google account
+    /// </summary>
+    /// <param name="request">Google ID token and optional user info</param>
+    /// <returns>Authentication response with JWT tokens</returns>
+    [HttpPost("google")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.IdToken))
+            {
+                return BadRequest(new ErrorResponse("MISSING_TOKEN", "Google ID token is required"));
+            }
+
+            var response = await _auth.GoogleLoginAsync(request);
+
+            // Set tokens in HTTP-only cookies
+            SetTokenCookies(response.Token, response.ExpiresUtc, response.RefreshToken, response.RefreshTokenExpiresUtc);
+
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Google login validation error");
+            return BadRequest(new ErrorResponse("GOOGLE_LOGIN_FAILED", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Google login");
+            return StatusCode(500, new ErrorResponse("INTERNAL_ERROR", "An error occurred during Google login"));
+        }
+    }
+
     // Helper methods
     private void SetTokenCookies(string accessToken, DateTime accessTokenExpires, string refreshToken, DateTime refreshTokenExpires)
     {
@@ -453,6 +491,18 @@ public class AuthenticationController : ControllerBase
             Expires = refreshTokenExpires
         };
         Response.Cookies.Append("RefreshToken", refreshToken, refreshCookieOptions);
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken, DateTime expires)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = expires
+        };
+        Response.Cookies.Append("RefreshToken", refreshToken, cookieOptions);
     }
 
     private string GetIpAddress()

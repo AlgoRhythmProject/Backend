@@ -24,6 +24,7 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Environment.SetEnvironmentVariable("JWT_KEY", TestConstants.TestJwtKey);
+        Environment.SetEnvironmentVariable("FRONTEND_URL", TestConstants.TestFrontendUrl);
 
         builder.UseEnvironment("Testing");
 
@@ -37,6 +38,9 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 {"SendGrid:ApiKey", TestConstants.TestSendGridApiKey},
                 {"SendGrid:FromName", TestConstants.TestSendGridFromName},
                 {"SendGrid:FromEmail", TestConstants.TestSendGridFromEmail},
+
+                {"Authentication:Google:ClientId", "test-google-client-id"},
+                {"Authentication:Google:ClientSecret", "test-google-client-secret"}
             });
         });
 
@@ -72,6 +76,13 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(emailSenderDescriptor);
 
             services.AddScoped<IEmailSender, MockEmailSender>();
+
+            var httpClientFactoryDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IHttpClientFactory));
+            if (httpClientFactoryDescriptor != null)
+                services.Remove(httpClientFactoryDescriptor);
+
+            services.AddSingleton<IHttpClientFactory, MockGoogleHttpClientFactory>();
         });
 
         builder.ConfigureLogging(logging =>

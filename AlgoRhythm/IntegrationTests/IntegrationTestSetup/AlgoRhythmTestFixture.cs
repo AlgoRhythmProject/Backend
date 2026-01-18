@@ -23,7 +23,7 @@ namespace IntegrationTests.IntegrationTestSetup
             
             await dbContext.Database.EnsureCreatedAsync();
 
-            // ⬇️ SEED ROLES
+            // SEED ROLES
             await SeedRolesAsync(roleManager);
         }
 

@@ -13,6 +13,6 @@
         /// <summary>
         /// Represents a regular user
         /// </summary>
-        public const string Student = nameof(Student);
+        public const string User = nameof(User);
     }
 }

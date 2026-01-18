@@ -1,15 +1,9 @@
-﻿using AlgoRhythm.Shared.Models.CodeExecution;
-using CodeExecutor.Interfaces;
-using Microsoft.CodeAnalysis;
-using System.Reflection;
-
-
-namespace CodeExecutor.Helpers
+﻿namespace AlgoRhythm.Shared.Helpers
 {
     /// <summary>
     /// Class that format the user's C# code 
     /// </summary>
-    public class CSharpCodeFormatter : ICodeFormatter
+    public class CSharpCodeFormatter 
     {
         public string CodeTemplate =>
              @"using System;
@@ -18,6 +12,7 @@ namespace CodeExecutor.Helpers
                using System.Collections; 
                using System.Numerics;
                using System.Text;
+               using System.Threading.Tasks;              
 
                {0};";
         
@@ -27,5 +22,4 @@ namespace CodeExecutor.Helpers
         }
 
     }
-
 }

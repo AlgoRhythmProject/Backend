@@ -30,6 +30,8 @@ namespace CodeAnalyzer.Services
                     list.Add(MetadataReference.CreateFromFile(path));
                 }
             }
+            var sharedAssemblyLocation = typeof(Graph.IGraph).Assembly.Location;
+            list.Add(MetadataReference.CreateFromFile(sharedAssemblyLocation));
 
             return list;
         }

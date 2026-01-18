@@ -1,13 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using System.Reflection;
 using AlgoRhythm.Shared.Models.CodeExecution;
-using System.Diagnostics.CodeAnalysis;
 using AlgoRhythm.Shared.Dtos.Submissions;
 
-namespace CodeExecutor.Helpers
+namespace AlgoRhythm.Shared.Helpers
 {
     /// <summary>
     /// Compiles C# code dynamically into an in-memory assembly using Roslyn.
@@ -87,6 +85,14 @@ namespace CodeExecutor.Helpers
             yield return MetadataReference.CreateFromFile(typeof(System.Numerics.BigInteger).Assembly.Location);
             yield return MetadataReference.CreateFromFile(typeof(System.Threading.Tasks.Task).Assembly.Location);
             yield return MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location);
+            yield return MetadataReference.CreateFromFile(typeof(System.Collections.Generic.List<>).Assembly.Location);
+
+            var sharedAssemblyLocation = typeof(Graph.IGraph).Assembly.Location;
+            
+            yield return MetadataReference.CreateFromFile(sharedAssemblyLocation);
+            yield return MetadataReference.CreateFromFile(Assembly.Load("System.Collections").Location);
+            yield return MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location);    
+
         }
 
     }

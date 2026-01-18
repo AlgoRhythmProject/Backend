@@ -1,5 +1,6 @@
 using AlgoRhythm.Services.Tasks.Interfaces;
 using AlgoRhythm.Shared.Dtos.Tasks;
+using AlgoRhythm.Shared.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace AlgoRhythm.Controllers.Tasks;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class TestCaseController : ControllerBase
 {
     private readonly ITestCaseService _service;
