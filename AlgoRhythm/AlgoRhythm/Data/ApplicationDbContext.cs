@@ -128,7 +128,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasMany(c => c.TaskItems)
             .WithMany(t => t.Courses);
 
-        // Course <-> Lecture (many-to-many) - NOWA KONFIGURACJA
+        // Course <-> Lecture (many-to-many)
         builder.Entity<Course>()
             .HasMany(c => c.Lectures)
             .WithMany(l => l.Courses);

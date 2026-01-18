@@ -10,7 +10,7 @@ public class LectureContentDto
     public Guid LectureId { get; set; }
 
     [Required]
-    public string Type { get; set; } = null!; // "Text" or "Photo"
+    public string Type { get; set; } = null!;
 
     public int Order { get; set; }
 
