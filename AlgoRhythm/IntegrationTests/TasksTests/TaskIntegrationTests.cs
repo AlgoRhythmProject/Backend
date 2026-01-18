@@ -154,8 +154,8 @@ namespace IntegrationTests.TasksTests
             var tasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>();
 
             Assert.NotNull(tasks);
-            Assert.Single(tasks);
             Assert.Contains(tasks, t => t.Title == "Task 1");
+            Assert.True(tasks.All(t => t.IsPublished));
         }
 
         [Fact]
