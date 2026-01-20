@@ -10,3 +10,4 @@ WORKDIR /app
 COPY --from=build /app/publish . 
 USER nobody
 ENTRYPOINT ["dotnet", "CodeExecutor.dll"]
+EXPOSE 8080

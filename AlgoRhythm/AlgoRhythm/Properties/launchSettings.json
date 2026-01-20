@@ -78,7 +78,18 @@
         "ASPNETCORE_URLS": "https://localhost:8080;http://localhost:8080"
       },
       "distributionName": ""
+    },
+    "Docker Compose Dev (LB)": {
+      "commandName": "Executable",
+      "executablePath": "docker-compose",
+      "commandLineArgs": "-f docker-compose.dev.yml up -d --scale executor=3",
+      "workingDirectory": "$(SolutionDir)\\",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
+      }
     }
+
   },
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "iisSettings": {

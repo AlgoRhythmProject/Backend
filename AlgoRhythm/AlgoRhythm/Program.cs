@@ -42,6 +42,8 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using Polly;
+using Polly.Extensions.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -135,16 +137,18 @@ builder.Services.AddScoped<IUserStreakService, UserStreakService>();
 builder.Services.AddSingleton<ICodeParser, CSharpCodeParser>();
 builder.Services.AddSingleton<IFileStorageService, BlobStorageService>();
 
+var retryPolicy = HttpPolicyExtensions
+    .HandleTransientHttpError() 
+    .WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500));
 
-// DI - clients
 builder.Services.AddHttpClient<CodeExecutorClient>(client =>
 {
     string? url = Environment.GetEnvironmentVariable("CODE_EXECUTOR_URL")
                 ?? builder.Configuration["CodeExecutor:Url"]
                 ?? throw new InvalidOperationException("Code executor url is not configured!");
-
     client.BaseAddress = new Uri(url);
-});
+})
+.AddPolicyHandler(retryPolicy);
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] // Najpierw User Secrets/appsettings

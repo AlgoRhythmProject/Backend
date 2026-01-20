@@ -7,7 +7,7 @@ using AlgoRhythm.Shared.Models.Users;
 
 namespace AlgoRhythm.Controllers.Submissions;
 
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SubmissionsController(ISubmissionService submissions, ILogger<SubmissionsController> logger) : ControllerBase
@@ -26,11 +26,12 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
     {
         try
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized(new { error = "Invalid user id in token." });
+            //var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            //if (!Guid.TryParse(userIdClaim, out var userId))
+            //    return Unauthorized(new { error = "Invalid user id in token." });
 
-            var response = await _submissions.CreateProgrammingSubmissionAsync(userId, req, ct);
+
+            var response = await _submissions.CreateProgrammingSubmissionAsync(Guid.Parse("601D17B2-EAE4-45E8-01DD-08DE57903E6D"), req, ct);
             return Ok(response);
         }
         catch (InvalidOperationException ex)

@@ -1,15 +1,12 @@
 ﻿using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace AlgoRhythm.Clients
 {
     public class CodeExecutorClient
     {
         private readonly HttpClient _client;
-        private readonly ILogger _logger;
+        private readonly ILogger<CodeExecutorClient> _logger;
 
         public CodeExecutorClient(HttpClient client, ILogger<CodeExecutorClient> logger)
         {
@@ -17,36 +14,35 @@ namespace AlgoRhythm.Clients
             _logger = logger;
         }
 
-        public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
+        public async Task<List<TestResultDto>> ExecuteAsync(List<ExecuteCodeRequest> req)
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                ReferenceHandler = ReferenceHandler.IgnoreCycles
-            };
-
             try
-            {   
-                HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+            {
+                // Dzięki AddPolicyHandler w Program.cs, to wywołanie 
+                // automatycznie ponowi próbę, jeśli kontener zginie.
+                var response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+
                 response.EnsureSuccessStatusCode();
 
-                var result = await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
-
-                return result;
+                return await response.Content.ReadFromJsonAsync<List<TestResultDto>>()
+                       ?? CreateErrorResult("Empty response");
             }
             catch (Exception ex)
             {
-                _logger.LogError("Exception thrown {0}", ex.Message);
+                // Jeśli po 3 próbach nadal jest błąd, znaczy że wszystkie repliki leżą 
+                // lub kod studenta wiesza każdą z nich po kolei.
+                _logger.LogError(ex, "Błąd krytyczny komunikacji z Executorami po seriach powtórzeń.");
 
-                return
-                [
-                    new TestResultDto
-                    {
-                        Errors = [ new("Couldn't connect with external service") ]
-                    }
-                ];
+                return CreateErrorResult($"Błąd wykonania: {ex.Message}");
             }
+        }
+
+        private List<TestResultDto> CreateErrorResult(string message)
+        {
+            return [ new TestResultDto {
+                Errors = [ new(message) ],
+                Passed = false
+            } ];
         }
     }
 }
