@@ -53,27 +53,6 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         return loginResponse.Token;
     }
 
-    private async Task<(string token, Guid userId)> SetupAuthenticatedUser()
-    {
-        var email = $"user-{Guid.NewGuid()}@test.com";
-        var user = new User
-        {
-            UserName = email,
-            Email = email,
-            FirstName = "Test",
-            LastName = "User",
-            EmailConfirmed = true
-        };
-
-        await _userManager.CreateAsync(user, TestConstants.TestUserPassword);
-        await _userManager.AddToRoleAsync(user, "User");
-
-        var loginResponse = await _authService.LoginAsync(new LoginRequest(email, TestConstants.TestUserPassword));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
-
-        return (loginResponse.Token, user.Id);
-    }
-
     [Fact]
     public async Task GET_AllCourses_Returns200()
     {
