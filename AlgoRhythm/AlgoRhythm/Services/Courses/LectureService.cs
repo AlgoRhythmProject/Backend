@@ -108,6 +108,8 @@ public class LectureService : ILectureService
             {
                 FileName = dto.FileName,
                 StreamUrl = dto.StreamUrl ?? string.Empty,
+                FileSize = dto.FileSize ?? 0,
+                LastModified = dto.LastModified ?? DateTime.UtcNow,
                 Type = ContentType.Video
             };
         }
@@ -169,6 +171,8 @@ public class LectureService : ILectureService
                 LectureId = lectureId,
                 FileName = dto.FileName,
                 StreamUrl = dto.StreamUrl ?? string.Empty,
+                FileSize = dto.FileSize ?? 0,
+                LastModified = dto.LastModified ?? DateTime.UtcNow,
                 Type = ContentType.Video,
                 Order = dto.Order
             };

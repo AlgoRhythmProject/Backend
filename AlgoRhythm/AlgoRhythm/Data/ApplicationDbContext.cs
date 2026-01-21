@@ -30,6 +30,7 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<LectureContent> LectureContents { get; set; } = null!;
     public DbSet<LectureText> LectureTexts { get; set; } = null!;
     public DbSet<LecturePhoto> LecturePhotos { get; set; } = null!;
+    public DbSet<LectureVideo> LectureVideos { get; set; } = null!; 
     public DbSet<CourseProgress> CourseProgresses { get; set; } = null!;
 
     // Tasks
@@ -90,7 +91,8 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
         builder.Entity<LectureContent>()
             .HasDiscriminator<ContentType>(nameof(LectureContent.Type))
             .HasValue<LectureText>(ContentType.Text)
-            .HasValue<LecturePhoto>(ContentType.Photo);
+            .HasValue<LecturePhoto>(ContentType.Photo)
+            .HasValue<LectureVideo>(ContentType.Video);
 
         // TPH dla TaskItem
         builder.Entity<TaskItem>()
