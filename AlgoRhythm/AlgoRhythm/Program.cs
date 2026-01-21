@@ -40,7 +40,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     try
     {
         logger.LogInformation("Applying migrations...");
-        context.Database.Migrate(); // ensures Roles, Users, etc. exist
+        await context.Database.MigrateAsync(); // ensures Roles, Users, etc. exist
         logger.LogInformation("Database ready!");
     }
     catch (Exception ex)

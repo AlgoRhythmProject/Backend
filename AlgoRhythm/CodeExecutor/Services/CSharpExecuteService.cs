@@ -56,7 +56,7 @@ namespace CodeExecutor.Services
 
             try
             {
-                CancellationTokenSource cts = new();
+                using CancellationTokenSource cts = new();
                 cts.CancelAfter(timeout);
 
                 var task = Task.Run(() =>
@@ -68,6 +68,7 @@ namespace CodeExecutor.Services
                     throw new TimeoutException("User code execution exceeded time limit.");
                 }
 
+                
                 return new()
                 {
                     Passed = true,
