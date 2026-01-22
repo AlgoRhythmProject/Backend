@@ -40,14 +40,14 @@ services:
     ports:
       - "7062:8080"
       - "5289:8081"
-    command: ["dotnet", "watch", "run", "--project", "AlgoRhythm.csproj", "--urls", "http://+:8080"]
+    command: ["dotnet", "run", "--project", "AlgoRhythm.csproj", "--urls", "http://+:8080"]
     environment:
       SendGrid__ApiKey: ${SENDGRID_API_KEY}
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       JWT_KEY: ${JWT_KEY}
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
-      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      DOTNET_USE_POLLING_FILE_WATCHER: "false"
       AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
       CODE_EXECUTOR_URL: ${CODE_EXECUTOR_URL}
       FRONTEND_URL: ${FRONTEND_URL}
