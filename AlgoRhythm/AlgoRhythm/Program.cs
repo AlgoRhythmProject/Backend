@@ -115,7 +115,6 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<ITestCaseRepository, EfTestCaseRepository>();
 builder.Services.AddScoped<IUserStreakRepository, EfUserStreakRepository>();
 
-
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
