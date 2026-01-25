@@ -27,7 +27,7 @@ namespace AlgoRhythm.Clients
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd krytyczny komunikacji z Executorami po seriach powtórzeń.");
+                _logger.LogError(ex, "Critical error while attempting to connect code executors.");
 
                 return CreateErrorResult($"Execution error: {ex.Message}", req.Count);
             }
