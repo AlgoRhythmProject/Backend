@@ -1,0 +1,48 @@
+name: Trigger auto deployment for backend
+
+on:
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/backend-AutoDeployTrigger-098170db-d264-4cf9-937e-2a4393d2d2a5.yml'
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write
+      contents: read
+      packages: write 
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BACKEND_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.BACKEND_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.BACKEND_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          # Ścieżka do katalogu z kodem aplikacji backendowej
+          appSourcePath: ${{ github.workspace }}/AlgoRhythm
+          
+          registryUrl: ghcr.io
+          registryUsername: ${{ secrets.BACKEND_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.BACKEND_REGISTRY_PASSWORD }}
+          
+          containerAppName: backend
+          resourceGroup: myapp-rg
+                  
+          imageToBuild: ghcr.io/algorhythmproject/backend:${{ github.sha }}     
+          dockerfilePath: AlgoRhythm/Dockerfile 
+
+
+
