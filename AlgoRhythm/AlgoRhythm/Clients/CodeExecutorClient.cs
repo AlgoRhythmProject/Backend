@@ -18,31 +18,32 @@ namespace AlgoRhythm.Clients
         {
             try
             {
-                // Dzięki AddPolicyHandler w Program.cs, to wywołanie 
-                // automatycznie ponowi próbę, jeśli kontener zginie.
                 var response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
 
                 response.EnsureSuccessStatusCode();
 
                 return await response.Content.ReadFromJsonAsync<List<TestResultDto>>()
-                       ?? CreateErrorResult("Empty response");
+                       ?? CreateErrorResult("Empty response", req.Count);
             }
             catch (Exception ex)
             {
-                // Jeśli po 3 próbach nadal jest błąd, znaczy że wszystkie repliki leżą 
-                // lub kod studenta wiesza każdą z nich po kolei.
-                _logger.LogError(ex, "Błąd krytyczny komunikacji z Executorami po seriach powtórzeń.");
+                _logger.LogError(ex, "Critical error while attempting to connect code executors.");
 
-                return CreateErrorResult($"Błąd wykonania: {ex.Message}");
+                return CreateErrorResult($"Execution error: {ex.Message}", req.Count);
             }
         }
 
-        private List<TestResultDto> CreateErrorResult(string message)
+        private static List<TestResultDto> CreateErrorResult(string message, int count)
         {
-            return [ new TestResultDto {
-                Errors = [ new(message) ],
-                Passed = false
-            } ];
+            return
+            [
+                ..Enumerable.Range(0, count)
+                    .Select(_ => new TestResultDto
+                    {
+                        Errors = [ new(message) ],
+                        Passed = false
+                    })
+            ];
         }
     }
 }
