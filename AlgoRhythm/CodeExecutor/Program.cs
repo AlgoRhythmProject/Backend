@@ -13,8 +13,9 @@ public class Program
         builder.Services.AddScoped<CSharpExecuteService>();
         builder.Services.AddScoped<CSharpCodeFormatter>();
         builder.Services.AddScoped<CSharpCompiler>();
+        builder.Services.AddHealthChecks();
 
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -36,7 +37,7 @@ public class Program
 
 
         app.MapControllers();
-
+        app.UseHealthChecks("/health");
         app.Run();
     }
 }

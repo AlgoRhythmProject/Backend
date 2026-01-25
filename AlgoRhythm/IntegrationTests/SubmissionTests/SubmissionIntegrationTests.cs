@@ -190,12 +190,12 @@ public class SubmissionIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         {
             TaskId = taskId,
             Code = @"public class Solution 
-{ 
-    public int Solve(int a, int b) 
-    { 
-        return a + b; 
-    } 
-}"
+            { 
+                public int Solve(int a, int b) 
+                { 
+                    return a + b; 
+                } 
+            }"
         };
 
         var submitContent = new StringContent(JsonConvert.SerializeObject(submission), Encoding.UTF8, "application/json");

@@ -15,9 +15,11 @@ namespace CodeExecutor.Services
     public class CSharpExecuteService
     {
         private readonly CSharpCompiler _codeCompiler;
-        public CSharpExecuteService(CSharpCompiler codeCompiler)
+        private readonly ILogger<CSharpExecuteService> _logger;
+        public CSharpExecuteService(CSharpCompiler codeCompiler, ILogger<CSharpExecuteService> logger)
         {
             _codeCompiler = codeCompiler;
+            _logger = logger;
         }
 
         /// <summary>
@@ -54,7 +56,7 @@ namespace CodeExecutor.Services
 
             try
             {
-                CancellationTokenSource cts = new();
+                using CancellationTokenSource cts = new();
                 cts.CancelAfter(timeout);
 
                 var task = Task.Run(() =>
@@ -66,6 +68,7 @@ namespace CodeExecutor.Services
                     throw new TimeoutException("User code execution exceeded time limit.");
                 }
 
+                
                 return new()
                 {
                     Passed = true,
@@ -96,7 +99,11 @@ namespace CodeExecutor.Services
             string executionMethod = requests[0].ExecutionMethod;
 
             CSharpCompilationResult result = _codeCompiler.Compile(code, executionMethod);
-            
+
+            _logger.LogInformation("Executing request on container {Container} PID {PID}",
+                Environment.MachineName,
+                Environment.ProcessId);
+
             // Code didn't compile
             if (!result.Success || result.AssemblyStream is null)
             {
