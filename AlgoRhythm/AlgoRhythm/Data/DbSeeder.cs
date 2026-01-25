@@ -1529,7 +1529,7 @@ Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
             IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
-    public int FindKthLargest(int[] nums, int k) 
+    public int FindKthSmallest(int[] nums, int k) 
     { 
         // Implement algorithm here
         

@@ -578,6 +578,17 @@ This is an automated message, please do not reply.";
             throw new InvalidRefreshTokenException();
         }
 
+        // Update streak on refresh token
+        try
+        {
+            await _streakService.UpdateLoginStreakAsync(token.UserId);
+            _logger.LogInformation("Streak updated via refresh token for user: {UserId}", token.UserId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update streak during token refresh for user {UserId}", token.UserId);
+        }
+
         // Generate new refresh token and revoke old one
         var newRefreshToken = await RotateRefreshTokenAsync(token, ipAddress);
         
