@@ -1,13 +1,10 @@
-﻿using AlgoRhythm.Shared.Models.Courses;
-using Microsoft.AspNetCore.Mvc;
-using AlgoRhythm.Attributes;
-using Microsoft.AspNetCore.Components.Web;
+﻿using Microsoft.AspNetCore.Mvc;
 using Azure;
-using System.Text.Encodings.Web;
 using System.Web;
 using AlgoRhythm.Services.Blob.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using AlgoRhythm.Shared.Models.Users;
+using AlgoRhythm.Attributes;
 
 namespace AlgoRhythm.Controllers.Common
 {
@@ -69,7 +66,7 @@ namespace AlgoRhythm.Controllers.Common
         /// <param name="continuationToken">Token for next page (optional)</param>
         /// <returns>List of file metadata with continuation token</returns>
         [HttpGet("list")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ListFiles([FromQuery] int pageSize = 50, [FromQuery] string? continuationToken = null)
@@ -97,6 +94,7 @@ namespace AlgoRhythm.Controllers.Common
         /// <returns>HTML page with video player</returns>
         [HttpGet("preview_video")]
         [DevelopmentOnly]
+        [Authorize(Roles = Roles.Admin)]
         [ApiExplorerSettings(IgnoreApi = true)]
         public IActionResult PreviewVideo([FromQuery] string path)
         {
@@ -222,7 +220,7 @@ namespace AlgoRhythm.Controllers.Common
         /// <param name="fileName">Name of the file to delete</param>
         /// <returns>True if the file was successfully deleted, false otherwise</returns>
         [HttpDelete("{fileName}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<bool>> DeleteFile(string fileName)
