@@ -7,7 +7,7 @@ using AlgoRhythm.Shared.Models.Users;
 
 namespace AlgoRhythm.Controllers.Submissions;
 
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SubmissionsController(ISubmissionService submissions, ILogger<SubmissionsController> logger) : ControllerBase
