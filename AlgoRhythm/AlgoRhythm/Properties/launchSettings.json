@@ -39,9 +39,6 @@
       "publishAllPorts": true,
       "useSSL": true
     },
-    // Do wywołania jeśli:
-    // zmiana plik package.json, .csproj, dockerfile (ogólnie zależności)
-    // Najszybsza opcja do developmentu
     "Docker Compose Dev": {
       "commandName": "Executable",
       "executablePath": "docker-compose",
@@ -52,8 +49,6 @@
         "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
       }
     },
-
-    // Do weryfikacji obrazu z maina
     "Docker Compose Prod": {
       "commandName": "Executable",
       "executablePath": "docker-compose",
@@ -64,9 +59,6 @@
         "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
       }
     },
-
-    // Profil do rozwiązywania problemów i czyszczenia 
-    // Znacznie wydłuża czas budowania (zmusza do ponownej instalacji wszystkich pakietów)
     "Docker Compose Dev (Full Rebuild)": {
       "commandName": "Executable",
       "executablePath": "cmd.exe",
@@ -76,7 +68,28 @@
       "environmentVariables": {
         "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
       }
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:8080/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:8080;http://localhost:8080"
+      },
+      "distributionName": ""
+    },
+    "Docker Compose Dev (LB)": {
+      "commandName": "Executable",
+      "executablePath": "docker-compose",
+      "commandLineArgs": "-f docker-compose.dev.yml up -d --scale executor=1",
+      "workingDirectory": "$(SolutionDir)\\",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COMPOSE_CONVERT_WINDOWS_PATHS": "1"
+      }
     }
+
   },
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "iisSettings": {

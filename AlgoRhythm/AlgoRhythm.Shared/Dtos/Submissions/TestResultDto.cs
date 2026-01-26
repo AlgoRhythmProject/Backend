@@ -1,5 +1,4 @@
-using AlgoRhythm.Shared.Models.CodeExecution;
-using AlgoRhythm.Shared.Models.Submissions;
+﻿using AlgoRhythm.Shared.Models.Submissions;
 
 namespace AlgoRhythm.Shared.Dtos.Submissions;
 
@@ -11,7 +10,7 @@ public class TestResultDto
     public double ExecutionTimeMs { get; set; }
     public string? StdOut { get; set; }
     public string? StdErr { get; set; }
-    public List<CSharpExecutionError> Errors { get; set; } = [];
+    public List<ExecutionErrorDto> Errors { get; set; } = [];
     public long ExitCode { get; set; }
     public object? ReturnedValue { get; set; }
 }

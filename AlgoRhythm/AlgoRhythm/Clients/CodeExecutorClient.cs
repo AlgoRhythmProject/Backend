@@ -1,49 +1,49 @@
 ﻿using AlgoRhythm.Shared.Dtos.Submissions;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace AlgoRhythm.Clients
 {
     public class CodeExecutorClient
     {
         private readonly HttpClient _client;
+        private readonly ILogger<CodeExecutorClient> _logger;
 
-        public CodeExecutorClient(HttpClient client)
+        public CodeExecutorClient(HttpClient client, ILogger<CodeExecutorClient> logger)
         {
             _client = client;
+            _logger = logger;
         }
 
-        public async Task<List<TestResultDto>?> ExecuteAsync(List<ExecuteCodeRequest> req)
+        public async Task<List<TestResultDto>> ExecuteAsync(List<ExecuteCodeRequest> req)
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                ReferenceHandler = ReferenceHandler.IgnoreCycles
-            };
-
             try
-            {   
-                HttpResponseMessage response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+            {
+                var response = await _client.PostAsJsonAsync("/code-executor/Execute", req);
+
                 response.EnsureSuccessStatusCode();
 
-                var result = await response.Content.ReadFromJsonAsync<List<TestResultDto>>();
-
-                return result;
+                return await response.Content.ReadFromJsonAsync<List<TestResultDto>>()
+                       ?? CreateErrorResult("Empty response", req.Count);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Critical error while attempting to connect code executors.");
 
-                return
-                [
-                    new TestResultDto
-                    {
-                        Errors = [ new("Couldn't connect with external service") ]
-                    }
-                ];
+                return CreateErrorResult($"Execution error: {ex.Message}", req.Count);
             }
+        }
+
+        private static List<TestResultDto> CreateErrorResult(string message, int count)
+        {
+            return
+            [
+                ..Enumerable.Range(0, count)
+                    .Select(_ => new TestResultDto
+                    {
+                        Errors = [ new(message) ],
+                        Passed = false
+                    })
+            ];
         }
     }
 }

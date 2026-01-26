@@ -4,6 +4,7 @@ using AlgoRhythm.Shared.Models.Tasks;
 using AlgoRhythm.Shared.Models.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using AlgoRhythm.Shared.Models.Achievements;
 
 namespace AlgoRhythm.Data;
 
@@ -21,11 +22,16 @@ public static class DbSeeder
 
         var users = await SeedUsersAsync(userManager);
         await SeedContentAsync(context, users);
+        await SeedAchievements(context);
     }
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
     {
-        string[] roleNames = { "Admin", "Student" };
+        var roleNames = typeof(Roles)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.FieldType == typeof(string))
+            .Select(f => (string)f.GetValue(null)!)
+            .ToArray();
 
         foreach (var roleName in roleNames)
         {
@@ -60,7 +66,7 @@ public static class DbSeeder
             var result = await userManager.CreateAsync(adminUser, "Admin123!");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                await userManager.AddToRoleAsync(adminUser, Roles.Admin);
             }
         }
         users["admin"] = adminUser;
@@ -93,7 +99,7 @@ public static class DbSeeder
                 var result = await userManager.CreateAsync(user, "Student123!");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(user, "Student");
+                    await userManager.AddToRoleAsync(user, Roles.User);
                 }
             }
             users[key] = user;
@@ -110,7 +116,7 @@ public static class DbSeeder
         if (await context.Courses.AnyAsync())
         {
             Console.WriteLine("Data already seeded, skipping...");
-            return; // Data already seeded
+            return;
         }
 
         Console.WriteLine("No existing data found, proceeding with seeding...");
@@ -132,6 +138,8 @@ public static class DbSeeder
 
         await context.Tags.AddRangeAsync(tagAlgo, tagIntro, tagCSharp, tagData, tagArrays, tagTrees,
             tagGraphs, tagStrings, tagDP, tagSorting, tagStack, tagQueue, tagLinkedList);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Tags saved successfully");
 
         // --- COURSES ---
         var course1 = new Course
@@ -158,38 +166,98 @@ public static class DbSeeder
             IsPublished = true
         };
 
-        await context.Courses.AddRangeAsync(course1, course2, course3);
+        var course4 = new Course
+        {
+            Name = "Graphs and Trees",
+            Description = "Explore the world of graphs and trees, two of the most important data structures in computer science. Learn about traversal, searching, and optimization algorithms.",
+            CreatedAt = DateTime.UtcNow,
+            IsPublished = true
+        };
 
-        // --- LECTURES FOR COURSE 1 (C# Programming Fundamentals) ---
-        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", Course = course1 };
-        var lec1_2 = new Lecture { Title = "Variables and Data Types", Course = course1 };
-        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", Course = course1 };
-        var lec1_4 = new Lecture { Title = "Functions and Methods", Course = course1 };
-        var lec1_5 = new Lecture { Title = "Introduction to Arrays", Course = course1 };
+        await context.Courses.AddRangeAsync(course1, course2, course3, course4);
+        await context.SaveChangesAsync();
+        Console.WriteLine("Courses saved successfully");
 
-        // --- LECTURES FOR COURSE 2 (Data Structures Essentials) ---
-        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", Course = course2 };
-        var lec2_2 = new Lecture { Title = "Two Pointer Technique", Course = course2 };
-        var lec2_3 = new Lecture { Title = "Stack Fundamentals", Course = course2 };
-        var lec2_4 = new Lecture { Title = "Queue Implementation", Course = course2 };
-        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", Course = course2 };
-        var lec2_6 = new Lecture { Title = "Binary Trees Basics", Course = course2 };
+        // --- LECTURES ---
+        var lec1_1 = new Lecture { Title = "Welcome to C# Programming", IsPublished = true };
+        var lec1_2 = new Lecture { Title = "Variables and Data Types", IsPublished = true };
+        var lec1_3 = new Lecture { Title = "Control Flow: Loops and Conditions", IsPublished = true };
+        var lec1_4 = new Lecture { Title = "Functions and Methods", IsPublished = true };
+        var lec1_5 = new Lecture { Title = "Introduction to Arrays", IsPublished = true };
 
-        // --- LECTURES FOR COURSE 3 (Advanced Algorithms) ---
-        var lec3_1 = new Lecture { Title = "Graph Representation", Course = course3 };
-        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", Course = course3 };
-        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", Course = course3 };
-        var lec3_4 = new Lecture { Title = "Divide and Conquer", Course = course3 };
+        var lec2_1 = new Lecture { Title = "Arrays Deep Dive", IsPublished = true };
+        var lec2_2 = new Lecture { Title = "Two Pointer Technique", IsPublished = true };
+        var lec2_3 = new Lecture { Title = "Stack Fundamentals", IsPublished = true };
+        var lec2_4 = new Lecture { Title = "Queue Implementation", IsPublished = true };
+        var lec2_5 = new Lecture { Title = "Linked Lists Introduction", IsPublished = true };
+        var lec2_6 = new Lecture { Title = "Binary Trees Basics", IsPublished = true };
+
+        var lec3_1 = new Lecture { Title = "Graph Representation", IsPublished = true };
+        var lec3_2 = new Lecture { Title = "Dynamic Programming Introduction", IsPublished = true };
+        var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", IsPublished = true };
+        var lec3_4 = new Lecture { Title = "Divide and Conquer", IsPublished = true };
+
+        var lec4_1 = new Lecture
+        {
+            Title = "Traveling Salesman Problem: Theory and Applications",
+            IsPublished = true
+        };
 
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
             lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
-            lec3_1, lec3_2, lec3_3, lec3_4
+            lec3_1, lec3_2, lec3_3, lec3_4, lec4_1
         );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Lectures saved successfully");
+
+        // --- LECTURE-TAG RELATIONSHIPS
+        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
+        lec1_2.Tags = new List<Tag> { tagCSharp };
+        lec1_3.Tags = new List<Tag> { tagCSharp };
+        lec1_4.Tags = new List<Tag> { tagCSharp };
+        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
+
+        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
+        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
+        lec2_3.Tags = new List<Tag> { tagStack, tagData };
+        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
+        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
+        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
+
+        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
+        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
+        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
+        lec3_4.Tags = new List<Tag> { tagAlgo };
+
+        await context.SaveChangesAsync();
+        Console.WriteLine("Lecture-Tag relationships saved successfully");
+
+        // --- COURSE-LECTURE RELATIONSHIPS (MANY-TO-MANY) ---
+        course1.Lectures.Add(lec1_1);
+        course1.Lectures.Add(lec1_2);
+        course1.Lectures.Add(lec1_3);
+        course1.Lectures.Add(lec1_4);
+        course1.Lectures.Add(lec1_5);
+
+        course2.Lectures.Add(lec2_1);
+        course2.Lectures.Add(lec2_2);
+        course2.Lectures.Add(lec2_3);
+        course2.Lectures.Add(lec2_4);
+        course2.Lectures.Add(lec2_5);
+        course2.Lectures.Add(lec2_6);
+
+        course3.Lectures.Add(lec3_1);
+        course3.Lectures.Add(lec3_2);
+        course3.Lectures.Add(lec3_3);
+        course3.Lectures.Add(lec3_4);
+
+        course4.Lectures.Add(lec4_1);
+
+        await context.SaveChangesAsync();
+        Console.WriteLine("Course-Lecture relationships saved successfully");
 
         // --- LECTURE CONTENT ---
-
-        // Course 1 Content
         var content1_1 = new LectureText
         {
             Lecture = lec1_1,
@@ -551,7 +619,6 @@ bool isEmpty = stack.Count == 0;</code></pre>
             Type = ContentType.Text
         };
 
-        // Course 3 Content
         var content3_1 = new LectureText
         {
             Lecture = lec3_1,
@@ -658,33 +725,420 @@ int Fibonacci(int n)
             Type = ContentType.Text
         };
 
+        // NEW CONTENT: Sorting Algorithms Lecture
+        var content3_3_part1 = new LectureText
+        {
+            Lecture = lec3_3,
+            HtmlContent = @"<h1>Advanced Sorting Algorithms</h1>
+<p>Sorting is one of the most fundamental operations in computer science. Understanding different sorting algorithms and their trade-offs is essential for writing efficient code.</p>
+
+<h2>Why Study Sorting?</h2>
+<ul>
+<li><strong>Ubiquitous</strong>: Used everywhere from databases to graphics rendering</li>
+<li><strong>Performance Critical</strong>: Can make the difference between usable and unusable software</li>
+<li><strong>Algorithmic Thinking</strong>: Teaches divide-and-conquer, recursion, and optimization</li>
+<li><strong>Interview Favorite</strong>: Commonly asked in technical interviews</li>
+</ul>
+
+<h2>Sorting Algorithm Categories</h2>
+
+<h3>Comparison-Based Sorts</h3>
+<p>These algorithms sort by comparing elements. The theoretical lower bound for comparison-based sorting is <strong>O(n log n)</strong>.</p>
+
+<h3>Non-Comparison Sorts</h3>
+<p>These algorithms exploit properties of the data (like integer ranges) to achieve linear time complexity in special cases.</p>
+
+<h2>Quick Sort</h2>
+<p>QuickSort is a highly efficient, divide-and-conquer sorting algorithm. It works by selecting a 'pivot' element and partitioning the array around it.</p>
+
+<h3>Algorithm Steps:</h3>
+<ol>
+<li><strong>Choose Pivot</strong>: Select an element as the pivot (commonly the last element, first element, or median)</li>
+<li><strong>Partition</strong>: Rearrange the array so that:
+    <ul>
+        <li>All elements smaller than pivot are on the left</li>
+        <li>All elements greater than pivot are on the right</li>
+    </ul>
+</li>
+<li><strong>Recursively Sort</strong>: Apply the same process to the left and right sub-arrays</li>
+</ol>
+
+<h3>Implementation in C#:</h3>
+<pre><code>public void QuickSort(int[] arr, int low, int high)
+{
+    if (low < high)
+    {
+        int pivotIndex = Partition(arr, low, high);
+        QuickSort(arr, low, pivotIndex - 1);
+        QuickSort(arr, pivotIndex + 1, high);
+    }
+}
+
+private int Partition(int[] arr, int low, int high)
+{
+    int pivot = arr[high];
+    int i = low - 1;
+    
+    for (int j = low; j < high; j++)
+    {
+        if (arr[j] < pivot)
+        {
+            i++;
+            Swap(arr, i, j);
+        }
+    }
+    
+    Swap(arr, i + 1, high);
+    return i + 1;
+}
+
+private void Swap(int[] arr, int i, int j)
+{
+    int temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+}</code></pre>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>Best Case</strong>: O(n log n) - pivot always divides array evenly</li>
+<li><strong>Average Case</strong>: O(n log n)</li>
+<li><strong>Worst Case</strong>: O(n²) - pivot is always the smallest or largest element (array already sorted)</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(log n) due to recursion stack</p>
+
+<h3>Characteristics:</h3>
+<ul>
+<li><strong>Not Stable</strong>: Equal elements may change relative order</li>
+<li><strong>In-Place</strong>: Requires only O(log n) extra space</li>
+<li><strong>Cache-Friendly</strong>: Good locality of reference</li>
+</ul>",
+            Type = ContentType.Text,
+            Order = 0
+        };
+
+        // Placeholder for GIF - you'll add this later
+        var content3_3_gif = new LecturePhoto
+        {
+            Lecture = lec3_3,
+            Path = "sorting-visualization.gif",
+            Alt = "Animated visualization of QuickSort algorithm partitioning and sorting an array",
+            Title = "QuickSort Visualization",
+            Type = ContentType.Photo,
+            Order = 1
+        };
+
+        var content3_3_part2 = new LectureText
+        {
+            Lecture = lec3_3,
+            HtmlContent = @"<h2>Merge Sort</h2>
+<p>MergeSort is another efficient divide-and-conquer algorithm that guarantees O(n log n) time complexity in all cases.</p>
+
+<h3>Algorithm Steps:</h3>
+<ol>
+<li><strong>Divide</strong>: Split the array into two halves</li>
+<li><strong>Conquer</strong>: Recursively sort both halves</li>
+<li><strong>Combine</strong>: Merge the two sorted halves into one sorted array</li>
+</ol>
+
+<h3>Implementation in C#:</h3>
+<pre><code>public void MergeSort(int[] arr, int left, int right)
+{
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+        
+        MergeSort(arr, left, mid);
+        MergeSort(arr, mid + 1, right);
+        
+        Merge(arr, left, mid, right);
+    }
+}
+
+private void Merge(int[] arr, int left, int mid, int right)
+{
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    int[] leftArr = new int[n1];
+    int[] rightArr = new int[n2];
+    
+    Array.Copy(arr, left, leftArr, 0, n1);
+    Array.Copy(arr, mid + 1, rightArr, 0, n2);
+    
+    int i = 0, j = 0, k = left;
+    
+    while (i < n1 && j < n2)
+    {
+        if (leftArr[i] <= rightArr[j])
+        {
+            arr[k] = leftArr[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = rightArr[j];
+            j++;
+        }
+        k++;
+    }
+    
+    while (i < n1)
+    {
+        arr[k] = leftArr[i];
+        i++;
+        k++;
+    }
+    
+    while (j < n2)
+    {
+        arr[k] = rightArr[j];
+        j++;
+        k++;
+    }
+}</code></pre>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>All Cases</strong>: O(n log n) - always divides evenly</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(n) - requires additional arrays for merging</p>
+
+<h3>Characteristics:</h3>
+<ul>
+<li><strong>Stable</strong>: Preserves relative order of equal elements</li>
+<li><strong>Not In-Place</strong>: Requires O(n) extra space</li>
+<li><strong>Predictable Performance</strong>: Always O(n log n)</li>
+</ul>
+
+<h2>Heap Sort</h2>
+<p>HeapSort uses a binary heap data structure to efficiently sort elements. It combines the efficiency of QuickSort with the guaranteed O(n log n) of MergeSort, while being in-place.</p>
+
+<h3>Key Concepts:</h3>
+<ul>
+<li><strong>Max Heap</strong>: Complete binary tree where parent ≥ children</li>
+<li><strong>Heapify</strong>: Convert array into valid heap</li>
+<li><strong>Extract Max</strong>: Remove largest element, maintain heap property</li>
+</ul>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>All Cases</strong>: O(n log n)</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(1) - in-place sorting</p>
+
+<h2>Comparison of Advanced Sorting Algorithms</h2>
+
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Best Case</th>
+<th>Average Case</th>
+<th>Worst Case</th>
+<th>Space</th>
+<th>Stable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Quick Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n²)</td>
+<td>O(log n)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Merge Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Heap Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(1)</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+
+<h2>When to Use Which Algorithm?</h2>
+
+<h3>Use Quick Sort When:</h3>
+<ul>
+<li>Average-case performance is most important</li>
+<li>You need in-place sorting with minimal extra space</li>
+<li>Data is randomly distributed</li>
+<li>Cache performance matters</li>
+</ul>
+
+<h3>Use Merge Sort When:</h3>
+<ul>
+<li>Stability is required (preserving order of equal elements)</li>
+<li>Worst-case O(n log n) is critical</li>
+<li>Sorting linked lists (natural fit)</li>
+<li>External sorting (data doesn't fit in memory)</li>
+</ul>
+
+<h3>Use Heap Sort When:</h3>
+<ul>
+<li>Memory is limited (O(1) space required)</li>
+<li>Guaranteed O(n log n) needed without extra space</li>
+<li>You need to find k largest/smallest elements efficiently</li>
+</ul>
+
+<h2>Optimization Techniques</h2>
+
+<h3>Hybrid Approaches</h3>
+<p>Modern sorting implementations often combine algorithms:</p>
+<ul>
+<li><strong>Introsort</strong>: Starts with QuickSort, switches to HeapSort if recursion depth exceeds threshold</li>
+<li><strong>Timsort</strong>: Hybrid of MergeSort and Insertion Sort (used in Python, Java)</li>
+</ul>
+
+<h3>Pivot Selection in QuickSort</h3>
+<ul>
+<li><strong>Random Pivot</strong>: Reduces probability of worst case</li>
+<li><strong>Median-of-Three</strong>: Choose median of first, middle, and last elements</li>
+<li><strong>Ninther</strong>: Median of medians for large arrays</li>
+</ul>
+
+<h2>Practical Considerations</h2>
+
+<h3>Small Arrays</h3>
+<p>For small arrays (typically n < 10-20), simple algorithms like Insertion Sort can be faster due to low overhead.</p>
+
+<h3>Nearly Sorted Data</h3>
+<p>If data is nearly sorted, adaptive algorithms like Insertion Sort or Timsort excel.</p>
+
+<h3>Parallel Sorting</h3>
+<p>MergeSort and QuickSort can be easily parallelized for multi-core processors.</p>
+
+<h2>Summary</h2>
+<p>Understanding sorting algorithms goes beyond memorizing implementations. It's about:</p>
+<ul>
+<li>Recognizing trade-offs between time, space, and stability</li>
+<li>Choosing the right algorithm for your data characteristics</li>
+<li>Applying divide-and-conquer thinking to other problems</li>
+<li>Appreciating the elegance of well-designed algorithms</li>
+</ul>
+
+<p>In practice, most programming languages provide highly optimized sorting functions (like <code>Array.Sort()</code> in C#), but understanding these algorithms helps you make informed decisions and solve related problems.</p>",
+            Type = ContentType.Text,
+            Order = 2
+        };
+
+        var content4_1_text = new LectureText
+        {
+            Lecture = lec4_1,
+            HtmlContent = @"<h1>The Traveling Salesman Problem</h1>
+<p>The Traveling Salesman Problem (TSP) is one of the most famous problems in computer science and operations research. It asks a simple question: <strong>Given a list of cities and the distances between each pair, what is the shortest possible route that visits each city exactly once and returns to the origin city?</strong></p>
+
+<h2>Problem Definition</h2>
+<p>Formally, given a complete graph G = (V, E) where:</p>
+<ul>
+<li>V is a set of n vertices (cities)</li>
+<li>E is a set of edges with weights d(i,j) representing distances</li>
+<li>We seek a Hamiltonian cycle (tour) with minimum total weight</li>
+</ul>
+
+<h2>Why TSP Matters</h2>
+<p>Despite its simple formulation, TSP is <strong>NP-hard</strong>, meaning no known algorithm can solve all instances in polynomial time. This makes it a benchmark problem for optimization algorithms and has real-world applications in:</p>
+<ul>
+<li><strong>Logistics</strong> - Package delivery route optimization</li>
+<li><strong>Manufacturing</strong> - Circuit board drilling sequences</li>
+<li><strong>DNA Sequencing</strong> - Ordering genetic fragments</li>
+<li><strong>Astronomy</strong> - Telescope observation scheduling</li>
+</ul>
+
+<h2>Computational Complexity</h2>
+<p>The brute force approach examines all (n-1)!/2 possible tours, which becomes infeasible very quickly:</p>
+<ul>
+<li>10 cities: ~181,000 tours</li>
+<li>15 cities: ~43 billion tours</li>
+<li>20 cities: ~60 quintillion tours</li>
+</ul>
+
+<p>This exponential growth necessitates clever algorithmic approaches.</p>",
+            Type = ContentType.Text,
+            Order = 0
+        };
+
+        var content4_1_text2 = new LectureText
+        {
+            Lecture = lec4_1,
+            HtmlContent = @"<h2>Algorithmic Approaches</h2>
+
+<h3>1. Exact Algorithms</h3>
+<h4>Held-Karp Dynamic Programming</h4>
+<p>The Held-Karp algorithm uses dynamic programming to solve TSP in O(n² × 2ⁿ) time, which is exponential but much better than brute force O(n!).</p>
+<p><strong>Key Idea:</strong> For each subset S ⊂ V and each vertex v ∈ S, compute the shortest path that:</p>
+<ul>
+<li>Starts at vertex 1</li>
+<li>Visits all vertices in S exactly once</li>
+<li>Ends at vertex v</li>
+</ul>
+
+<h3>2. Approximation Algorithms</h3>
+<h4>Christofides Algorithm</h4>
+<p>For metric TSP (satisfying triangle inequality), this algorithm guarantees a solution within 1.5× optimal in polynomial time:</p>
+<pre><code>1. Find minimum spanning tree (MST)
+2. Find minimum-weight perfect matching on odd-degree vertices
+3. Combine to form Eulerian graph
+4. Convert to Hamiltonian cycle (shortcutting)</code></pre>
+
+<h3>3. Heuristic Approaches</h3>
+<h4>Nearest Neighbor Heuristic</h4>
+<p>A simple greedy approach: start at any city, repeatedly visit the nearest unvisited city. Fast but can produce tours up to 25% longer than optimal.</p>
+
+<h4>2-Opt Improvement</h4>
+<p>Local search method that repeatedly removes two edges and reconnects the path in a different way if it improves the tour length.</p>
+
+<h2>Advanced Topics</h2>
+<h3>Variants of TSP</h3>
+<ul>
+<li><strong>Multiple TSP</strong> - Multiple salesmen, each visiting a subset of cities</li>
+<li><strong>TSP with Time Windows</strong> - Each city must be visited within a specific time range</li>
+<li><strong>Asymmetric TSP</strong> - Distance from A to B may differ from B to A</li>
+<li><strong>Bottleneck TSP</strong> - Minimize the longest edge in the tour</li>
+</ul>
+
+<h2>Modern Solving Techniques</h2>
+<p>State-of-the-art TSP solvers like Concorde can solve instances with thousands of cities to proven optimality using:</p>
+<ul>
+<li>Branch-and-cut algorithms</li>
+<li>Linear programming relaxations</li>
+<li>Cutting plane methods</li>
+<li>Sophisticated preprocessing</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>TSP exemplifies the challenges of combinatorial optimization and continues to drive advances in algorithm design, complexity theory, and practical optimization techniques.</p>",
+            Type = ContentType.Text,
+            Order = 1
+        };
+
         await context.LectureContents.AddRangeAsync(
             content1_1, content1_2, content1_3, content1_5,
             content2_1, content2_2, content2_3, content2_6,
-            content3_1, content3_2
+            content3_1, content3_2,
+            content3_3_part1, content3_3_gif, content3_3_part2,
+            content4_1_text, content4_1_text2
         );
-
-        // --- LECTURE-TAG RELATIONSHIPS ---
-        // Course 1 - C# Programming Fundamentals
-        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
-        lec1_2.Tags = new List<Tag> { tagCSharp };
-        lec1_3.Tags = new List<Tag> { tagCSharp };
-        lec1_4.Tags = new List<Tag> { tagCSharp };
-        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
-
-        // Course 2 - Data Structures Essentials
-        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
-        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
-        lec2_3.Tags = new List<Tag> { tagStack, tagData };
-        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
-        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
-        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
-
-        // Course 3 - Advanced Algorithms
-        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
-        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
-        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
-        lec3_4.Tags = new List<Tag> { tagAlgo };
+        await context.SaveChangesAsync();
+        Console.WriteLine("Lecture contents saved successfully");
 
         // --- PROGRAMMING TASKS ---
         var task1 = new ProgrammingTaskItem
@@ -692,6 +1146,7 @@ int Fibonacci(int n)
             Title = "Sum of Two Numbers",
             Description = "Write a function that returns the sum of two integers. This is a simple warm-up exercise to get familiar with basic C# syntax and the testing environment.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Sum(int a, int b) 
@@ -707,6 +1162,7 @@ int Fibonacci(int n)
             Title = "Find Maximum",
             Description = "Given two integers, return the larger one. If they are equal, return either value.",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int Max(int a, int b) 
@@ -727,6 +1183,7 @@ Example:
 Input: ""hello""
 Output: ""olleh""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string Reverse(string s) 
@@ -748,6 +1205,7 @@ Input: nums = [2,7,11,15], target = 9
 Output: [0,1]
 Explanation: nums[0] + nums[1] = 2 + 7 = 9",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int[] TwoSum(int[] nums, int target) 
@@ -773,6 +1231,7 @@ Output: true
 Input: ""([)]""
 Output: false",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool IsValid(string s) 
@@ -793,6 +1252,7 @@ Example:
 Input: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
 Output: [1,2,2,3,5,6]",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public void Merge(int[] nums1, int m, int[] nums2, int n) 
@@ -812,6 +1272,7 @@ Example:
 Input: root = [3,9,20,null,null,15,7]
 Output: [[3],[9,20],[15,7]]",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public IList<IList<int>> LevelOrder(TreeNode root) 
@@ -836,6 +1297,7 @@ Output: ""bab"" (Note: ""aba"" is also a valid answer)
 Input: s = ""cbbd""
 Output: ""bb""",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public string LongestPalindrome(string s) 
@@ -857,6 +1319,7 @@ Implement the MyStack class:
 - int Top() Returns the element on the top of the stack
 - bool Empty() Returns true if the stack is empty, false otherwise",
             Difficulty = Difficulty.Easy,
+            IsPublished = true,
             TemplateCode = @"public class MyStack 
 {
     public MyStack() 
@@ -903,6 +1366,7 @@ Output: 2
 Input: nums = [7,8,9,11,12]
 Output: 1",
             Difficulty = Difficulty.Hard,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int FirstMissingPositive(int[] nums) 
@@ -930,6 +1394,7 @@ Output: true
 Input: n = 5, edges = [[0,1], [1,2], [2,3], [1,3], [1,4]]
 Output: false",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public bool ValidTree(int n, int[][] edges) 
@@ -955,6 +1420,7 @@ Output: 3 (11 = 5 + 5 + 1)
 Input: coins = [2], amount = 3
 Output: -1",
             Difficulty = Difficulty.Medium,
+            IsPublished = true,
             TemplateCode = @"public class Solution 
 { 
     public int CoinChange(int[] coins, int amount) 
@@ -965,20 +1431,289 @@ Output: -1",
 }"
         };
 
+        var task15 = new ProgrammingTaskItem
+        {
+            Title = "Project Critical Path Analysis",
+            Description = @"Given a directed graph of project tasks with dependencies, find the minimum completion time, latest start times, and a critical path.
+
+**Input:**
+- n: number of tasks (1 to 1000)
+- tasks: array of task durations
+- edges: dependencies as [prerequisite, dependent] pairs
+
+**Output - ProjectSchedule object:**
+- MinTime: minimum project completion time
+- LatestStarts: latest start time for each task
+- CriticalPath: sequence of critical tasks
+
+**Critical Path:** A path where delaying any task delays the entire project.
+
+**Example:**
+Tasks: [2, 3, 4, 1, 1, 1, 3, 4, 6]
+Edges: [[0,1], [1,2], [0,3], [3,4], [4,5], [5,6], [0,7], [7,6], [8,6]]
+
+Graph structure:
+0→1→2
+0→3→4→5→6
+0→7→6
+8→6
+
+Output:
+MinTime: 9
+LatestStarts: [0, 0, 5, 5, 6, 7, 6, 2, 0]
+CriticalPath: [0, 7, 6] (or [8, 6] or [0, 1, 2])
+
+**Constraints:**
+- No circular dependencies guaranteed
+- Time complexity: O(V + E)
+- Task duration: 1 to 100",
+            Difficulty = Difficulty.Hard,
+            IsPublished = true,
+            TemplateCode = @"using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class ProjectSchedule
+{
+    public int MinTime { get; set; }
+    public int[] LatestStarts { get; set; }
+    public List<int> CriticalPath { get; set; }
+}
+
+public class Solution
+{
+    public ProjectSchedule AnalyzeProject(int n, int[] tasks, int[][] edges)
+    {
+        // Your solution here
+        // Hint: Use topological sorting and dynamic programming
+        
+        return new ProjectSchedule
+        {
+            MinTime = 0,
+            LatestStarts = new int[n],
+            CriticalPath = new List<int>()
+        };
+    }
+}"
+        };
+
+        // NEW TASK: Quickselect - Hoare's Algorithm
+        var task16 = new ProgrammingTaskItem
+        {
+            Title = "Find Kth Smallest Element - Hoare's Algorithm",
+            Description = @"Find the kth smallest element in an unsorted array.
+
+**Problem:**
+Given an integer array nums and an integer k, return the kth smallest element in the array.
+
+Note that it is the kth smallest element in sorted order, not the kth distinct element.
+
+
+**Examples:**
+
+Example 1:
+Input: nums = [3,2,1,5,6,4], k = 2
+Output: 5
+Explanation: The 2nd smallest element is 2
+
+Example 2:
+Input: nums = [3,2,3,1,2,4,5,5,6], k = 4
+Output: 4
+Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
+
+**Constraints:**
+- 1 <= k <= nums.length <= 10^5
+- -10^4 <= nums[i] <= 10^4
+- Time Complexity: O(n) average case, O(n²) worst case",
+            Difficulty = Difficulty.Medium,
+            IsPublished = true,
+            TemplateCode = @"public class Solution 
+{ 
+    public int FindKthSmallest(int[] nums, int k) 
+    { 
+        // Implement algorithm here
+        
+        return 0; 
+    }
+    
+    // Helper method for partitioning (optional)
+    private int Partition(int[] nums, int left, int right)
+    {
+        // Your partitioning logic here
+        return 0;
+    }
+    
+    // Helper method for quickselect recursion (optional)
+    private int QuickSelect(int[] nums, int left, int right, int k)
+    {
+        // Your quickselect logic here
+        return 0;
+    }
+}"
+        };
+
         // --- INTERACTIVE TASKS ---
         var task13 = new InteractiveTaskItem
         {
             Title = "Guess the Output: Loops",
             Description = "Look at the following C# code and choose the correct output.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
 
         var task14 = new InteractiveTaskItem
         {
             Title = "Spot the Bug: Array Access",
             Description = "Identify the bug in the given code snippet.",
-            Difficulty = Difficulty.Easy
+            Difficulty = Difficulty.Easy,
+            IsPublished = true
         };
+
+        await context.TaskItems.AddRangeAsync(
+            task1, task2, task3, task4, task5, task6, task7, task8,
+            task9, task10, task11, task12, task13, task14, task15, task16
+        );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Tasks saved successfully");
+
+        // --- HINTS ---
+        var hint1 = new Hint
+        {
+            TaskItem = task1,
+            Content = "Use the + operator to add two numbers together and return the result.",
+            Order = 1
+        };
+
+        var hint2 = new Hint
+        {
+            TaskItem = task2,
+            Content = "Use the ternary operator: return (a > b) ? a : b; or a simple if-else statement.",
+            Order = 1
+        };
+
+        var hint3 = new Hint
+        {
+            TaskItem = task3,
+            Content = "Create a character array from the string, reverse it using a loop with two pointers (start and end), then convert back to string.",
+            Order = 1
+        };
+
+        var hint4 = new Hint
+        {
+            TaskItem = task4,
+            Content = "Use a Dictionary<int, int> to store numbers you've seen. For each number, check if (target - number) exists in the dictionary.",
+            Order = 1
+        };
+
+        var hint5 = new Hint
+        {
+            TaskItem = task5,
+            Content = "Use a Stack<char>. Push opening brackets onto the stack. When you see a closing bracket, pop from stack and check if they match.",
+            Order = 1
+        };
+
+        var hint6 = new Hint
+        {
+            TaskItem = task6,
+            Content = "Start from the end of both arrays and work backwards. Compare elements and place the larger one at the end of nums1.",
+            Order = 1
+        };
+
+        var hint7 = new Hint
+        {
+            TaskItem = task7,
+            Content = "Use a Queue<TreeNode> for BFS (Breadth-First Search). Process nodes level by level, keeping track of the current level size.",
+            Order = 1
+        };
+
+        var hint8 = new Hint
+        {
+            TaskItem = task8,
+            Content = "For each character, expand around it treating it as the center of a palindrome. Check both odd-length (single center) and even-length (two centers) palindromes.",
+            Order = 1
+        };
+
+        var hint9 = new Hint
+        {
+            TaskItem = task9,
+            Content = "Use two queues. For Push, add to queue1. For Pop, move all elements except the last from queue1 to queue2, then swap the queues.",
+            Order = 1
+        };
+
+        var hint10 = new Hint
+        {
+            TaskItem = task10,
+            Content = "Place each positive number at its correct index (number n goes to index n-1). Then scan the array to find the first index where the number doesn't match.",
+            Order = 1
+        };
+
+        var hint11 = new Hint
+        {
+            TaskItem = task11,
+            Content = "A valid tree must have exactly n-1 edges and be fully connected. Use DFS or BFS to check connectivity, and verify edge count.",
+            Order = 1
+        };
+
+        var hint12 = new Hint
+        {
+            TaskItem = task12,
+            Content = "Use dynamic programming. Create an array dp where dp[i] represents the minimum coins needed for amount i. For each amount, try all coin denominations.",
+            Order = 1
+        };
+
+        var hint13 = new Hint
+        {
+            TaskItem = task13,
+            Content = "Carefully trace through each loop iteration, keeping track of variable values at each step.",
+            Order = 1
+        };
+
+        var hint14 = new Hint
+        {
+            TaskItem = task14,
+            Content = "Check if the array index is within valid bounds (0 to array.Length - 1) before accessing elements.",
+            Order = 1
+        };
+
+        var hint15 = new Hint
+        {
+            TaskItem = task15,
+            Content = @"Use topological sorting and two-pass DP:
+1. Forward pass: Compute earliest start time for each task using topological order
+2. Backward pass: Compute latest start time working backwards from the end
+3. Critical tasks: those where earliest start = latest start (zero slack)
+4. Critical path: any path through critical tasks from source to sink",
+            Order = 1
+        };
+
+        var hint16_1 = new Hint
+        {
+            TaskItem = task16,
+            Content = "Remember that the kth largest element is the same as the (n-k)th smallest element. Convert k accordingly.",
+            Order = 1
+        };
+
+        var hint16_2 = new Hint
+        {
+            TaskItem = task16,
+            Content = "In Hoare's partition, use two pointers moving towards each other. Swap elements when left pointer finds element >= pivot and right pointer finds element <= pivot.",
+            Order = 2
+        };
+
+        var hint16_3 = new Hint
+        {
+            TaskItem = task16,
+            Content = "After partitioning, compare the pivot's final position with your target position. Only recurse into the partition containing the target.",
+            Order = 3
+        };
+
+        await context.Hints.AddRangeAsync(
+            hint1, hint2, hint3, hint4, hint5, hint6, hint7,
+            hint8, hint9, hint10, hint11, hint12, hint13, hint14, hint15,
+            hint16_1, hint16_2, hint16_3
+        );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Hints saved successfully");
 
         // --- TEST CASES ---
         var test1 = new TestCase
@@ -1253,6 +1988,148 @@ Output: -1",
             IsVisible = false
         };
 
+        // Test Case 1: Simple linear chain
+        var test15_1 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 3,
+        ""tasks"": [2, 3, 4],
+        ""edges"": [[0, 1], [1, 2]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 9,
+        ""LatestStarts"": [0, 2, 5],
+        ""CriticalPath"": [0, 1, 2]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 2: Example from description
+        var test15_2 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 9,
+        ""tasks"": [2, 3, 4, 1, 1, 1, 3, 4, 6],
+        ""edges"": [[0,1], [1,2], [0,3], [3,4], [4,5], [5,6], [0,7], [7,6], [8,6]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 9,
+        ""LatestStarts"": [0, 0, 5, 5, 6, 7, 6, 2, 0],
+        ""CriticalPath"": [0, 7, 6]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 3: Diamond structure
+        var test15_3 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 4,
+        ""tasks"": [1, 2, 3, 1],
+        ""edges"": [[0,1], [0,2], [1,3], [2,3]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 5,
+        ""LatestStarts"": [0, 2, 1, 4],
+        ""CriticalPath"": [0, 2, 3]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 4: Single task (edge case)
+        var test15_4 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 1,
+        ""tasks"": [5],
+        ""edges"": []
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 5,
+        ""LatestStarts"": [0],
+        ""CriticalPath"": [0]
+    }",
+            IsVisible = false
+        };
+
+        // Test cases for task16 (Quickselect)
+        var test16_1 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [3,2,1,5,6,4], \"k\": 2 }",
+            ExpectedJson = "2",
+            IsVisible = true
+        };
+
+        var test16_2 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [3,2,3,1,2,4,5,5,6], \"k\": 4 }",
+            ExpectedJson = "3",
+            IsVisible = true
+        };
+
+        var test16_3 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [7,10,4,3,20,15], \"k\": 3 }",
+            ExpectedJson = "1",
+            IsVisible = true
+        };
+
+        var test16_4 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [1], \"k\": 1 }",
+            ExpectedJson = "1",
+            IsVisible = true
+        };
+
+        var test16_5 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [5,5,5,5,5], \"k\": 3 }",
+            ExpectedJson = "5",
+            IsVisible = false
+        };
+
+        var test16_6 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [99,99], \"k\": 1 }",
+            ExpectedJson = "99",
+            IsVisible = false
+        };
+
+        var test16_7 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [1,2,3,4,5,6,7,8,9,10], \"k\": 5 }",
+            ExpectedJson = "5",
+            IsVisible = false
+        };
+
+        await context.TestCases.AddRangeAsync(test1, test1_2, test1_3,
+            test2, test2_2, test2_3,
+            test3, test3_2, test3_3, test3_4,
+            test4, test4_2, test4_3,
+            test5, test5_2, test5_3, test5_4,
+            test6, test6_2,
+            test7, test7_2, test7_3,
+            test8, test8_2, test8_3,
+            test10, test10_2, test10_3,
+            test11, test11_2, test11_3,
+            test12, test12_2, test12_3,
+            test15_1, test15_2, test15_3, test15_4,
+            test16_1, test16_2, test16_3, test16_4, test16_5, test16_6, test16_7
+        );
+        await context.SaveChangesAsync();
+        Console.WriteLine("Test cases saved successfully");
+
         // --- TAG RELATIONS FOR TASKS ---
         task1.Tags = new List<Tag> { tagCSharp, tagIntro };
         task2.Tags = new List<Tag> { tagCSharp, tagIntro };
@@ -1268,69 +2145,22 @@ Output: -1",
         task12.Tags = new List<Tag> { tagDP, tagAlgo };
         task13.Tags = new List<Tag> { tagIntro, tagCSharp };
         task14.Tags = new List<Tag> { tagIntro, tagArrays };
+        task15.Tags = new List<Tag> { tagGraphs, tagAlgo, tagDP };
+        task16.Tags = new List<Tag> { tagArrays, tagAlgo, tagSorting };
+
+        await context.SaveChangesAsync();
+        Console.WriteLine("Task-Tag relationships saved successfully");
 
         // --- COURSE-TASK RELATIONS ---
         course1.TaskItems = new List<TaskItem> { task1, task2, task4, task5, task6, task13, task14 };
         course2.TaskItems = new List<TaskItem> { task3, task7, task9 };
-        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12 };
-
-        // --- LECTURE-TAG RELATIONSHIPS ---
-        // Course 1 - C# Programming Fundamentals
-        lec1_1.Tags = new List<Tag> { tagIntro, tagCSharp };
-        lec1_2.Tags = new List<Tag> { tagCSharp };
-        lec1_3.Tags = new List<Tag> { tagCSharp };
-        lec1_4.Tags = new List<Tag> { tagCSharp };
-        lec1_5.Tags = new List<Tag> { tagArrays, tagIntro };
-
-        // Course 2 - Data Structures Essentials
-        lec2_1.Tags = new List<Tag> { tagArrays, tagData };
-        lec2_2.Tags = new List<Tag> { tagArrays, tagAlgo };
-        lec2_3.Tags = new List<Tag> { tagStack, tagData };
-        lec2_4.Tags = new List<Tag> { tagQueue, tagData };
-        lec2_5.Tags = new List<Tag> { tagLinkedList, tagData };
-        lec2_6.Tags = new List<Tag> { tagTrees, tagData };
-
-        // Course 3 - Advanced Algorithms
-        lec3_1.Tags = new List<Tag> { tagGraphs, tagAlgo };
-        lec3_2.Tags = new List<Tag> { tagDP, tagAlgo };
-        lec3_3.Tags = new List<Tag> { tagSorting, tagAlgo };
-        lec3_4.Tags = new List<Tag> { tagAlgo };
-
-        // --- SAVE ALL ---
-        await context.Courses.AddRangeAsync(course1, course2, course3);
-        await context.Lectures.AddRangeAsync(
-            lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
-            lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
-            lec3_1, lec3_2, lec3_3, lec3_4
-        );
-        await context.LectureContents.AddRangeAsync(
-            content1_1, content1_2, content1_3, content1_5,
-            content2_1, content2_2, content2_3, content2_6,
-            content3_1, content3_2
-        );
-        await context.TaskItems.AddRangeAsync(
-            task1, task2, task3, task4, task5, task6, task7, task8,
-            task9, task10, task11, task12, task13, task14
-        );
-        await context.TestCases.AddRangeAsync(
-            test1, test1_2, test1_3,
-            test2, test2_2, test2_3,
-            test3, test3_2, test3_3, test3_4,
-            test4, test4_2, test4_3,
-            test5, test5_2, test5_3, test5_4,
-            test6, test6_2,
-            test7, test7_2, test7_3,
-            test8, test8_2, test8_3,
-            test10, test10_2, test10_3,
-            test11, test11_2, test11_3,
-            test12, test12_2, test12_3
-        );
+        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12, task16 };
+        course4.TaskItems = new List<TaskItem> { task15 };
 
         await context.SaveChangesAsync();
-        Console.WriteLine($"Saved all entities. Courses count: {await context.Courses.CountAsync()}");
+        Console.WriteLine("Course-Task relationships saved successfully");
 
         // --- COURSE PROGRESS ---
-        // John has progress in course1 (60%)
         var progress1 = new CourseProgress
         {
             UserId = users["john"].Id,
@@ -1340,7 +2170,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // Alice completed course1 (100%)
         var progress2 = new CourseProgress
         {
             UserId = users["alice"].Id,
@@ -1350,7 +2179,6 @@ Output: -1",
             CompletedAt = DateTime.UtcNow.AddDays(-5)
         };
 
-        // Alice started course2 (20%)
         var progress3 = new CourseProgress
         {
             UserId = users["alice"].Id,
@@ -1360,7 +2188,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // Mark has progress in course2 (45%)
         var progress4 = new CourseProgress
         {
             UserId = users["mark"].Id,
@@ -1370,7 +2197,6 @@ Output: -1",
             CompletedAt = null
         };
 
-        // John started course3 (15%)
         var progress5 = new CourseProgress
         {
             UserId = users["john"].Id,
@@ -1385,12 +2211,332 @@ Output: -1",
         );
 
         await context.SaveChangesAsync();
+        Console.WriteLine("Course progresses saved successfully");
         Console.WriteLine("SeedContentAsync completed successfully!");
     }
+
+    private static async Task SeedAchievements(ApplicationDbContext context)
+    {
+        if (await context.Achievements.AnyAsync())
+            return;
+
+        var achievements = new List<Achievement>
+        {
+            // Task completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "First Steps",
+                Description = "Complete your first 5 programming tasks",
+                IconPath = "/icons/achievements/first-steps.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Problem Solver",
+                Description = "Complete 10 programming tasks",
+                IconPath = "/icons/achievements/problem-solver.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Code Master",
+                Description = "Complete 15 programming tasks",
+                IconPath = "/icons/achievements/code-master.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Lecture completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Eager Learner",
+                Description = "Complete your first 5 lectures",
+                IconPath = "/icons/achievements/eager-learner.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Knowledge Seeker",
+                Description = "Complete 10 lectures",
+                IconPath = "/icons/achievements/knowledge-seeker.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Scholar",
+                Description = "Complete 15 lectures",
+                IconPath = "/icons/achievements/scholar.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 15 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+
+            // Course completion achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Course Completer",
+                Description = "Complete your first course",
+                IconPath = "/icons/achievements/course-completer.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 1 course",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 1
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
+                Description = "Complete 3 courses",
+                IconPath = "/icons/achievements/dedicated-student.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 3 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 3
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Graduate",
+                Description = "Complete 5 courses",
+                IconPath = "/icons/achievements/graduate.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 5 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+
+            // Combined achievement
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Well Rounded",
+                Description = "Complete 10 tasks, 10 lectures, and 2 courses",
+                IconPath = "/icons/achievements/well-rounded.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Complete 10 tasks",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteTasks,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 10 lectures",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteLectures,
+                            TargetValue = 10
+                        }
+                    },
+                    new Requirement
+                    {
+                        Description = "Complete 2 courses",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.CompleteCourses,
+                            TargetValue = 2
+                        }
+                    }
+                }
+            },
+
+            // Login streak achievements
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Consistent Learner",
+                Description = "Log in for 2 consecutive days",
+                IconPath = "/icons/achievements/2-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 2 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 2
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Dedicated Student",
+                Description = "Log in for 5 consecutive days",
+                IconPath = "/icons/achievements/5-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 5 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 5
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Unstoppable",
+                Description = "Log in for 15 consecutive days",
+                IconPath = "/icons/achievements/15-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 15 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 15
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Marathon Runner",
+                Description = "Log in for 30 consecutive days",
+                IconPath = "/icons/achievements/30-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 30 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 30
+                        }
+                    }
+                }
+            },
+            new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Name = "Century",
+                Description = "Log in for 100 consecutive days",
+                IconPath = "/icons/achievements/100-day-streak.png",
+                Requirements = new List<Requirement>
+                {
+                    new Requirement
+                    {
+                        Description = "Log in for 100 days in a row",
+                        Condition = new RequirementCondition
+                        {
+                            Type = RequirementType.LoginStreak,
+                            TargetValue = 100
+                        }
+                    }
+                }
+            }
+        };
+
+        await context.Achievements.AddRangeAsync(achievements);
+        await context.SaveChangesAsync();
+    }
 }
-
-
-
-
-
-

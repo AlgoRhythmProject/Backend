@@ -1,7 +1,0 @@
-﻿namespace AlgoRhythm.Shared.Dtos;
-
-public class ProgrammingTaskDto : TaskDto
-{
-    public string? TemplateCode { get; set; }
-    public List<TestCaseDto> TestCases { get; set; } = [];
-}

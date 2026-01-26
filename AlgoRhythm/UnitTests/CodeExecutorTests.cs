@@ -1,7 +1,8 @@
 using AlgoRhythm.Shared.Dtos.Submissions;
+using AlgoRhythm.Shared.Helpers;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
-using CodeExecutor.Helpers;
 using CodeExecutor.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 
 namespace UnitTests
@@ -16,7 +17,7 @@ namespace UnitTests
         {
             _codeFormatter = new CSharpCodeFormatter();
             _compiler = new CSharpCompiler(_codeFormatter);
-            _service = new CSharpExecuteService(_compiler);
+            _service = new CSharpExecuteService(_compiler, new NullLogger<CSharpExecuteService>());
         }
 
 

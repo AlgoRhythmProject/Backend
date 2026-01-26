@@ -260,9 +260,7 @@ public class HintIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         var response = await _httpClient.GetAsync("/api/hint/task/" + Guid.NewGuid());
 
-        // Since GetByTask doesn't have [Authorize], it will return OK with empty list
-        // If you want it to require auth, add [Authorize] to that endpoint
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

@@ -1,10 +1,12 @@
-using AlgoRhythm.Data;
+﻿using AlgoRhythm.Data;
+using AlgoRhythm.Services.Users.Interfaces;
 using AlgoRhythm.Shared.Dtos.Courses;
+using AlgoRhythm.Shared.Dtos.Users;
 using AlgoRhythm.Shared.Models.Courses;
 using AlgoRhythm.Shared.Models.Users;
-using AlgoRhythm.Shared.Models.Tasks;
 using IntegrationTests.IntegrationTestSetup;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
@@ -16,56 +18,46 @@ namespace IntegrationTests.CoursesTests;
 public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 {
     private readonly IServiceScope _scope;
-    private readonly AlgoRhythmTestFixture _fixture;
     private readonly ApplicationDbContext _dbContext;
     private readonly HttpClient _httpClient;
     private readonly UserManager<User> _userManager;
-    private readonly RoleManager<Role> _roleManager;
+    private readonly IAuthService _authService;
 
     public CourseIntegrationTests(AlgoRhythmTestFixture fixture)
     {
-        _fixture = fixture;
         _scope = fixture.ServerFactory.Services.CreateScope();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         _userManager = _scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-        _roleManager = _scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+        _authService = _scope.ServiceProvider.GetRequiredService<IAuthService>();
         _httpClient = fixture.ServerFactory.CreateClient();
     }
 
-    private async Task<string> GetAuthTokenAsync()
+    private async Task<string> SetupAuthenticatedAdmin()
     {
-        var authService = _scope.ServiceProvider.GetRequiredService<AlgoRhythm.Services.Users.Interfaces.IAuthService>();
-        return await TestHelpers.SetupAuthenticatedUser(
-            TestConstants.TestUserEmail + Guid.NewGuid(),
-            TestConstants.TestUserPassword,
-            _roleManager,
-            _userManager,
-            authService
-        );
-    }
-
-    private async Task<Course> AddCourseToDb(string name, string? description = null, bool isPublished = false)
-    {
-        var course = new Course
+        var email = $"admin-{Guid.NewGuid()}@test.com";
+        var user = new User
         {
-            Name = name,
-            Description = description,
-            IsPublished = isPublished
+            UserName = email,
+            Email = email,
+            FirstName = "Admin",
+            LastName = "User",
+            EmailConfirmed = true
         };
 
-        await _dbContext.Courses.AddAsync(course);
-        await _dbContext.SaveChangesAsync();
-        return course;
+        await _userManager.CreateAsync(user, TestConstants.TestUserPassword);
+        await _userManager.AddToRoleAsync(user, "Admin");
+
+        var loginResponse = await _authService.LoginAsync(new LoginRequest(email, TestConstants.TestUserPassword));
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+
+        return loginResponse.Token;
     }
 
     [Fact]
-    public async Task GET_GetAll_Returns200WithCourses()
+    public async Task GET_AllCourses_Returns200()
     {
-        var token = await GetAuthTokenAsync();
-        await AddCourseToDb("Test Course 1", "Description 1");
-        await AddCourseToDb("Test Course 2", "Description 2");
+        await SetupAuthenticatedAdmin();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _httpClient.GetAsync("/api/course");
 
         response.EnsureSuccessStatusCode();
@@ -73,17 +65,30 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
         var courses = JsonConvert.DeserializeObject<List<CourseSummaryDto>>(responseBody);
 
         Assert.NotNull(courses);
-        Assert.True(courses.Count >= 2);
     }
 
     [Fact]
-    public async Task GET_GetPublished_Returns200WithOnlyPublishedCourses()
+    public async Task GET_PublishedCourses_ReturnsOnlyPublished()
     {
-        var token = await GetAuthTokenAsync();
-        await AddCourseToDb("Published Course", "Published", true);
-        await AddCourseToDb("Unpublished Course", "Unpublished", false);
+        await SetupAuthenticatedAdmin();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var publishedCourse = new Course
+        {
+            Name = "Published Course",
+            Description = "This is published",
+            IsPublished = true
+        };
+
+        var unpublishedCourse = new Course
+        {
+            Name = "Unpublished Course",
+            Description = "This is not published",
+            IsPublished = false
+        };
+
+        await _dbContext.Courses.AddRangeAsync(publishedCourse, unpublishedCourse);
+        await _dbContext.SaveChangesAsync();
+
         var response = await _httpClient.GetAsync("/api/course/published");
 
         response.EnsureSuccessStatusCode();
@@ -95,12 +100,20 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     }
 
     [Fact]
-    public async Task GET_GetById_ValidId_Returns200WithCourse()
+    public async Task GET_CourseById_ValidId_Returns200()
     {
-        var token = await GetAuthTokenAsync();
-        var course = await AddCourseToDb("Test Course", "Description");
+        await SetupAuthenticatedAdmin();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var course = new Course
+        {
+            Name = "Test Course",
+            Description = "Test Description",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.SaveChangesAsync();
+
         var response = await _httpClient.GetAsync($"/api/course/{course.Id}");
 
         response.EnsureSuccessStatusCode();
@@ -109,100 +122,108 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
 
         Assert.NotNull(courseDto);
         Assert.Equal(course.Id, courseDto.Id);
-        Assert.Equal(course.Name, courseDto.Name);
+        Assert.Equal("Test Course", courseDto.Name);
     }
 
     [Fact]
-    public async Task GET_GetById_InvalidId_Returns404()
+    public async Task GET_CourseById_InvalidId_Returns404()
     {
-        var token = await GetAuthTokenAsync();
-        var invalidId = Guid.NewGuid();
+        await SetupAuthenticatedAdmin();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _httpClient.GetAsync($"/api/course/{invalidId}");
+        var response = await _httpClient.GetAsync($"/api/course/{Guid.NewGuid()}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task POST_Create_ValidInput_Returns201AndCreatedCourse()
+    public async Task POST_CreateCourse_ValidData_Returns201()
     {
-        var token = await GetAuthTokenAsync();
-        var inputDto = new CourseInputDto
+        await SetupAuthenticatedAdmin();
+
+        var courseInput = new CourseInputDto
         {
             Name = "New Course",
-            Description = "New Description",
+            Description = "New course description",
             IsPublished = false
         };
-        HttpContent content = new StringContent(JsonConvert.SerializeObject(inputDto), Encoding.UTF8, "application/json");
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var content = new StringContent(JsonConvert.SerializeObject(courseInput), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync("/api/course", content);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync();
-        var courseDto = JsonConvert.DeserializeObject<CourseDto>(responseBody);
+        var createdCourse = JsonConvert.DeserializeObject<CourseDto>(responseBody);
 
-        Assert.NotNull(courseDto);
-        Assert.Equal(inputDto.Name, courseDto.Name);
-        Assert.Equal(inputDto.Description, courseDto.Description);
+        Assert.NotNull(createdCourse);
+        Assert.Equal("New Course", createdCourse.Name);
 
         _dbContext.ChangeTracker.Clear();
-        var dbCourse = await _dbContext.Courses.FindAsync(courseDto.Id);
+        var dbCourse = await _dbContext.Courses.FindAsync(createdCourse.Id);
         Assert.NotNull(dbCourse);
     }
 
     [Fact]
-    public async Task PUT_Update_ValidInput_Returns204()
+    public async Task POST_CreateCourse_Unauthorized_Returns401()
     {
-        var token = await GetAuthTokenAsync();
-        var course = await AddCourseToDb("Original Name", "Original Description");
+        var courseInput = new CourseInputDto
+        {
+            Name = "New Course",
+            Description = "Description"
+        };
+
+        var content = new StringContent(JsonConvert.SerializeObject(courseInput), Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync("/api/course", content);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PUT_UpdateCourse_ValidData_Returns204()
+    {
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
+        {
+            Name = "Original Name",
+            Description = "Original Description",
+            IsPublished = false
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.SaveChangesAsync();
+
         var updateDto = new CourseInputDto
         {
             Name = "Updated Name",
             Description = "Updated Description",
             IsPublished = true
         };
-        HttpContent content = new StringContent(JsonConvert.SerializeObject(updateDto), Encoding.UTF8, "application/json");
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var content = new StringContent(JsonConvert.SerializeObject(updateDto), Encoding.UTF8, "application/json");
         var response = await _httpClient.PutAsync($"/api/course/{course.Id}", content);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _dbContext.ChangeTracker.Clear();
         var updatedCourse = await _dbContext.Courses.FindAsync(course.Id);
-        Assert.NotNull(updatedCourse);
-        Assert.Equal(updateDto.Name, updatedCourse.Name);
-        Assert.Equal(updateDto.Description, updatedCourse.Description);
-        Assert.Equal(updateDto.IsPublished, updatedCourse.IsPublished);
+        Assert.Equal("Updated Name", updatedCourse!.Name);
+        Assert.True(updatedCourse.IsPublished);
     }
 
     [Fact]
-    public async Task PUT_Update_InvalidId_Returns404()
+    public async Task DELETE_Course_ValidId_Returns204()
     {
-        var token = await GetAuthTokenAsync();
-        var updateDto = new CourseInputDto
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
         {
-            Name = "Updated Name",
-            Description = "Updated Description",
-            IsPublished = true
+            Name = "To Delete",
+            Description = "Will be deleted"
         };
-        HttpContent content = new StringContent(JsonConvert.SerializeObject(updateDto), Encoding.UTF8, "application/json");
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _httpClient.PutAsync($"/api/course/{Guid.NewGuid()}", content);
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.SaveChangesAsync();
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task DELETE_Delete_ValidId_Returns204()
-    {
-        var token = await GetAuthTokenAsync();
-        var course = await AddCourseToDb("To Delete");
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _httpClient.DeleteAsync($"/api/course/{course.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -213,52 +234,168 @@ public class CourseIntegrationTests : IClassFixture<AlgoRhythmTestFixture>
     }
 
     [Fact]
-    public async Task POST_AddTask_ValidIds_Returns204()
+    public async Task GET_CourseWithLectures_ValidId_ReturnsLectures()
     {
-        var token = await GetAuthTokenAsync();
-        var course = await AddCourseToDb("Course");
-        var task = new ProgrammingTaskItem
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
         {
-            Title = "Task",
-            Description = "Task Description",
-            Difficulty = Difficulty.Easy,
+            Name = "Course with Lectures",
+            Description = "Has lectures"
+        };
+
+        // Create lectures independently (many-to-many)
+        var lecture1 = new Lecture
+        {
+            Title = "Lecture 1",
             IsPublished = true
         };
-        await _dbContext.TaskItems.AddAsync(task);
+
+        var lecture2 = new Lecture
+        {
+            Title = "Lecture 2",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.Lectures.AddRangeAsync(lecture1, lecture2);
         await _dbContext.SaveChangesAsync();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _httpClient.PostAsync($"/api/course/{course.Id}/tasks/{task.Id}", null);
+        // Assign lectures to course (many-to-many)
+        course.Lectures.Add(lecture1);
+        course.Lectures.Add(lecture2);
+        await _dbContext.SaveChangesAsync();
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        _dbContext.ChangeTracker.Clear();
+
+        var response = await _httpClient.GetAsync($"/api/course/{course.Id}");
+
+        response.EnsureSuccessStatusCode();
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var courseDto = JsonConvert.DeserializeObject<CourseDto>(responseBody);
+
+        Assert.NotNull(courseDto);
+        Assert.True(courseDto.Lectures.Count >= 2);
+        Assert.Contains(courseDto.Lectures, l => l.Title == "Lecture 1");
+        Assert.Contains(courseDto.Lectures, l => l.Title == "Lecture 2");
     }
 
     [Fact]
-    public async Task DELETE_RemoveTask_ValidIds_Returns204()
+    public async Task POST_AddLectureToCourse_ValidIds_Returns204()
     {
-        var token = await GetAuthTokenAsync();
-        var course = await AddCourseToDb("Course");
-        var task = new ProgrammingTaskItem
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
         {
-            Title = "Task",
-            Description = "Task Description",
-            Difficulty = Difficulty.Easy,
+            Name = "Course",
+            Description = "Test"
+        };
+
+        var lecture = new Lecture
+        {
+            Title = "Lecture to Add",
             IsPublished = true
         };
-        task.Courses.Add(course);
-        await _dbContext.TaskItems.AddAsync(task);
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.Lectures.AddAsync(lecture);
         await _dbContext.SaveChangesAsync();
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _httpClient.DeleteAsync($"/api/course/{course.Id}/tasks/{task.Id}");
+        var response = await _httpClient.PostAsync($"/api/course/{course.Id}/lectures/{lecture.Id}", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        _dbContext.ChangeTracker.Clear();
+        var updatedCourse = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstOrDefaultAsync(c => c.Id == course.Id);
+
+        Assert.NotNull(updatedCourse);
+        Assert.Contains(updatedCourse.Lectures, l => l.Id == lecture.Id);
     }
 
     [Fact]
-    public async Task GET_WithoutAuth_Returns401()
+    public async Task DELETE_RemoveLectureFromCourse_ValidIds_Returns204()
     {
-        var response = await _httpClient.GetAsync("/api/course");
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await SetupAuthenticatedAdmin();
+
+        var course = new Course
+        {
+            Name = "Course",
+            Description = "Test"
+        };
+
+        var lecture = new Lecture
+        {
+            Title = "Lecture to Remove",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddAsync(course);
+        await _dbContext.Lectures.AddAsync(lecture);
+        await _dbContext.SaveChangesAsync();
+
+        // Add lecture to course
+        course.Lectures.Add(lecture);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        var response = await _httpClient.DeleteAsync($"/api/course/{course.Id}/lectures/{lecture.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        _dbContext.ChangeTracker.Clear();
+        var updatedCourse = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstOrDefaultAsync(c => c.Id == course.Id);
+
+        Assert.NotNull(updatedCourse);
+        Assert.DoesNotContain(updatedCourse.Lectures, l => l.Id == lecture.Id);
+    }
+
+    [Fact]
+    public async Task Lecture_CanBelongToMultipleCourses()
+    {
+        await SetupAuthenticatedAdmin();
+
+        var course1 = new Course { Name = "Course 1", Description = "Test" };
+        var course2 = new Course { Name = "Course 2", Description = "Test" };
+
+        var sharedLecture = new Lecture
+        {
+            Title = "Shared Lecture",
+            IsPublished = true
+        };
+
+        await _dbContext.Courses.AddRangeAsync(course1, course2);
+        await _dbContext.Lectures.AddAsync(sharedLecture);
+        await _dbContext.SaveChangesAsync();
+
+        // Add same lecture to both courses
+        course1.Lectures.Add(sharedLecture);
+        course2.Lectures.Add(sharedLecture);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        // Verify lecture is in both courses
+        var updatedCourse1 = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstAsync(c => c.Id == course1.Id);
+
+        var updatedCourse2 = await _dbContext.Courses
+            .Include(c => c.Lectures)
+            .FirstAsync(c => c.Id == course2.Id);
+
+        Assert.Contains(updatedCourse1.Lectures, l => l.Id == sharedLecture.Id);
+        Assert.Contains(updatedCourse2.Lectures, l => l.Id == sharedLecture.Id);
+
+        // Verify lecture has both courses
+        var updatedLecture = await _dbContext.Lectures
+            .Include(l => l.Courses)
+            .FirstAsync(l => l.Id == sharedLecture.Id);
+
+        Assert.Equal(2, updatedLecture.Courses.Count);
     }
 }

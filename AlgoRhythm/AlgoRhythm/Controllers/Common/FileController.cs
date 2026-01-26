@@ -1,11 +1,10 @@
-﻿using AlgoRhythm.Shared.Models.Courses;
-using Microsoft.AspNetCore.Mvc;
-using AlgoRhythm.Attributes;
-using Microsoft.AspNetCore.Components.Web;
+﻿using Microsoft.AspNetCore.Mvc;
 using Azure;
-using System.Text.Encodings.Web;
 using System.Web;
 using AlgoRhythm.Services.Blob.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using AlgoRhythm.Shared.Models.Users;
+using AlgoRhythm.Attributes;
 
 namespace AlgoRhythm.Controllers.Common
 {
@@ -20,9 +19,12 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Uploads a file to blob (or azurite in dev)
+        /// Uploads a file to blob storage. Admin only.
         /// </summary>
+        /// <param name="file">The file to upload</param>
+        /// <returns>URL of the uploaded file</returns>
         [HttpPost]
+        [Authorize(Roles = Roles.Admin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -57,11 +59,42 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Video preview for debugging, not visible in swagger (it does not support streaming)
-        /// url should be opened directly in browser to preview video
+        /// Retrieves a paginated list of files from blob storage. Admin only.
+        /// Returns only metadata - use get_file endpoint to download actual files.
         /// </summary>
+        /// <param name="pageSize">Number of files per page (default: 50, max: 100)</param>
+        /// <param name="continuationToken">Token for next page (optional)</param>
+        /// <returns>List of file metadata with continuation token</returns>
+        [HttpGet("list")]
+        [Authorize(Roles = Roles.Admin)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ListFiles([FromQuery] int pageSize = 50, [FromQuery] string? continuationToken = null)
+        {
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            var (files, nextToken) = await _storageService.ListFilesAsync(pageSize, continuationToken);
+
+            return Ok(new
+            {
+                Files = files,
+                ContinuationToken = nextToken,
+                HasMore = nextToken != null
+            });
+        }
+
+        /// <summary>
+        /// Video preview for debugging, not visible in swagger (it does not support streaming).
+        /// URL should be opened directly in browser to preview video.
+        /// </summary>
+        /// <param name="path">Path to the video file</param>
+        /// <returns>HTML page with video player</returns>
         [HttpGet("preview_video")]
         [DevelopmentOnly]
+        [Authorize(Roles = Roles.Admin)]
         [ApiExplorerSettings(IgnoreApi = true)]
         public IActionResult PreviewVideo([FromQuery] string path)
         {
@@ -115,15 +148,18 @@ namespace AlgoRhythm.Controllers.Common
                     </div>
                 </body>
                 </html>
-            ");
+            ", "text/html");
         }
 
         /// <summary>
-        /// Endpoint for retrieving a file stream from blob
+        /// Retrieves a file stream from blob storage with range support for streaming.
+        /// Supports partial content requests for efficient video/audio streaming.
         /// </summary>
-        /// <param name="fileName">Name of a file inside blob</param>
+        /// <param name="fileName">Name of the file in blob storage (with GUID prefix)</param>
+        /// <returns>File stream with range processing enabled</returns>
         [HttpGet("get_file")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status206PartialContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -133,7 +169,7 @@ namespace AlgoRhythm.Controllers.Common
 
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                return BadRequest("Path is required");
+                return BadRequest("fileName is required");
             }
 
             try
@@ -153,9 +189,10 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Endpoint for retrieving video metadata needed for streaming
+        /// Retrieves video metadata needed for streaming.
         /// </summary>
-        /// <param name="fileName">Path to a file</param>
+        /// <param name="fileName">Path to the video file</param>
+        /// <returns>Video metadata</returns>
         [HttpGet("video_info")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -178,14 +215,14 @@ namespace AlgoRhythm.Controllers.Common
         }
 
         /// <summary>
-        /// Deletes a file from blob
+        /// Deletes a file from blob storage. Admin only.
         /// </summary>
-        /// <param name="fileName">blob fileName</param>
-        /// <returns>true if the blob was succesfully deleted, false otherwise</returns>
+        /// <param name="fileName">Name of the file to delete</param>
+        /// <returns>True if the file was successfully deleted, false otherwise</returns>
         [HttpDelete("{fileName}")]
+        [Authorize(Roles = Roles.Admin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-
         public async Task<ActionResult<bool>> DeleteFile(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))

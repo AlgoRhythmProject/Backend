@@ -5,7 +5,7 @@ namespace AlgoRhythm.Services.Tasks.Interfaces;
 public interface ITaskService
 {
     Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct);
-    Task<IEnumerable<TaskWithCoursesDto>> GetAllWithCoursesAsync(CancellationToken ct);
+    Task<IEnumerable<TaskWithCoursesDto>> GetPublishedWithCoursesAsync(CancellationToken ct);
     Task<IEnumerable<TaskDto>> GetPublishedAsync(CancellationToken ct);
     Task<TaskDetailsDto?> GetByIdAsync(Guid id, CancellationToken ct);
     Task<TaskDto> CreateAsync(TaskInputDto dto, CancellationToken ct);

@@ -1,5 +1,6 @@
 using AlgoRhythm.Data;
 using AlgoRhythm.Repositories.Courses.Interfaces;
+using AlgoRhythm.Shared.Models.Common;
 using AlgoRhythm.Shared.Models.Courses;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,14 +9,15 @@ namespace AlgoRhythm.Repositories.Courses;
 public class EfLectureRepository : ILectureRepository
 {
     private readonly ApplicationDbContext _db;
-    
+
     public EfLectureRepository(ApplicationDbContext db) => _db = db;
 
-    public async Task<IEnumerable<Lecture>> GetAllAsync(CancellationToken ct)
+    public async Task<IEnumerable<Lecture>> GetAllAsync(bool publishedOnly, CancellationToken ct)
     {
         return await _db.Lectures
-            .Include(l => l.Contents.OrderBy(c => c.Order))
+            .Include(l => l.Courses)
             .Include(l => l.Tags)
+            .Where(l => !publishedOnly || l.IsPublished)
             .OrderBy(l => l.CreatedAt)
             .ToListAsync(ct);
     }
@@ -23,9 +25,10 @@ public class EfLectureRepository : ILectureRepository
     public async Task<IEnumerable<Lecture>> GetByCourseIdAsync(Guid courseId, CancellationToken ct)
     {
         return await _db.Lectures
-            .Include(l => l.Contents.OrderBy(c => c.Order))
+            .Include(l => l.Courses)
             .Include(l => l.Tags)
-            .Where(l => l.CourseId == courseId)
+            .Include(l => l.Contents.OrderBy(c => c.Order))
+            .Where(l => l.Courses.Any(c => c.Id == courseId))
             .OrderBy(l => l.CreatedAt)
             .ToListAsync(ct);
     }
@@ -33,15 +36,17 @@ public class EfLectureRepository : ILectureRepository
     public async Task<Lecture?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _db.Lectures
+            .Include(l => l.Courses)
+            .Include(l => l.Tags)
             .FirstOrDefaultAsync(l => l.Id == id, ct);
     }
 
     public async Task<Lecture?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct)
     {
         return await _db.Lectures
-            .Include(l => l.Contents.OrderBy(c => c.Order))
+            .Include(l => l.Courses)
             .Include(l => l.Tags)
-            .Include(l => l.Course)
+            .Include(l => l.Contents.OrderBy(c => c.Order))
             .FirstOrDefaultAsync(l => l.Id == id, ct);
     }
 
@@ -72,7 +77,7 @@ public class EfLectureRepository : ILectureRepository
         var lecture = await _db.Lectures
             .Include(l => l.Tags)
             .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
-        
+
         var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Id == tagId, ct);
 
         if (lecture != null && tag != null && !lecture.Tags.Contains(tag))
@@ -87,7 +92,7 @@ public class EfLectureRepository : ILectureRepository
         var lecture = await _db.Lectures
             .Include(l => l.Tags)
             .FirstOrDefaultAsync(l => l.Id == lectureId, ct);
-        
+
         var tag = lecture?.Tags.FirstOrDefault(t => t.Id == tagId);
 
         if (lecture != null && tag != null)
@@ -108,46 +113,41 @@ public class EfLectureRepository : ILectureRepository
 
         content.LectureId = lectureId;
         
-        // Ustaw order na nastêpny wolny numer
-        var maxOrder = lecture.Contents.Any() ? lecture.Contents.Max(c => c.Order) : -1;
-        content.Order = maxOrder + 1;
-        
-        if (content is LectureText lectureText)
+        // Set order to be last
+        if (lecture.Contents.Any())
         {
-            await _db.Set<LectureText>().AddAsync(lectureText, ct);
+            content.Order = lecture.Contents.Max(c => c.Order) + 1;
         }
-        else if (content is LecturePhoto lecturePhoto)
+        else
         {
-            await _db.Set<LecturePhoto>().AddAsync(lecturePhoto, ct);
+            content.Order = 0;
         }
 
+        await _db.LectureContents.AddAsync(content, ct);
         await _db.SaveChangesAsync(ct);
+        
         return content;
     }
 
     public async Task UpdateContentAsync(Guid contentId, LectureContent content, CancellationToken ct)
     {
-        var existingContent = await _db.Set<LectureContent>()
-            .FirstOrDefaultAsync(c => c.Id == contentId, ct);
-
+        var existingContent = await _db.LectureContents.FirstOrDefaultAsync(c => c.Id == contentId, ct);
         if (existingContent == null)
             throw new KeyNotFoundException("Content not found");
 
-        if (existingContent is LectureText existingText && content is LectureText newText)
+        // Update properties based on type
+        if (existingContent is LectureText textContent && content is LectureText newTextContent)
         {
-            existingText.HtmlContent = newText.HtmlContent;
+            textContent.HtmlContent = newTextContent.HtmlContent;
         }
-        else if (existingContent is LecturePhoto existingPhoto && content is LecturePhoto newPhoto)
+        else if (existingContent is LecturePhoto photoContent && content is LecturePhoto newPhotoContent)
         {
-            existingPhoto.Path = newPhoto.Path;
-            existingPhoto.Alt = newPhoto.Alt;
-            existingPhoto.Title = newPhoto.Title;
-        }
-        else
-        {
-            throw new ArgumentException("Content type mismatch");
+            photoContent.Path = newPhotoContent.Path;
+            photoContent.Alt = newPhotoContent.Alt;
+            photoContent.Title = newPhotoContent.Title;
         }
 
+        existingContent.Order = content.Order;
         await _db.SaveChangesAsync(ct);
     }
 
@@ -161,21 +161,20 @@ public class EfLectureRepository : ILectureRepository
 
         if (lecture != null && content != null)
         {
-            _db.Set<LectureContent>().Remove(content);
+            lecture.Contents.Remove(content);
+            _db.LectureContents.Remove(content);
             await _db.SaveChangesAsync(ct);
         }
     }
 
     public async Task<LectureContent?> GetContentByIdAsync(Guid contentId, CancellationToken ct)
     {
-        return await _db.Set<LectureContent>()
-            .Include(c => c.Lecture)
-            .FirstOrDefaultAsync(c => c.Id == contentId, ct);
+        return await _db.LectureContents.FirstOrDefaultAsync(c => c.Id == contentId, ct);
     }
 
     public async Task<IEnumerable<LectureContent>> GetContentsByLectureIdAsync(Guid lectureId, CancellationToken ct)
     {
-        return await _db.Set<LectureContent>()
+        return await _db.LectureContents
             .Where(c => c.LectureId == lectureId)
             .OrderBy(c => c.Order)
             .ToListAsync(ct);
@@ -196,7 +195,7 @@ public class EfLectureRepository : ILectureRepository
         if (firstContent == null || secondContent == null)
             throw new KeyNotFoundException("One or both contents not found in this lecture");
 
-        // Zamieñ ordery
+        // Swap orders
         (firstContent.Order, secondContent.Order) = (secondContent.Order, firstContent.Order);
 
         await _db.SaveChangesAsync(ct);
