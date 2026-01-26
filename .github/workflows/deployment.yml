@@ -49,8 +49,8 @@ jobs:
 
     # Build visualizer image
     - name: Build code executor
-      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/backend/visualizer:latest -f ./AlgoRhythm/visualizerService/Dockerfile ./AlgoRhythm
+      run: docker build -t ${{ env.REGISTRY }}/algorhythmproject/backend/visualizer:latest -f ./AlgoRhythm/VisualizerService/Dockerfile ./AlgoRhythm
     
-    # Push code executor image
+    # Push visualizer image
     - name: Push code executor
-      run: docker push ${{ env.REGISTRY }}/algorhythmproject/backend/visualizer-executor:latest
+      run: docker push ${{ env.REGISTRY }}/algorhythmproject/backend/visualizer:latest
