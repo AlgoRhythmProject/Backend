@@ -8,7 +8,4 @@ namespace AlgoRhythm.Shared.Models.Users;
 public class Role : IdentityRole<Guid>
 {
     public string? Description { get; set; }
-    
-    // Many-to-many with Permissions
-    public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 }

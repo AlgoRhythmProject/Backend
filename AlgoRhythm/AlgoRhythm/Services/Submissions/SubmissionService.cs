@@ -212,6 +212,7 @@ public class SubmissionService : ISubmissionService
                 StdOut = judgeDto.StdOut,
                 StdErr = judgeDto.StdErr,
                 Errors = [.. judgeDto.Errors.FromDto()],
+                ReturnedValue = judgeDto.ReturnedValue?.ToString()
             };
 
             await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
@@ -314,7 +315,8 @@ public class SubmissionService : ISubmissionService
             Errors = [.. tr.Errors.ToDto()],
             IsVisible = tr.TestCase.IsVisible,
             InputJson = tr.TestCase.InputJson,
-            ExpectedJson = tr.TestCase.ExpectedJson
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? [];
 
 
@@ -335,7 +337,8 @@ public class SubmissionService : ISubmissionService
             Errors = [.. tr.Errors.ToDto()],
             IsVisible = tr.TestCase.IsVisible,
             InputJson = tr.TestCase.InputJson,
-            ExpectedJson = tr.TestCase.ExpectedJson
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -353,7 +356,8 @@ public class SubmissionService : ISubmissionService
             Errors = [.. tr.Errors.ToDto()],
             IsVisible = tr.TestCase.IsVisible,
             InputJson = tr.TestCase.InputJson,
-            ExpectedJson = tr.TestCase.ExpectedJson
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -371,7 +375,8 @@ public class SubmissionService : ISubmissionService
             Errors = [.. tr.Errors.ToDto()],
             IsVisible = tr.TestCase.IsVisible,
             InputJson = tr.TestCase.InputJson,
-            ExpectedJson = tr.TestCase.ExpectedJson
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -390,7 +395,8 @@ public class SubmissionService : ISubmissionService
             Errors = [.. tr.Errors.ToDto()],
             IsVisible = tr.TestCase.IsVisible,
             InputJson = tr.TestCase.InputJson,
-            ExpectedJson = tr.TestCase.ExpectedJson
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 

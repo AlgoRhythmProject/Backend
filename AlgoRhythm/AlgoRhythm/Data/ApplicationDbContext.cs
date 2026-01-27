@@ -185,10 +185,5 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
             .HasOne(urp => urp.UserAchievement)
             .WithMany(ua => ua.RequirementProgresses)
             .OnDelete(DeleteBehavior.NoAction);
-
-        // Configure Role -> Permissions many-to-many
-        builder.Entity<Role>()
-            .HasMany(r => r.Permissions)
-            .WithMany(p => p.Roles);
     }
 }

@@ -24,6 +24,7 @@ public class TestResult
     public string? StdOut { get; set; }
 
     public string? StdErr { get; set; }
+    public string? ReturnedValue { get; set; }
 
     [ForeignKey(nameof(SubmissionId))]
     public ProgrammingSubmission Submission { get; set; } = null!;

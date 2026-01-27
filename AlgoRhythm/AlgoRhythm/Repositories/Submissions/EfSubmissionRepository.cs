@@ -30,6 +30,9 @@ public class EfSubmissionRepository : ISubmissionRepository
     {
         return await _context.ProgrammingSubmissions
             .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.Errors)
+            .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.TestCase)
             .Include(s => s.TaskItem)
             .Include(s => s.User)
             .OrderByDescending(s => s.SubmittedAt)
@@ -40,6 +43,9 @@ public class EfSubmissionRepository : ISubmissionRepository
     {
         return await _context.ProgrammingSubmissions
             .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.Errors)
+            .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.TestCase)
             .Include(s => s.TaskItem)
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.SubmittedAt)
@@ -50,6 +56,9 @@ public class EfSubmissionRepository : ISubmissionRepository
     {
         return await _context.ProgrammingSubmissions
             .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.Errors)
+            .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.TestCase)
             .Include(s => s.TaskItem)
             .Where(s => s.UserId == userId && s.TaskItemId == taskId)
             .OrderByDescending(s => s.SubmittedAt)
@@ -60,6 +69,9 @@ public class EfSubmissionRepository : ISubmissionRepository
     {
         return await _context.ProgrammingSubmissions
             .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.Errors)
+            .Include(s => s.TestResults)
+                .ThenInclude(tr => tr.TestCase)
             .Include(s => s.TaskItem)
             .Include(s => s.User)
             .OrderByDescending(s => s.SubmittedAt)
