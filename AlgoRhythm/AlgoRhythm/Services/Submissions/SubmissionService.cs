@@ -311,7 +311,10 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson
         }).ToList() ?? [];
 
 
@@ -329,7 +332,10 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson
         }).ToList() ?? []));
     }
 
@@ -344,7 +350,10 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson
         }).ToList() ?? []));
     }
 
@@ -359,7 +368,10 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson
         }).ToList() ?? []));
     }
 
@@ -375,7 +387,10 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson
         }).ToList() ?? []));
     }
 
@@ -386,10 +401,11 @@ public class SubmissionService : ISubmissionService
             SubmissionId = submission.Id,
             TaskItemId = submission.TaskItemId,
             UserId = submission.UserId,
-            Status = submission.Status.ToString(),
+            Status = submission.Status,
             Score = submission.Score,
             IsSolved = submission.IsSolved,
             SubmittedAt = submission.SubmittedAt,
+            Code = submission.Code,
             TestResults = results.ToList()
         };
     }
