@@ -10,13 +10,19 @@ namespace AlgoRhythm.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
+            migrationBuilder.RenameColumn(
+                name: "TimeoutSeconds",
+                table: "TestCases",
+                newName: "TimeoutMs");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            migrationBuilder.RenameColumn(
+                name: "TimeoutMs",
+                table: "TestCases",
+                newName: "TimeoutSeconds");
         }
     }
 }

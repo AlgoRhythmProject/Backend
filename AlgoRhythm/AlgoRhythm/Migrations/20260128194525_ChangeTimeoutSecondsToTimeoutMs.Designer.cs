@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlgoRhythm.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260128193237_ChangeTimeoutSecondsToTimeoutMs")]
+    [Migration("20260128194525_ChangeTimeoutSecondsToTimeoutMs")]
     partial class ChangeTimeoutSecondsToTimeoutMs
     {
         /// <inheritdoc />
@@ -486,7 +486,7 @@ namespace AlgoRhythm.Migrations
                     b.Property<Guid>("ProgrammingTaskItemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("TimeoutSeconds")
+                    b.Property<int?>("TimeoutMs")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
