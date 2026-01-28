@@ -181,14 +181,17 @@ public class SubmissionService : ISubmissionService
         var orderedTestCases = task.TestCases.OrderBy(tc => tc.Id).ToList();
         var finalResults = new List<TestResultDto>();
 
+        // This is to help match results by id not index
+        var judgeResultsByTestCaseId = judgeResults.ToDictionary(jr => jr.TestCaseId);
+
         for (int i = 0; i < orderedTestCases.Count; i++)
         {
             var tc = orderedTestCases[i];
             TestResultDto judgeDto;
 
-            if (i < judgeResults.Count)
+            if (judgeResultsByTestCaseId.TryGetValue(tc.Id, out var matchedResult))
             {
-                judgeDto = judgeResults[i];
+                judgeDto = matchedResult;
             }
             else
             {
@@ -217,7 +220,7 @@ public class SubmissionService : ISubmissionService
 
             await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
 
-            finalResults.Add(judgeResults[i]);
+            finalResults.Add(judgeDto);
         }
 
         submission.ExecuteFinishedAt = DateTime.UtcNow;

@@ -16,20 +16,22 @@ public class EfSubmissionRepository : ISubmissionRepository
 
     public async Task<ProgrammingSubmission?> GetSubmissionAsync(Guid id, CancellationToken ct)
     {
-        return await _context.ProgrammingSubmissions
-            .Include(s => s.TestResults)
+        var submission = await _context.ProgrammingSubmissions
+            .Include(s => s.TestResults.OrderBy(tr => tr.TestCase.Id))
                 .ThenInclude(tr => tr.Errors)
             .Include(s => s.TestResults)
                 .ThenInclude(tr => tr.TestCase)
             .Include(s => s.TaskItem)
             .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.Id == id, ct);
+
+        return submission;
     }
 
     public async Task<IEnumerable<ProgrammingSubmission>> GetAllSubmissionsAsync(CancellationToken ct)
     {
-        return await _context.ProgrammingSubmissions
-            .Include(s => s.TestResults)
+        var submissions = await _context.ProgrammingSubmissions
+            .Include(s => s.TestResults.OrderBy(tr => tr.TestCase.Id))
                 .ThenInclude(tr => tr.Errors)
             .Include(s => s.TestResults)
                 .ThenInclude(tr => tr.TestCase)
@@ -37,12 +39,14 @@ public class EfSubmissionRepository : ISubmissionRepository
             .Include(s => s.User)
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync(ct);
+
+        return submissions;
     }
 
     public async Task<IEnumerable<ProgrammingSubmission>> GetSubmissionsByUserIdAsync(Guid userId, CancellationToken ct)
     {
-        return await _context.ProgrammingSubmissions
-            .Include(s => s.TestResults)
+        var submissions = await _context.ProgrammingSubmissions
+            .Include(s => s.TestResults.OrderBy(tr => tr.TestCase.Id))
                 .ThenInclude(tr => tr.Errors)
             .Include(s => s.TestResults)
                 .ThenInclude(tr => tr.TestCase)
@@ -50,12 +54,14 @@ public class EfSubmissionRepository : ISubmissionRepository
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync(ct);
+
+        return submissions;
     }
 
     public async Task<IEnumerable<ProgrammingSubmission>> GetSubmissionsByUserAndTaskAsync(Guid userId, Guid taskId, CancellationToken ct)
     {
-        return await _context.ProgrammingSubmissions
-            .Include(s => s.TestResults)
+        var submissions = await _context.ProgrammingSubmissions
+            .Include(s => s.TestResults.OrderBy(tr => tr.TestCase.Id))
                 .ThenInclude(tr => tr.Errors)
             .Include(s => s.TestResults)
                 .ThenInclude(tr => tr.TestCase)
@@ -63,12 +69,14 @@ public class EfSubmissionRepository : ISubmissionRepository
             .Where(s => s.UserId == userId && s.TaskItemId == taskId)
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync(ct);
+
+        return submissions;
     }
 
     public async Task<IEnumerable<ProgrammingSubmission>> GetRecentSubmissionsAsync(int skip, int take, CancellationToken ct)
     {
-        return await _context.ProgrammingSubmissions
-            .Include(s => s.TestResults)
+        var submissions = await _context.ProgrammingSubmissions
+            .Include(s => s.TestResults.OrderBy(tr => tr.TestCase.Id))
                 .ThenInclude(tr => tr.Errors)
             .Include(s => s.TestResults)
                 .ThenInclude(tr => tr.TestCase)
@@ -78,6 +86,8 @@ public class EfSubmissionRepository : ISubmissionRepository
             .Skip(skip)
             .Take(take)
             .ToListAsync(ct);
+
+        return submissions;
     }
 
     public async Task AddSubmissionAsync(ProgrammingSubmission submission, CancellationToken ct)
