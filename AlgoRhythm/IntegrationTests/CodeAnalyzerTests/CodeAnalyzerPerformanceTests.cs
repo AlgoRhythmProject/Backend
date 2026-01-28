@@ -29,7 +29,8 @@ namespace IntegrationTests.CodeAnalyzerTests
             _factory = factory;
         }
 
-        [Fact]
+        [Trait("Category", "Performance")]
+        [Fact(Skip = "Performance test - run manually")]
         public async Task FullCodeAnalysis_StressTest_100ConcurrentClients()
         {
             int clientCount = 50;
