@@ -2,6 +2,7 @@
 using Graph;
 using Microsoft.AspNetCore.SignalR;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace VisualizerService
 {
@@ -39,7 +40,6 @@ namespace VisualizerService
 
             await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "Compilation successful", ct);
             await _hubContext.Clients.Group(sessionId).SendAsync("AddLog", "Starting algorithm...", ct);
-
             try
             {
                 if (result.AssemblyStream is null) {

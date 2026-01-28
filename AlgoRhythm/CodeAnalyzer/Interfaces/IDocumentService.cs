@@ -1,11 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using CodeAnalyzer.Models;
+using Microsoft.CodeAnalysis;
 
 namespace CodeAnalyzer.Interfaces
 {
     public interface IDocumentService
     {
-        Document UpdateDocument(SessionState session, string userCode);
-        int ToRoslynPosition(Document document, int line, int column);
+        Task<Document> UpdateDocumentAsync(SessionState session, string userCode);
+        Task<int> ToRoslynPosition(Document document, int line, int column);
     }
 
 }
