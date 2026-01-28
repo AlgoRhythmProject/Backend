@@ -66,24 +66,24 @@ namespace VisualizerService
 
         public async Task SetNodeColor(string nodeId, string color)
         {
-            await _hubContext.Clients.Group(_sessionId).SendAsync("UpdateNodeColor", nodeId, color, _state.CTS.Token);
+            await _hubContext.Clients.Group(_sessionId).SendAsync(FrontendCommands.UpdateNodeColor, nodeId, color, _state.CTS.Token);
             await Task.Delay(50, _state.CTS.Token);
         }
 
         public async Task HighlightEdge(string fromId, string toId, string color)
         {
-            await SendAsync("UpdateEdgeColor", fromId, toId, color);
+            await SendAsync(FrontendCommands.UpdateEdgeColor, fromId, toId, color);
             await Task.Delay(50, _state.CTS.Token);
         }
 
         public async Task SetEdgeLabel(string fromId, string toId, string label)
         {
-            await SendAsync("UpdateEdgeLabel", fromId, toId, label);
+            await SendAsync(FrontendCommands.UpdateEdgeLabel, fromId, toId, label);
         }
 
         public async Task Log(string message)
         {
-            await SendAsync("AddLog", message);
+            await SendAsync(FrontendCommands.AddLog, message);
         }
 
         public async Task Sleep(int ms)

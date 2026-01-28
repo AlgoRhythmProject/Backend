@@ -5,9 +5,7 @@ namespace AlgoRhythm.Shared.Dtos.Courses;
 public class LectureContentInputDto
 {
     [Required]
-    public string Type { get; set; } = null!; // "Text" or "Photo"
-
-    public int Order { get; set; } = 0;
+    public string Type { get; set; } = string.Empty;
 
     // For Text content
     public string? HtmlContent { get; set; }

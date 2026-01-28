@@ -19,4 +19,8 @@ public static class TestConstants
 
     // URLs
     public const string TestFrontendUrl = "http://frontend:8888";
+    public const string TestCodeExecutorUrl = "http://executor:11";
+
+    // Azure
+    public const string TestAzureConnectionString = "Azure";
 }

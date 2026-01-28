@@ -30,6 +30,7 @@ public class SubmissionsController(ISubmissionService submissions, ILogger<Submi
             if (!Guid.TryParse(userIdClaim, out var userId))
                 return Unauthorized(new { error = "Invalid user id in token." });
 
+
             var response = await _submissions.CreateProgrammingSubmissionAsync(userId, req, ct);
             return Ok(response);
         }

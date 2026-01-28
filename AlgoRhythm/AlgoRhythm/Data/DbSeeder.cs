@@ -166,7 +166,15 @@ public static class DbSeeder
             IsPublished = true
         };
 
-        await context.Courses.AddRangeAsync(course1, course2, course3);
+        var course4 = new Course
+        {
+            Name = "Graphs and Trees",
+            Description = "Explore the world of graphs and trees, two of the most important data structures in computer science. Learn about traversal, searching, and optimization algorithms.",
+            CreatedAt = DateTime.UtcNow,
+            IsPublished = true
+        };
+
+        await context.Courses.AddRangeAsync(course1, course2, course3, course4);
         await context.SaveChangesAsync();
         Console.WriteLine("Courses saved successfully");
 
@@ -189,10 +197,16 @@ public static class DbSeeder
         var lec3_3 = new Lecture { Title = "Advanced Sorting Algorithms", IsPublished = true };
         var lec3_4 = new Lecture { Title = "Divide and Conquer", IsPublished = true };
 
+        var lec4_1 = new Lecture
+        {
+            Title = "Traveling Salesman Problem: Theory and Applications",
+            IsPublished = true
+        };
+
         await context.Lectures.AddRangeAsync(
             lec1_1, lec1_2, lec1_3, lec1_4, lec1_5,
             lec2_1, lec2_2, lec2_3, lec2_4, lec2_5, lec2_6,
-            lec3_1, lec3_2, lec3_3, lec3_4
+            lec3_1, lec3_2, lec3_3, lec3_4, lec4_1
         );
         await context.SaveChangesAsync();
         Console.WriteLine("Lectures saved successfully");
@@ -237,6 +251,8 @@ public static class DbSeeder
         course3.Lectures.Add(lec3_2);
         course3.Lectures.Add(lec3_3);
         course3.Lectures.Add(lec3_4);
+
+        course4.Lectures.Add(lec4_1);
 
         await context.SaveChangesAsync();
         Console.WriteLine("Course-Lecture relationships saved successfully");
@@ -709,10 +725,417 @@ int Fibonacci(int n)
             Type = ContentType.Text
         };
 
+        // NEW CONTENT: Sorting Algorithms Lecture
+        var content3_3_part1 = new LectureText
+        {
+            Lecture = lec3_3,
+            HtmlContent = @"<h1>Advanced Sorting Algorithms</h1>
+<p>Sorting is one of the most fundamental operations in computer science. Understanding different sorting algorithms and their trade-offs is essential for writing efficient code.</p>
+
+<h2>Why Study Sorting?</h2>
+<ul>
+<li><strong>Ubiquitous</strong>: Used everywhere from databases to graphics rendering</li>
+<li><strong>Performance Critical</strong>: Can make the difference between usable and unusable software</li>
+<li><strong>Algorithmic Thinking</strong>: Teaches divide-and-conquer, recursion, and optimization</li>
+<li><strong>Interview Favorite</strong>: Commonly asked in technical interviews</li>
+</ul>
+
+<h2>Sorting Algorithm Categories</h2>
+
+<h3>Comparison-Based Sorts</h3>
+<p>These algorithms sort by comparing elements. The theoretical lower bound for comparison-based sorting is <strong>O(n log n)</strong>.</p>
+
+<h3>Non-Comparison Sorts</h3>
+<p>These algorithms exploit properties of the data (like integer ranges) to achieve linear time complexity in special cases.</p>
+
+<h2>Quick Sort</h2>
+<p>QuickSort is a highly efficient, divide-and-conquer sorting algorithm. It works by selecting a 'pivot' element and partitioning the array around it.</p>
+
+<h3>Algorithm Steps:</h3>
+<ol>
+<li><strong>Choose Pivot</strong>: Select an element as the pivot (commonly the last element, first element, or median)</li>
+<li><strong>Partition</strong>: Rearrange the array so that:
+    <ul>
+        <li>All elements smaller than pivot are on the left</li>
+        <li>All elements greater than pivot are on the right</li>
+    </ul>
+</li>
+<li><strong>Recursively Sort</strong>: Apply the same process to the left and right sub-arrays</li>
+</ol>
+
+<h3>Implementation in C#:</h3>
+<pre><code>public void QuickSort(int[] arr, int low, int high)
+{
+    if (low < high)
+    {
+        int pivotIndex = Partition(arr, low, high);
+        QuickSort(arr, low, pivotIndex - 1);
+        QuickSort(arr, pivotIndex + 1, high);
+    }
+}
+
+private int Partition(int[] arr, int low, int high)
+{
+    int pivot = arr[high];
+    int i = low - 1;
+    
+    for (int j = low; j < high; j++)
+    {
+        if (arr[j] < pivot)
+        {
+            i++;
+            Swap(arr, i, j);
+        }
+    }
+    
+    Swap(arr, i + 1, high);
+    return i + 1;
+}
+
+private void Swap(int[] arr, int i, int j)
+{
+    int temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+}</code></pre>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>Best Case</strong>: O(n log n) - pivot always divides array evenly</li>
+<li><strong>Average Case</strong>: O(n log n)</li>
+<li><strong>Worst Case</strong>: O(n²) - pivot is always the smallest or largest element (array already sorted)</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(log n) due to recursion stack</p>
+
+<h3>Characteristics:</h3>
+<ul>
+<li><strong>Not Stable</strong>: Equal elements may change relative order</li>
+<li><strong>In-Place</strong>: Requires only O(log n) extra space</li>
+<li><strong>Cache-Friendly</strong>: Good locality of reference</li>
+</ul>",
+            Type = ContentType.Text,
+            Order = 0
+        };
+
+        // Placeholder for GIF - you'll add this later
+        var content3_3_gif = new LecturePhoto
+        {
+            Lecture = lec3_3,
+            Path = "sorting-visualization.gif",
+            Alt = "Animated visualization of QuickSort algorithm partitioning and sorting an array",
+            Title = "QuickSort Visualization",
+            Type = ContentType.Photo,
+            Order = 1
+        };
+
+        var content3_3_part2 = new LectureText
+        {
+            Lecture = lec3_3,
+            HtmlContent = @"<h2>Merge Sort</h2>
+<p>MergeSort is another efficient divide-and-conquer algorithm that guarantees O(n log n) time complexity in all cases.</p>
+
+<h3>Algorithm Steps:</h3>
+<ol>
+<li><strong>Divide</strong>: Split the array into two halves</li>
+<li><strong>Conquer</strong>: Recursively sort both halves</li>
+<li><strong>Combine</strong>: Merge the two sorted halves into one sorted array</li>
+</ol>
+
+<h3>Implementation in C#:</h3>
+<pre><code>public void MergeSort(int[] arr, int left, int right)
+{
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+        
+        MergeSort(arr, left, mid);
+        MergeSort(arr, mid + 1, right);
+        
+        Merge(arr, left, mid, right);
+    }
+}
+
+private void Merge(int[] arr, int left, int mid, int right)
+{
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    int[] leftArr = new int[n1];
+    int[] rightArr = new int[n2];
+    
+    Array.Copy(arr, left, leftArr, 0, n1);
+    Array.Copy(arr, mid + 1, rightArr, 0, n2);
+    
+    int i = 0, j = 0, k = left;
+    
+    while (i < n1 && j < n2)
+    {
+        if (leftArr[i] <= rightArr[j])
+        {
+            arr[k] = leftArr[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = rightArr[j];
+            j++;
+        }
+        k++;
+    }
+    
+    while (i < n1)
+    {
+        arr[k] = leftArr[i];
+        i++;
+        k++;
+    }
+    
+    while (j < n2)
+    {
+        arr[k] = rightArr[j];
+        j++;
+        k++;
+    }
+}</code></pre>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>All Cases</strong>: O(n log n) - always divides evenly</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(n) - requires additional arrays for merging</p>
+
+<h3>Characteristics:</h3>
+<ul>
+<li><strong>Stable</strong>: Preserves relative order of equal elements</li>
+<li><strong>Not In-Place</strong>: Requires O(n) extra space</li>
+<li><strong>Predictable Performance</strong>: Always O(n log n)</li>
+</ul>
+
+<h2>Heap Sort</h2>
+<p>HeapSort uses a binary heap data structure to efficiently sort elements. It combines the efficiency of QuickSort with the guaranteed O(n log n) of MergeSort, while being in-place.</p>
+
+<h3>Key Concepts:</h3>
+<ul>
+<li><strong>Max Heap</strong>: Complete binary tree where parent ≥ children</li>
+<li><strong>Heapify</strong>: Convert array into valid heap</li>
+<li><strong>Extract Max</strong>: Remove largest element, maintain heap property</li>
+</ul>
+
+<h3>Time Complexity:</h3>
+<ul>
+<li><strong>All Cases</strong>: O(n log n)</li>
+</ul>
+
+<h3>Space Complexity:</h3>
+<p>O(1) - in-place sorting</p>
+
+<h2>Comparison of Advanced Sorting Algorithms</h2>
+
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Best Case</th>
+<th>Average Case</th>
+<th>Worst Case</th>
+<th>Space</th>
+<th>Stable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Quick Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n²)</td>
+<td>O(log n)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Merge Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Heap Sort</strong></td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(n log n)</td>
+<td>O(1)</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+
+<h2>When to Use Which Algorithm?</h2>
+
+<h3>Use Quick Sort When:</h3>
+<ul>
+<li>Average-case performance is most important</li>
+<li>You need in-place sorting with minimal extra space</li>
+<li>Data is randomly distributed</li>
+<li>Cache performance matters</li>
+</ul>
+
+<h3>Use Merge Sort When:</h3>
+<ul>
+<li>Stability is required (preserving order of equal elements)</li>
+<li>Worst-case O(n log n) is critical</li>
+<li>Sorting linked lists (natural fit)</li>
+<li>External sorting (data doesn't fit in memory)</li>
+</ul>
+
+<h3>Use Heap Sort When:</h3>
+<ul>
+<li>Memory is limited (O(1) space required)</li>
+<li>Guaranteed O(n log n) needed without extra space</li>
+<li>You need to find k largest/smallest elements efficiently</li>
+</ul>
+
+<h2>Optimization Techniques</h2>
+
+<h3>Hybrid Approaches</h3>
+<p>Modern sorting implementations often combine algorithms:</p>
+<ul>
+<li><strong>Introsort</strong>: Starts with QuickSort, switches to HeapSort if recursion depth exceeds threshold</li>
+<li><strong>Timsort</strong>: Hybrid of MergeSort and Insertion Sort (used in Python, Java)</li>
+</ul>
+
+<h3>Pivot Selection in QuickSort</h3>
+<ul>
+<li><strong>Random Pivot</strong>: Reduces probability of worst case</li>
+<li><strong>Median-of-Three</strong>: Choose median of first, middle, and last elements</li>
+<li><strong>Ninther</strong>: Median of medians for large arrays</li>
+</ul>
+
+<h2>Practical Considerations</h2>
+
+<h3>Small Arrays</h3>
+<p>For small arrays (typically n < 10-20), simple algorithms like Insertion Sort can be faster due to low overhead.</p>
+
+<h3>Nearly Sorted Data</h3>
+<p>If data is nearly sorted, adaptive algorithms like Insertion Sort or Timsort excel.</p>
+
+<h3>Parallel Sorting</h3>
+<p>MergeSort and QuickSort can be easily parallelized for multi-core processors.</p>
+
+<h2>Summary</h2>
+<p>Understanding sorting algorithms goes beyond memorizing implementations. It's about:</p>
+<ul>
+<li>Recognizing trade-offs between time, space, and stability</li>
+<li>Choosing the right algorithm for your data characteristics</li>
+<li>Applying divide-and-conquer thinking to other problems</li>
+<li>Appreciating the elegance of well-designed algorithms</li>
+</ul>
+
+<p>In practice, most programming languages provide highly optimized sorting functions (like <code>Array.Sort()</code> in C#), but understanding these algorithms helps you make informed decisions and solve related problems.</p>",
+            Type = ContentType.Text,
+            Order = 2
+        };
+
+        var content4_1_text = new LectureText
+        {
+            Lecture = lec4_1,
+            HtmlContent = @"<h1>The Traveling Salesman Problem</h1>
+<p>The Traveling Salesman Problem (TSP) is one of the most famous problems in computer science and operations research. It asks a simple question: <strong>Given a list of cities and the distances between each pair, what is the shortest possible route that visits each city exactly once and returns to the origin city?</strong></p>
+
+<h2>Problem Definition</h2>
+<p>Formally, given a complete graph G = (V, E) where:</p>
+<ul>
+<li>V is a set of n vertices (cities)</li>
+<li>E is a set of edges with weights d(i,j) representing distances</li>
+<li>We seek a Hamiltonian cycle (tour) with minimum total weight</li>
+</ul>
+
+<h2>Why TSP Matters</h2>
+<p>Despite its simple formulation, TSP is <strong>NP-hard</strong>, meaning no known algorithm can solve all instances in polynomial time. This makes it a benchmark problem for optimization algorithms and has real-world applications in:</p>
+<ul>
+<li><strong>Logistics</strong> - Package delivery route optimization</li>
+<li><strong>Manufacturing</strong> - Circuit board drilling sequences</li>
+<li><strong>DNA Sequencing</strong> - Ordering genetic fragments</li>
+<li><strong>Astronomy</strong> - Telescope observation scheduling</li>
+</ul>
+
+<h2>Computational Complexity</h2>
+<p>The brute force approach examines all (n-1)!/2 possible tours, which becomes infeasible very quickly:</p>
+<ul>
+<li>10 cities: ~181,000 tours</li>
+<li>15 cities: ~43 billion tours</li>
+<li>20 cities: ~60 quintillion tours</li>
+</ul>
+
+<p>This exponential growth necessitates clever algorithmic approaches.</p>",
+            Type = ContentType.Text,
+            Order = 0
+        };
+
+        var content4_1_text2 = new LectureText
+        {
+            Lecture = lec4_1,
+            HtmlContent = @"<h2>Algorithmic Approaches</h2>
+
+<h3>1. Exact Algorithms</h3>
+<h4>Held-Karp Dynamic Programming</h4>
+<p>The Held-Karp algorithm uses dynamic programming to solve TSP in O(n² × 2ⁿ) time, which is exponential but much better than brute force O(n!).</p>
+<p><strong>Key Idea:</strong> For each subset S ⊂ V and each vertex v ∈ S, compute the shortest path that:</p>
+<ul>
+<li>Starts at vertex 1</li>
+<li>Visits all vertices in S exactly once</li>
+<li>Ends at vertex v</li>
+</ul>
+
+<h3>2. Approximation Algorithms</h3>
+<h4>Christofides Algorithm</h4>
+<p>For metric TSP (satisfying triangle inequality), this algorithm guarantees a solution within 1.5× optimal in polynomial time:</p>
+<pre><code>1. Find minimum spanning tree (MST)
+2. Find minimum-weight perfect matching on odd-degree vertices
+3. Combine to form Eulerian graph
+4. Convert to Hamiltonian cycle (shortcutting)</code></pre>
+
+<h3>3. Heuristic Approaches</h3>
+<h4>Nearest Neighbor Heuristic</h4>
+<p>A simple greedy approach: start at any city, repeatedly visit the nearest unvisited city. Fast but can produce tours up to 25% longer than optimal.</p>
+
+<h4>2-Opt Improvement</h4>
+<p>Local search method that repeatedly removes two edges and reconnects the path in a different way if it improves the tour length.</p>
+
+<h2>Advanced Topics</h2>
+<h3>Variants of TSP</h3>
+<ul>
+<li><strong>Multiple TSP</strong> - Multiple salesmen, each visiting a subset of cities</li>
+<li><strong>TSP with Time Windows</strong> - Each city must be visited within a specific time range</li>
+<li><strong>Asymmetric TSP</strong> - Distance from A to B may differ from B to A</li>
+<li><strong>Bottleneck TSP</strong> - Minimize the longest edge in the tour</li>
+</ul>
+
+<h2>Modern Solving Techniques</h2>
+<p>State-of-the-art TSP solvers like Concorde can solve instances with thousands of cities to proven optimality using:</p>
+<ul>
+<li>Branch-and-cut algorithms</li>
+<li>Linear programming relaxations</li>
+<li>Cutting plane methods</li>
+<li>Sophisticated preprocessing</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>TSP exemplifies the challenges of combinatorial optimization and continues to drive advances in algorithm design, complexity theory, and practical optimization techniques.</p>",
+            Type = ContentType.Text,
+            Order = 1
+        };
+
         await context.LectureContents.AddRangeAsync(
             content1_1, content1_2, content1_3, content1_5,
             content2_1, content2_2, content2_3, content2_6,
-            content3_1, content3_2
+            content3_1, content3_2,
+            content3_3_part1, content3_3_gif, content3_3_part2,
+            content4_1_text, content4_1_text2
         );
         await context.SaveChangesAsync();
         Console.WriteLine("Lecture contents saved successfully");
@@ -1008,6 +1431,127 @@ Output: -1",
 }"
         };
 
+        var task15 = new ProgrammingTaskItem
+        {
+            Title = "Project Critical Path Analysis",
+            Description = @"Given a directed graph of project tasks with dependencies, find the minimum completion time, latest start times, and a critical path.
+
+**Input:**
+- n: number of tasks (1 to 1000)
+- tasks: array of task durations
+- edges: dependencies as [prerequisite, dependent] pairs
+
+**Output - ProjectSchedule object:**
+- MinTime: minimum project completion time
+- LatestStarts: latest start time for each task
+- CriticalPath: sequence of critical tasks
+
+**Critical Path:** A path where delaying any task delays the entire project.
+
+**Example:**
+Tasks: [2, 3, 4, 1, 1, 1, 3, 4, 6]
+Edges: [[0,1], [1,2], [0,3], [3,4], [4,5], [5,6], [0,7], [7,6], [8,6]]
+
+Graph structure:
+0→1→2
+0→3→4→5→6
+0→7→6
+8→6
+
+Output:
+MinTime: 9
+LatestStarts: [0, 0, 5, 5, 6, 7, 6, 2, 0]
+CriticalPath: [0, 7, 6] (or [8, 6] or [0, 1, 2])
+
+**Constraints:**
+- No circular dependencies guaranteed
+- Time complexity: O(V + E)
+- Task duration: 1 to 100",
+            Difficulty = Difficulty.Hard,
+            IsPublished = true,
+            TemplateCode = @"using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class ProjectSchedule
+{
+    public int MinTime { get; set; }
+    public int[] LatestStarts { get; set; }
+    public List<int> CriticalPath { get; set; }
+}
+
+public class Solution
+{
+    public ProjectSchedule AnalyzeProject(int n, int[] tasks, int[][] edges)
+    {
+        // Your solution here
+        // Hint: Use topological sorting and dynamic programming
+        
+        return new ProjectSchedule
+        {
+            MinTime = 0,
+            LatestStarts = new int[n],
+            CriticalPath = new List<int>()
+        };
+    }
+}"
+        };
+
+        // NEW TASK: Quickselect - Hoare's Algorithm
+        var task16 = new ProgrammingTaskItem
+        {
+            Title = "Find Kth Smallest Element - Hoare's Algorithm",
+            Description = @"Find the kth smallest element in an unsorted array.
+
+**Problem:**
+Given an integer array nums and an integer k, return the kth smallest element in the array.
+
+Note that it is the kth smallest element in sorted order, not the kth distinct element.
+
+
+**Examples:**
+
+Example 1:
+Input: nums = [3,2,1,5,6,4], k = 2
+Output: 5
+Explanation: The 2nd smallest element is 2
+
+Example 2:
+Input: nums = [3,2,3,1,2,4,5,5,6], k = 4
+Output: 4
+Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
+
+**Constraints:**
+- 1 <= k <= nums.length <= 10^5
+- -10^4 <= nums[i] <= 10^4
+- Time Complexity: O(n) average case, O(n²) worst case",
+            Difficulty = Difficulty.Medium,
+            IsPublished = true,
+            TemplateCode = @"public class Solution 
+{ 
+    public int FindKthSmallest(int[] nums, int k) 
+    { 
+        // Implement algorithm here
+        
+        return 0; 
+    }
+    
+    // Helper method for partitioning (optional)
+    private int Partition(int[] nums, int left, int right)
+    {
+        // Your partitioning logic here
+        return 0;
+    }
+    
+    // Helper method for quickselect recursion (optional)
+    private int QuickSelect(int[] nums, int left, int right, int k)
+    {
+        // Your quickselect logic here
+        return 0;
+    }
+}"
+        };
+
         // --- INTERACTIVE TASKS ---
         var task13 = new InteractiveTaskItem
         {
@@ -1027,7 +1571,7 @@ Output: -1",
 
         await context.TaskItems.AddRangeAsync(
             task1, task2, task3, task4, task5, task6, task7, task8,
-            task9, task10, task11, task12, task13, task14
+            task9, task10, task11, task12, task13, task14, task15, task16
         );
         await context.SaveChangesAsync();
         Console.WriteLine("Tasks saved successfully");
@@ -1036,7 +1580,7 @@ Output: -1",
         var hint1 = new Hint
         {
             TaskItem = task1,
-            Content = "Use the + operator (shift and =) to add two numbers together and return the result.",
+            Content = "Use the + operator to add two numbers together and return the result.",
             Order = 1
         };
 
@@ -1131,9 +1675,42 @@ Output: -1",
             Order = 1
         };
 
+        var hint15 = new Hint
+        {
+            TaskItem = task15,
+            Content = @"Use topological sorting and two-pass DP:
+1. Forward pass: Compute earliest start time for each task using topological order
+2. Backward pass: Compute latest start time working backwards from the end
+3. Critical tasks: those where earliest start = latest start (zero slack)
+4. Critical path: any path through critical tasks from source to sink",
+            Order = 1
+        };
+
+        var hint16_1 = new Hint
+        {
+            TaskItem = task16,
+            Content = "Remember that the kth largest element is the same as the (n-k)th smallest element. Convert k accordingly.",
+            Order = 1
+        };
+
+        var hint16_2 = new Hint
+        {
+            TaskItem = task16,
+            Content = "In Hoare's partition, use two pointers moving towards each other. Swap elements when left pointer finds element >= pivot and right pointer finds element <= pivot.",
+            Order = 2
+        };
+
+        var hint16_3 = new Hint
+        {
+            TaskItem = task16,
+            Content = "After partitioning, compare the pivot's final position with your target position. Only recurse into the partition containing the target.",
+            Order = 3
+        };
+
         await context.Hints.AddRangeAsync(
             hint1, hint2, hint3, hint4, hint5, hint6, hint7,
-            hint8, hint9, hint10, hint11, hint12, hint13, hint14
+            hint8, hint9, hint10, hint11, hint12, hint13, hint14, hint15,
+            hint16_1, hint16_2, hint16_3
         );
         await context.SaveChangesAsync();
         Console.WriteLine("Hints saved successfully");
@@ -1411,8 +1988,132 @@ Output: -1",
             IsVisible = false
         };
 
-        await context.TestCases.AddRangeAsync(
-            test1, test1_2, test1_3,
+        // Test Case 1: Simple linear chain
+        var test15_1 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 3,
+        ""tasks"": [2, 3, 4],
+        ""edges"": [[0, 1], [1, 2]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 9,
+        ""LatestStarts"": [0, 2, 5],
+        ""CriticalPath"": [0, 1, 2]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 2: Example from description
+        var test15_2 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 9,
+        ""tasks"": [2, 3, 4, 1, 1, 1, 3, 4, 6],
+        ""edges"": [[0,1], [1,2], [0,3], [3,4], [4,5], [5,6], [0,7], [7,6], [8,6]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 9,
+        ""LatestStarts"": [0, 0, 5, 5, 6, 7, 6, 2, 0],
+        ""CriticalPath"": [0, 7, 6]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 3: Diamond structure
+        var test15_3 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 4,
+        ""tasks"": [1, 2, 3, 1],
+        ""edges"": [[0,1], [0,2], [1,3], [2,3]]
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 5,
+        ""LatestStarts"": [0, 2, 1, 4],
+        ""CriticalPath"": [0, 2, 3]
+    }",
+            IsVisible = true
+        };
+
+        // Test Case 4: Single task (edge case)
+        var test15_4 = new TestCase
+        {
+            ProgrammingTaskItem = task15,
+            InputJson = @"{
+        ""n"": 1,
+        ""tasks"": [5],
+        ""edges"": []
+    }",
+            ExpectedJson = @"{
+        ""MinTime"": 5,
+        ""LatestStarts"": [0],
+        ""CriticalPath"": [0]
+    }",
+            IsVisible = false
+        };
+
+        // Test cases for task16 (Quickselect)
+        var test16_1 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [3,2,1,5,6,4], \"k\": 2 }",
+            ExpectedJson = "2",
+            IsVisible = true
+        };
+
+        var test16_2 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [3,2,3,1,2,4,5,5,6], \"k\": 4 }",
+            ExpectedJson = "3",
+            IsVisible = true
+        };
+
+        var test16_3 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [7,10,4,3,20,15], \"k\": 3 }",
+            ExpectedJson = "1",
+            IsVisible = true
+        };
+
+        var test16_4 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [1], \"k\": 1 }",
+            ExpectedJson = "1",
+            IsVisible = true
+        };
+
+        var test16_5 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [5,5,5,5,5], \"k\": 3 }",
+            ExpectedJson = "5",
+            IsVisible = false
+        };
+
+        var test16_6 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [99,99], \"k\": 1 }",
+            ExpectedJson = "99",
+            IsVisible = false
+        };
+
+        var test16_7 = new TestCase
+        {
+            ProgrammingTaskItem = task16,
+            InputJson = "{ \"nums\": [1,2,3,4,5,6,7,8,9,10], \"k\": 5 }",
+            ExpectedJson = "5",
+            IsVisible = false
+        };
+
+        await context.TestCases.AddRangeAsync(test1, test1_2, test1_3,
             test2, test2_2, test2_3,
             test3, test3_2, test3_3, test3_4,
             test4, test4_2, test4_3,
@@ -1422,7 +2123,9 @@ Output: -1",
             test8, test8_2, test8_3,
             test10, test10_2, test10_3,
             test11, test11_2, test11_3,
-            test12, test12_2, test12_3
+            test12, test12_2, test12_3,
+            test15_1, test15_2, test15_3, test15_4,
+            test16_1, test16_2, test16_3, test16_4, test16_5, test16_6, test16_7
         );
         await context.SaveChangesAsync();
         Console.WriteLine("Test cases saved successfully");
@@ -1442,6 +2145,8 @@ Output: -1",
         task12.Tags = new List<Tag> { tagDP, tagAlgo };
         task13.Tags = new List<Tag> { tagIntro, tagCSharp };
         task14.Tags = new List<Tag> { tagIntro, tagArrays };
+        task15.Tags = new List<Tag> { tagGraphs, tagAlgo, tagDP };
+        task16.Tags = new List<Tag> { tagArrays, tagAlgo, tagSorting };
 
         await context.SaveChangesAsync();
         Console.WriteLine("Task-Tag relationships saved successfully");
@@ -1449,7 +2154,8 @@ Output: -1",
         // --- COURSE-TASK RELATIONS ---
         course1.TaskItems = new List<TaskItem> { task1, task2, task4, task5, task6, task13, task14 };
         course2.TaskItems = new List<TaskItem> { task3, task7, task9 };
-        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12 };
+        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12, task16 };
+        course4.TaskItems = new List<TaskItem> { task15 };
 
         await context.SaveChangesAsync();
         Console.WriteLine("Course-Task relationships saved successfully");
@@ -1834,9 +2540,3 @@ Output: -1",
         await context.SaveChangesAsync();
     }
 }
-
-
-
-
-
-

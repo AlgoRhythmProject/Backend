@@ -108,6 +108,8 @@ public class LectureService : ILectureService
             {
                 FileName = dto.FileName,
                 StreamUrl = dto.StreamUrl ?? string.Empty,
+                FileSize = dto.FileSize ?? 0,
+                LastModified = dto.LastModified ?? DateTime.UtcNow,
                 Type = ContentType.Video
             };
         }
@@ -139,7 +141,7 @@ public class LectureService : ILectureService
                 LectureId = lectureId,
                 HtmlContent = dto.HtmlContent,
                 Type = ContentType.Text,
-                Order = dto.Order
+                Order = existingContent.Order
             };
         }
         else if (dto.Type == "Photo")
@@ -155,7 +157,7 @@ public class LectureService : ILectureService
                 Alt = dto.Alt,
                 Title = dto.Title,
                 Type = ContentType.Photo,
-                Order = dto.Order
+                Order = existingContent.Order
             };
         }
         else if (dto.Type == "Video")
@@ -169,8 +171,10 @@ public class LectureService : ILectureService
                 LectureId = lectureId,
                 FileName = dto.FileName,
                 StreamUrl = dto.StreamUrl ?? string.Empty,
+                FileSize = dto.FileSize ?? 0,
+                LastModified = dto.LastModified ?? DateTime.UtcNow,
                 Type = ContentType.Video,
-                Order = dto.Order
+                Order = existingContent.Order
             };
         }
         else
