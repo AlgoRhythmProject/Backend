@@ -52,7 +52,7 @@ namespace CodeAnalyzer.Services
                 }
             }
 
-            return currentDocument;
+            return currentDocument ?? throw new Exception("Invalid session state!");
         }
 
         /// <summary>
