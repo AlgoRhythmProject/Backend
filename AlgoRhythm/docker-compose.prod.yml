@@ -65,6 +65,7 @@ services:
       API_BASE_URL: ${BACKEND_URL}
       ANALYZER_URL: ${ANALYZER_URL}
       VISUALIZER_URL: ${VISUALIZER_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     
   executor:
     image: ghcr.io/algorhythmproject/backend/code-executor:latest
