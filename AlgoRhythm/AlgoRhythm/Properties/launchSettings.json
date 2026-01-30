@@ -52,7 +52,7 @@
     "Docker Compose Prod": {
       "commandName": "Executable",
       "executablePath": "docker-compose",
-      "commandLineArgs": "-f docker-compose.prod.yml up --pull=always",
+      "commandLineArgs": "-f docker-compose.prod.yml up --scale executor=2 --pull=always",
       "workingDirectory": "$(SolutionDir)\\",
       "launchBrowser": true,
       "environmentVariables": {
@@ -82,7 +82,7 @@
     "Docker Compose Dev (LB)": {
       "commandName": "Executable",
       "executablePath": "docker-compose",
-      "commandLineArgs": "-f docker-compose.dev.yml up -d --scale executor=1",
+      "commandLineArgs": "-f docker-compose.dev.yml up --scale executor=1",
       "workingDirectory": "$(SolutionDir)\\",
       "launchBrowser": true,
       "environmentVariables": {

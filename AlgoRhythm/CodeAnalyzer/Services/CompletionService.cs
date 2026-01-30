@@ -1,5 +1,6 @@
 ﻿using AlgoRhythm.Shared.Dtos.CodeAnalysis;
 using CodeAnalyzer.Interfaces;
+using CodeAnalyzer.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,7 +21,7 @@ namespace CodeAnalyzer.Services
         private readonly ILogger<CompletionService> _logger;
 
         /// <summary>
-        /// Maps completion item kinds to their priority for sorting in IntelliSense.
+        /// Maps completion item kinds to their priority for sorting.
         /// Higher values appear first.
         /// </summary>
         private static readonly Dictionary<CompletionItemKind, int> KindPriority = new()
@@ -73,29 +74,33 @@ namespace CodeAnalyzer.Services
         }
 
         /// <summary>
-        /// Gets completion items at the specified line and column in the user's code.
+        /// Retrieves completion items
         /// </summary>
+        /// <param name="code">Source code of user</param>
+        /// <param name="line">Line number (0-indexed).</param>
+        /// <param name="column">Column number (0-indexed).</param>
+        /// <param name="connectionId">Id of user's connection.</param>
         public async Task<CompletionItemDto[]> GetCompletionsAsync(string code, int line, int column, string connectionId)
         {
             _logger.LogInformation($"[GetCompletions] line={line}, column={column}");
 
             var session = _sessionManager.GetOrCreate(connectionId);
-            var document = _documentService.UpdateDocument(session, code);
+            var document = await _documentService.UpdateDocumentAsync(session, code);
 
-            var position = CalculatePosition(document, line, column);
+            var position = await CalculatePosition(document, line, column);
 
-            var (lastWord, isDotCompletion) = GetCursorContext(document, position);
+            var (lastWord, isDotCompletion) = await GetCursorContext(document, position);
 
             var items = await GetCompletionItems(document, position, isDotCompletion);
 
-            items = ApplyFiltersAndSorting(items, lastWord, isDotCompletion);
+            var itemsDto = ApplyFiltersAndSorting(items, lastWord, isDotCompletion);
 
             if (!isDotCompletion)
             {
-                items = items.Concat(GetKeywordCompletions(lastWord));
+                itemsDto = itemsDto.Concat(GetKeywordCompletions(lastWord));
             }
 
-            return [.. items];
+            return [.. itemsDto];
         }
 
         #region Helpers
@@ -103,10 +108,10 @@ namespace CodeAnalyzer.Services
         /// <summary>
         /// Calculates the absolute position in the Roslyn document for a given line and column.
         /// </summary>
-        private static int CalculatePosition(Document document, int line, int column)
+        private static async Task<int> CalculatePosition(Document document, int line, int column)
         {
             var roslynLine = line + DocumentService.TemplateLineCount;
-            var text = document.GetTextAsync().Result;
+            var text = await document.GetTextAsync();
 
             if (roslynLine >= text.Lines.Count) return text.Length;
 
@@ -116,10 +121,10 @@ namespace CodeAnalyzer.Services
         /// <summary>
         /// Returns the last typed word and whether the cursor is after a dot (member access).
         /// </summary>
-        private static (string lastWord, bool isDotCompletion) GetCursorContext(Document document, int position)
+        private static async Task<(string lastWord, bool isDotCompletion)> GetCursorContext(Document document, int position)
         {
-            var text = document.GetTextAsync().Result;
-            var textBeforeCursor = text.GetSubText(TextSpan.FromBounds(Math.Max(0, position - 50), position)).ToString();
+            var text = await document.GetTextAsync();
+            var textBeforeCursor = text.GetSubText(TextSpan.FromBounds(Math.Max(0, position - 30), position)).ToString();
             var isDot = textBeforeCursor.TrimEnd().EndsWith(".");
 
             var lineIndex = text.Lines.GetLineFromPosition(position).LineNumber;
@@ -134,18 +139,13 @@ namespace CodeAnalyzer.Services
         /// <summary>
         /// Gets completion items from Roslyn or falls back to manual completions.
         /// </summary>
-        private async Task<IEnumerable<CompletionItemDto>> GetCompletionItems(Document document, int position, bool isDotCompletion)
+        private async Task<IEnumerable<CompletionItem>> GetCompletionItems(Document document, int position, bool isDotCompletion)
         {
             var service = Microsoft.CodeAnalysis.Completion.CompletionService.GetService(document);
+            if (service == null) return [];
 
-            if (service != null)
-            {
-                var result = await service.GetCompletionsAsync(document, position);
-                if (result != null)
-                    return result.ItemsList.Select(item => MapToDto(item, isDotCompletion));
-            }
-
-            return [];
+            var result = await service.GetCompletionsAsync(document, position);
+            return result?.ItemsList ?? [];
         }
 
         /// <summary>
@@ -209,17 +209,16 @@ namespace CodeAnalyzer.Services
         }
 
 
-        private static IEnumerable<CompletionItemDto> ApplyFiltersAndSorting(IEnumerable<CompletionItemDto> items, string lastWord, bool isDot)
+        private static IEnumerable<CompletionItemDto> ApplyFiltersAndSorting(IEnumerable<CompletionItem> items, string lastWord, bool isDot)
         {
             return items
-                .Where(i => string.IsNullOrEmpty(lastWord) || i.Label.Contains(lastWord, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(i =>
-                {
-                    var prio = int.Parse(i.SortText.Substring(0, 4));
-                    return prio;
-                })
-                .ThenBy(i => i.Label)
-                .Take(100);
+                .Where(item => string.IsNullOrEmpty(lastWord) ||
+                           item.DisplayText.StartsWith(lastWord, StringComparison.OrdinalIgnoreCase)) 
+                .Select(item => new { Item = item, Priority = GetPriority(item.Tags, isDot) })
+                .OrderByDescending(x => x.Priority)
+                .ThenBy(x => x.Item.DisplayText)
+                .Take(50) 
+                .Select(x => MapToDto(x.Item, isDot));
         }
 
         private static CompletionItemDto[] GetKeywordCompletions(string filter)

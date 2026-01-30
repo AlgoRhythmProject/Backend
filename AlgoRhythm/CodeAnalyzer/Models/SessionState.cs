@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace CodeAnalyzer
+namespace CodeAnalyzer.Models
 {
     public record SessionState(
         AdhocWorkspace Workspace,

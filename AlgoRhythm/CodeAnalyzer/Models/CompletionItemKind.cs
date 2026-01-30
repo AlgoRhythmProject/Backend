@@ -1,4 +1,4 @@
-﻿namespace CodeAnalyzer
+﻿namespace CodeAnalyzer.Models
 {
     /// <summary>
     /// Represents the kind of a completion item in IntelliSense, following the values used by Monaco Editor.

@@ -9,6 +9,14 @@ services:
       MSSQL_SA_PASSWORD: ${SA_PASSWORD}
     volumes:
     - db_data:/var/opt/mssql # database lives as long as the image is not deleted
+    healthcheck:  # Health check dla pewnosci ze DB jest gotowa
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD}" -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
   backend:
     container_name: backend
     image: ghcr.io/algorhythmproject/backend/algorhythm-backend:latest
@@ -17,19 +25,28 @@ services:
     - "5289:8081"
     environment:
       SendGrid__ApiKey: ${SENDGRID_API_KEY}
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: PRODUCTION
       ASPNETCORE_URLS: http://+:8080
       JWT_KEY: ${JWT_KEY}
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
-      AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
-      CODE_EXECUTOR_URL: http://executor:8080
+      AzureStorage__ConnectionString: ${AZURE_CONNECTION_STRING}
+      CODE_EXECUTOR_URL: ${CODE_EXECUTOR_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID}
       Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
     depends_on:
-      - database
+      database:
+        condition: service_healthy
+      azurite:
+        condition: service_started
     networks:
     - default  
     - internal_net
@@ -44,11 +61,15 @@ services:
     networks:
     - default  
     - internal_net
+    environment:
+      API_BASE_URL: ${BACKEND_URL}
+      ANALYZER_URL: ${ANALYZER_URL}
+      VISUALIZER_URL: ${VISUALIZER_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     
   executor:
-    container_name: code_executor
     image: ghcr.io/algorhythmproject/backend/code-executor:latest
-    restart: always
+    restart: unless-stopped
     cpus: 0.5              # CPU limit
     mem_limit: 256M        # Memory limit
     networks:
@@ -58,10 +79,42 @@ services:
     pids_limit: 50
     read_only: true
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: PRODUCTION
     tmpfs:
-      - /tmp
+      - /tmp:size=100M,mode=1777
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
   
+  analyzer:
+    container_name: code_analyzer
+    image: ghcr.io/algorhythmproject/backend/code-analyzer:latest
+    ports:
+    - "5095:8080"
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL}
+    restart: unless-stopped
+  
+  visualizer:
+    container_name: visualizer
+    image: ghcr.io/algorhythmproject/backend/code-analyzer:latest 
+    cpus: 0.5              # limit CPU
+    mem_limit: 256M        # limit pamieci
+    networks:
+      - internal_net
+    pids_limit: 50
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+    ports:
+    - "5148:8080"
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL}
+      ASPNETCORE_ENVIRONMENT: PRODUCTION
+    restart: unless-stopped
+
   azurite:
     container_name: azurite
     image: mcr.microsoft.com/azure-storage/azurite
@@ -74,6 +127,18 @@ services:
       - azurite_data:/data
     networks:
       - default
+
+  executor-lb:
+    container_name: executor_load_balancer
+    image: nginx:alpine
+    volumes:
+      - ./nginx-executor-lb.conf:/etc/nginx/nginx.conf:ro
+    networks:
+     - internal_net
+    depends_on:
+      - executor
+    ports:
+    - "8888:80"
 
 networks:
   internal_net:

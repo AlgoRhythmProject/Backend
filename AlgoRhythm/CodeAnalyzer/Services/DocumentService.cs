@@ -1,19 +1,18 @@
 ﻿using CodeAnalyzer.Interfaces;
+using CodeAnalyzer.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace CodeAnalyzer.Services
 {
+    /// <summary>
+    /// Manages the lifecycle of Roslyn documents within a workspace.
+    /// Handles code wrapping into templates, position mapping, and synchronization 
+    /// between the user's raw input and the virtual compilation environment.
+    /// </summary>
     public class DocumentService : IDocumentService
     {
         private static string TemplateCode => @"
-             using System;
-             using System.Collections.Generic;
-             using System.Linq;
-             using System.Text;
-             using System.Threading.Tasks;
-
              {0}
 
              public class Program
@@ -21,25 +20,48 @@ namespace CodeAnalyzer.Services
                  public static void Main() {{ }}
              }}";
 
-
         public static int TemplateLineCount => TemplateCode
                                                     .Split(Environment.NewLine)
                                                     .TakeWhile(line => !line.Contains("{0}"))
                                                     .Count();
 
-        public Document UpdateDocument(SessionState session, string userCode)
+        /// <summary>
+        /// Updates the current document in the session's workspace with new content.
+        /// </summary>
+        /// <param name="session">The current user session containing the Workspace and Document IDs.</param>
+        /// <param name="userCode">The raw code string from the Monaco editor.</param>
+        /// <returns>The updated <see cref="Document"/> instance from the Roslyn workspace.</returns>
+        public async Task<Document> UpdateDocumentAsync(SessionState session, string userCode)
         {
             var fullCode = WrapCode(userCode);
-            var solution = session.Workspace.CurrentSolution
-                .WithDocumentText(session.DocumentId, SourceText.From(fullCode));
+            var sourceText = SourceText.From(fullCode);
 
-            session.Workspace.TryApplyChanges(solution);
-            return session.Workspace.CurrentSolution.GetDocument(session.DocumentId)!;
+            var currentDocument = session.Workspace.CurrentSolution.GetDocument(session.DocumentId);
+
+            if (currentDocument != null)
+            {
+                var oldText = await currentDocument.GetTextAsync();
+                if (oldText.ToString() == fullCode)
+                    return currentDocument;
+
+                var newSolution = currentDocument.Project.Solution.WithDocumentText(session.DocumentId, sourceText);
+
+                if (session.Workspace.TryApplyChanges(newSolution))
+                {
+                    return session.Workspace.CurrentSolution.GetDocument(session.DocumentId)!;
+                }
+            }
+
+            return currentDocument ?? throw new Exception("Invalid session state!");
         }
 
-        public int ToRoslynPosition(Document document, int line, int column)
+        /// <summary>
+        /// Maps a line and column from the Monaco Editor (user view) 
+        /// to an absolute character position in the Roslyn Document (compiler view).
+        /// </summary>
+        public async Task<int> ToRoslynPosition(Document document, int line, int column)
         {
-            var text = document.GetTextAsync().Result;
+            var text = await document.GetTextAsync();
             var roslynLine = line + TemplateLineCount;
 
             if (roslynLine >= text.Lines.Count)

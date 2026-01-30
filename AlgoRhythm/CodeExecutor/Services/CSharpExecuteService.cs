@@ -4,6 +4,7 @@ using AlgoRhythm.Shared.Models.CodeExecution;
 using AlgoRhythm.Shared.Models.CodeExecution.Requests;
 using CodeExecutor.Helpers;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace CodeExecutor.Services
 {
@@ -150,6 +151,21 @@ namespace CodeExecutor.Services
                         StdErr = console.StdErr.ToString(),
                         ExitCode = 0,
                         Points = Grade(passed, stopwatch.ElapsedMilliseconds, request.Timeout.TotalMilliseconds, request.MaxPoints),
+                    });
+                }
+                catch (TargetInvocationException ex) when (ex.InnerException is InsufficientExecutionStackException)
+                {
+                    stopwatch.Stop();
+                    results.Add(new TestResultDto()
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = false,
+                        Errors = [new("Possible stack overflow")],
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 1,
+                        Points = 0
                     });
                 }
                 catch (TimeoutException)

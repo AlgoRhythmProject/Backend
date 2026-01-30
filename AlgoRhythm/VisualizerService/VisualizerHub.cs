@@ -24,7 +24,7 @@ namespace VisualizerService
             StopAlgorithm(sessionId);
             await JoinSession(sessionId);
 
-            var cts = new CancellationTokenSource();
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             var newState = new SessionState(cts);
 
             _sessions[sessionId] = newState;
@@ -35,13 +35,17 @@ namespace VisualizerService
 
                 await Clients.Group(sessionId).SendAsync("ExecutionFinished");
             }
-            catch (OperationCanceledException) { /* Ignore - operation stopped manually */ }
+            catch (OperationCanceledException)
+            {
+                await Clients.Group(sessionId).SendAsync("ExecutionError", "Algorithm timed out or was stopped.");
+            }
             catch (Exception ex)
             {
                 await Clients.Group(sessionId).SendAsync("ExecutionError", ex.Message);
             }
             finally
             {
+                cts.Dispose();
                 _sessions.TryRemove(sessionId, out _);
             }
         }

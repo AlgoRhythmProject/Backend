@@ -4,6 +4,10 @@ using Microsoft.CodeAnalysis;
 
 namespace CodeAnalyzer.Services
 {
+    /// <summary>
+    /// Provides real-time code analysis using the Roslyn compilation engine.
+    /// Detects syntax errors, semantic issues, and warnings within the source code.
+    /// </summary>
     public class DiagnosticService : IDiagnosticService
     {
         private readonly IDocumentService _documentService;
@@ -15,10 +19,17 @@ namespace CodeAnalyzer.Services
             _sessionManager = sessionManager;
         }
 
+        /// <summary>
+        /// Analyzes the provided source code and returns a collection of diagnostics.
+        /// Filters results to include only relevant errors and warnings, mapping them back to the user's coordinate space.
+        /// </summary>
+        /// <param name="code">The raw C# source code provided by the user.</param>
+        /// <param name="connectionId">The unique identifier for the user's active coding session.</param>
+        /// <returns>An array of <see cref="DiagnosticDto"/> containing error/warning details and positions.</returns>
         public async Task<DiagnosticDto[]> AnalyzeAsync(string code, string connectionId)
         {
             var session = _sessionManager.GetOrCreate(connectionId);
-            var document = _documentService.UpdateDocument(session, code);
+            var document = await _documentService.UpdateDocumentAsync(session, code);
 
             var compilation = await document.Project.GetCompilationAsync();
             if (compilation == null) return [];
