@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlgoRhythm.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260131210632_AddTimeoutToTestCase")]
+    [Migration("20260131225007_AddTimeoutToTestCase")]
     partial class AddTimeoutToTestCase
     {
         /// <inheritdoc />
@@ -486,8 +486,8 @@ namespace AlgoRhythm.Migrations
                     b.Property<Guid>("ProgrammingTaskItemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("TimeoutMs")
-                        .HasColumnType("int");
+                    b.Property<TimeSpan?>("Timeout")
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 
@@ -908,6 +908,27 @@ namespace AlgoRhythm.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasDiscriminator().HasValue(0);
+                });
+
+            modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.LectureVideo", b =>
+                {
+                    b.HasBaseType("AlgoRhythm.Shared.Models.Courses.LectureContent");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StreamUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue(2);
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.ProgrammingSubmission", b =>

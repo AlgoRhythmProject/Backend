@@ -483,8 +483,8 @@ namespace AlgoRhythm.Migrations
                     b.Property<Guid>("ProgrammingTaskItemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("TimeoutMs")
-                        .HasColumnType("int");
+                    b.Property<TimeSpan?>("Timeout")
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 
