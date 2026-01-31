@@ -59,7 +59,7 @@ public class TestCaseService : ITestCaseService
             ExpectedJson = dto.ExpectedJson,
             IsVisible = dto.IsVisible,
             MaxPoints = dto.MaxPoints,
-            TimeoutMs = dto.TimeoutMs
+            Timeout = dto.Timeout
         };
 
         var created = await _repo.CreateAsync(testCase, ct);
@@ -80,7 +80,7 @@ public class TestCaseService : ITestCaseService
         testCase.ExpectedJson = dto.ExpectedJson;
         testCase.IsVisible = dto.IsVisible;
         testCase.MaxPoints = dto.MaxPoints;
-        testCase.TimeoutMs = dto.TimeoutMs;
+        testCase.Timeout = dto.Timeout;
 
         var updated = await _repo.UpdateAsync(testCase, ct);
         _logger.LogInformation("Updated test case {Id}", id);
@@ -109,7 +109,7 @@ public class TestCaseService : ITestCaseService
             ExpectedJson = testCase.ExpectedJson,
             IsVisible = testCase.IsVisible,
             MaxPoints = testCase.MaxPoints,
-            TimeoutMs = testCase.TimeoutMs
+            Timeout = testCase.Timeout
         };
     }
 }

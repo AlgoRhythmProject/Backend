@@ -7,5 +7,5 @@ public class CreateTestCaseDto
     public string? ExpectedJson { get; set; }
     public bool IsVisible { get; set; } = true;
     public int MaxPoints { get; set; } = 10;
-    public int? TimeoutMs { get; set; }
+    public TimeSpan? Timeout { get; set; }
 }
