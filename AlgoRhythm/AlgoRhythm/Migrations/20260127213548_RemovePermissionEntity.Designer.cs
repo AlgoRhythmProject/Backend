@@ -4,6 +4,7 @@ using AlgoRhythm.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AlgoRhythm.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260127213548_RemovePermissionEntity")]
+    partial class RemovePermissionEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -376,9 +379,6 @@ namespace AlgoRhythm.Migrations
                     b.Property<int>("Points")
                         .HasColumnType("int");
 
-                    b.Property<string>("ReturnedValue")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("StdErr")
                         .HasColumnType("nvarchar(max)");
 
@@ -482,9 +482,6 @@ namespace AlgoRhythm.Migrations
 
                     b.Property<Guid>("ProgrammingTaskItemId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("TimeoutMs")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -905,27 +902,6 @@ namespace AlgoRhythm.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasDiscriminator().HasValue(0);
-                });
-
-            modelBuilder.Entity("AlgoRhythm.Shared.Models.Courses.LectureVideo", b =>
-                {
-                    b.HasBaseType("AlgoRhythm.Shared.Models.Courses.LectureContent");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("StreamUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasDiscriminator().HasValue(2);
                 });
 
             modelBuilder.Entity("AlgoRhythm.Shared.Models.Submissions.ProgrammingSubmission", b =>

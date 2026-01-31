@@ -20,6 +20,12 @@ public class TestCase
 
     public int MaxPoints { get; set; } = 10;
 
+    /// <summary>
+    /// Optional custom timeout for this test case.
+    /// If null, the default timeout (10 seconds) will be used.
+    /// </summary>
+    public TimeSpan? Timeout { get; set; }
+
     [ForeignKey(nameof(ProgrammingTaskItemId))]
     public ProgrammingTaskItem ProgrammingTaskItem { get; set; } = null!;
     

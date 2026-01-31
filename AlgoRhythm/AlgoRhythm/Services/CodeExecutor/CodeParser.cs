@@ -9,6 +9,8 @@ namespace AlgoRhythm.Services.CodeExecutor;
 
 public class CSharpCodeParser : ICodeParser
 {
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+
     public ExecuteCodeRequest ParseToExecuteRequest(string code, string? inputJson = null, TimeSpan? timeout = null)
     {
         try
@@ -61,7 +63,7 @@ public class CSharpCodeParser : ICodeParser
             {
                 Code = code,
                 Args = argsList,
-                Timeout = timeout ?? TimeSpan.FromSeconds(5),
+                Timeout = timeout ?? DefaultTimeout,
                 ExecutionClass = className,
                 ExecutionMethod = methodName,
             };
@@ -102,6 +104,9 @@ public class CSharpCodeParser : ICodeParser
                 }
             }
 
+            // Use test case specific timeout if available, otherwise use provided timeout or default
+            var requestTimeout = tc.Timeout ?? timeout ?? DefaultTimeout;
+
             requests.Add(new ExecuteCodeRequest
             {
                 TestCaseId = tc.Id,
@@ -109,8 +114,9 @@ public class CSharpCodeParser : ICodeParser
                 ExecutionClass = templateRequest.ExecutionClass,
                 ExecutionMethod = templateRequest.ExecutionMethod,
                 Args = argsForTest,
-                Timeout = templateRequest.Timeout,
+                Timeout = requestTimeout,
                 ExpectedValue = tc?.ExpectedJson ?? string.Empty,
+                MaxPoints = tc?.MaxPoints ?? 10
             });
         }
 

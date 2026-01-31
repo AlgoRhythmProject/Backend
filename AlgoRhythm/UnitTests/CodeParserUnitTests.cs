@@ -33,7 +33,7 @@ namespace UnitTests
             Assert.Equal(2, result.Args.Count);
             Assert.Equal("a", result.Args[0].Name);
             Assert.Equal("b", result.Args[1].Name);
-            Assert.Equal(TimeSpan.FromSeconds(5), result.Timeout);
+            Assert.Equal(TimeSpan.FromSeconds(10), result.Timeout);
         }
 
         [Fact]
