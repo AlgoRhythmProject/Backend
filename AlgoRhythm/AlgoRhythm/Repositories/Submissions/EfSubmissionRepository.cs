@@ -92,14 +92,14 @@ public class EfSubmissionRepository : ISubmissionRepository
 
     public async Task AddSubmissionAsync(ProgrammingSubmission submission, CancellationToken ct)
     {
-        await _context.ProgrammingSubmissions.AddAsync(submission, ct);
-        await _context.SaveChangesAsync(ct);
+        _db.ProgrammingSubmissions.Add(submission);
+        await _db.SaveChangesAsync(ct);
     }
 
     public async Task UpdateSubmissionAsync(ProgrammingSubmission submission, CancellationToken ct)
     {
-        _context.ProgrammingSubmissions.Update(submission);
-        await _context.SaveChangesAsync(ct);
+        _db.ProgrammingSubmissions.Update(submission);
+        await _db.SaveChangesAsync(ct);
     }
 
     public async Task MarkSubmissionAsErrorAsync(Guid id, CancellationToken ct)

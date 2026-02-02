@@ -2,6 +2,7 @@
 using CodeAnalyzer.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace CodeAnalyzer.Services
 {
@@ -48,8 +49,8 @@ namespace CodeAnalyzer.Services
 
                 if (session.Workspace.TryApplyChanges(newSolution))
                 {
-                    return session.Workspace.CurrentSolution.GetDocument(session.DocumentId)!;
-                }
+            return session.Workspace.CurrentSolution.GetDocument(session.DocumentId)!;
+        }
             }
 
             return currentDocument ?? throw new Exception("Invalid session state!");

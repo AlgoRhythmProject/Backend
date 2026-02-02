@@ -144,7 +144,9 @@ namespace CodeAnalyzer.Services
             var service = Microsoft.CodeAnalysis.Completion.CompletionService.GetService(document);
             if (service == null) return [];
 
-            var result = await service.GetCompletionsAsync(document, position);
+            if (service != null)
+            {
+                var result = await service.GetCompletionsAsync(document, position);
             return result?.ItemsList ?? [];
         }
 
