@@ -493,18 +493,6 @@ public class AuthenticationController : ControllerBase
         Response.Cookies.Append("RefreshToken", refreshToken, refreshCookieOptions);
     }
 
-    private void SetRefreshTokenCookie(string refreshToken, DateTime expires)
-    {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = expires
-        };
-        Response.Cookies.Append("RefreshToken", refreshToken, cookieOptions);
-    }
-
     private string GetIpAddress()
     {
         // Get IP address from X-Forwarded-For header or connection
