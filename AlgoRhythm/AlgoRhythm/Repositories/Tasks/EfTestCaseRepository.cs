@@ -19,7 +19,7 @@ public class EfTestCaseRepository : ITestCaseRepository
         return await _context.TestCases
             .Include(tc => tc.ProgrammingTaskItem)
             .OrderBy(tc => tc.ProgrammingTaskItemId)
-            .ThenBy(tc => tc.MaxPoints)
+            .ThenBy(tc => tc.Id)
             .ToListAsync(ct);
     }
 
@@ -27,7 +27,7 @@ public class EfTestCaseRepository : ITestCaseRepository
     {
         return await _context.TestCases
             .Where(tc => tc.ProgrammingTaskItemId == taskId)
-            .OrderBy(tc => tc.MaxPoints)
+            .OrderBy(tc => tc.Id)
             .ToListAsync(ct);
     }
 

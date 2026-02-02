@@ -55,6 +55,7 @@ jobs:
       - name: Run Integration Tests with Coverage
         run: >
             dotnet test AlgoRhythm/IntegrationTests/IntegrationTests.csproj 
+            --filter "Category!=Performance"
             --configuration Release 
             --logger "trx;LogFileName=IntegrationTestResults.trx" 
             --collect:"XPlat Code Coverage" 

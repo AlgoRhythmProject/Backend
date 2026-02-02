@@ -22,7 +22,7 @@ namespace CodeAnalyzer.Services
         public async Task<QuickInfoDto?> GetQuickInfoAsync(string code, int line, int column, string connectionId)
         {
             var session = _sessionManager.GetOrCreate(connectionId);
-            var document = _documentService.UpdateDocument(session, code);
+            var document = await _documentService.UpdateDocumentAsync(session, code);
 
             var roslynLine = line + DocumentService.TemplateLineCount;
             var text = await document.GetTextAsync();

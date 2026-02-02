@@ -181,14 +181,17 @@ public class SubmissionService : ISubmissionService
         var orderedTestCases = task.TestCases.OrderBy(tc => tc.Id).ToList();
         var finalResults = new List<TestResultDto>();
 
+        // This is to help match results by id not index
+        var judgeResultsByTestCaseId = judgeResults.ToDictionary(jr => jr.TestCaseId);
+
         for (int i = 0; i < orderedTestCases.Count; i++)
         {
             var tc = orderedTestCases[i];
             TestResultDto judgeDto;
 
-            if (i < judgeResults.Count)
+            if (judgeResultsByTestCaseId.TryGetValue(tc.Id, out var matchedResult))
             {
-                judgeDto = judgeResults[i];
+                judgeDto = matchedResult;
             }
             else
             {
@@ -212,11 +215,12 @@ public class SubmissionService : ISubmissionService
                 StdOut = judgeDto.StdOut,
                 StdErr = judgeDto.StdErr,
                 Errors = [.. judgeDto.Errors.FromDto()],
+                ReturnedValue = judgeDto.ReturnedValue?.ToString()
             };
 
             await submissionRepo.AddTestResultAsync(tr, CancellationToken.None);
 
-            finalResults.Add(judgeResults[i]);
+            finalResults.Add(judgeDto);
         }
 
         submission.ExecuteFinishedAt = DateTime.UtcNow;
@@ -311,7 +315,11 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? [];
 
 
@@ -329,7 +337,11 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -344,7 +356,11 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -359,7 +375,11 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -375,7 +395,11 @@ public class SubmissionService : ISubmissionService
             ExecutionTimeMs = tr.ExecutionTimeMs,
             StdOut = tr.StdOut,
             StdErr = tr.StdErr,
-            Errors = [.. tr.Errors.ToDto()]
+            Errors = [.. tr.Errors.ToDto()],
+            IsVisible = tr.TestCase.IsVisible,
+            InputJson = tr.TestCase.InputJson,
+            ExpectedJson = tr.TestCase.ExpectedJson,
+            ReturnedValue = tr.ReturnedValue
         }).ToList() ?? []));
     }
 
@@ -386,10 +410,11 @@ public class SubmissionService : ISubmissionService
             SubmissionId = submission.Id,
             TaskItemId = submission.TaskItemId,
             UserId = submission.UserId,
-            Status = submission.Status.ToString(),
+            Status = submission.Status,
             Score = submission.Score,
             IsSolved = submission.IsSolved,
             SubmittedAt = submission.SubmittedAt,
+            Code = submission.Code,
             TestResults = results.ToList()
         };
     }

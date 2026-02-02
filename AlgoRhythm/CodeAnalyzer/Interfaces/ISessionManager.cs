@@ -1,4 +1,6 @@
-﻿namespace CodeAnalyzer.Interfaces
+﻿using CodeAnalyzer.Models;
+
+namespace CodeAnalyzer.Interfaces
 {
     public interface ISessionManager
     {

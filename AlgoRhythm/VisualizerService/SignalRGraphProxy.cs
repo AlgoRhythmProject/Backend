@@ -66,31 +66,23 @@ namespace VisualizerService
 
         public async Task SetNodeColor(string nodeId, string color)
         {
-            _state.CTS.Token.ThrowIfCancellationRequested();
-            await _state.WaitIfPausedAsync();
             await _hubContext.Clients.Group(_sessionId).SendAsync(FrontendCommands.UpdateNodeColor, nodeId, color, _state.CTS.Token);
             await Task.Delay(50, _state.CTS.Token);
         }
 
         public async Task HighlightEdge(string fromId, string toId, string color)
         {
-            _state.CTS.Token.ThrowIfCancellationRequested();
-            await _state.WaitIfPausedAsync();
             await SendAsync(FrontendCommands.UpdateEdgeColor, fromId, toId, color);
             await Task.Delay(50, _state.CTS.Token);
         }
 
         public async Task SetEdgeLabel(string fromId, string toId, string label)
         {
-            _state.CTS.Token.ThrowIfCancellationRequested();
-            await _state.WaitIfPausedAsync();
             await SendAsync(FrontendCommands.UpdateEdgeLabel, fromId, toId, label);
         }
 
         public async Task Log(string message)
         {
-            _state.CTS.Token.ThrowIfCancellationRequested();
-            await _state.WaitIfPausedAsync();
             await SendAsync(FrontendCommands.AddLog, message);
         }
 

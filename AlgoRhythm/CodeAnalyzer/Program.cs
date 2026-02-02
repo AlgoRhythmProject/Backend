@@ -4,6 +4,12 @@ using CodeAnalyzer.Services;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.Host.Mef;
 
+namespace CodeAnalyzer;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSignalR();
@@ -37,3 +43,5 @@ app.UseCors("AllowFrontend");
 app.MapHub<RoslynHub>("/roslynhub");
 
 app.Run();
+    }
+}

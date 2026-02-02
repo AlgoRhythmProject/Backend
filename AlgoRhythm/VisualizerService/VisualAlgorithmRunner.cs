@@ -2,6 +2,7 @@
 using Graph;
 using Microsoft.AspNetCore.SignalR;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace VisualizerService
 {

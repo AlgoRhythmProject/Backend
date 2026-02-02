@@ -25,6 +25,7 @@ internal class AlgoRhythmWebApplicationFactory : WebApplicationFactory<Program>
     {
         Environment.SetEnvironmentVariable("JWT_KEY", TestConstants.TestJwtKey);
         Environment.SetEnvironmentVariable("FRONTEND_URL", TestConstants.TestFrontendUrl);
+        Environment.SetEnvironmentVariable("AzureStorage__ConnectionString", TestConstants.TestAzureConnectionString);
 
         builder.UseEnvironment("Testing");
 

@@ -1,3 +1,5 @@
+using AlgoRhythm.Shared.Models.Submissions;
+
 namespace AlgoRhythm.Shared.Dtos.Submissions;
 
 public class SubmissionDto
@@ -7,7 +9,7 @@ public class SubmissionDto
     public string? UserName { get; set; }
     public Guid TaskItemId { get; set; }
     public string? TaskTitle { get; set; }
-    public string Status { get; set; } = "Pending";
+    public SubmissionStatus Status { get; set; } = SubmissionStatus.Pending;
     public double? Score { get; set; }
     public DateTime SubmittedAt { get; set; }
     public string Type { get; set; } = "submission";

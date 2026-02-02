@@ -27,7 +27,7 @@ namespace AlgoRhythm.Shared.Helpers
         public CSharpCompilationResult Compile(string code, string methodName)
         {
             string formattedCode = _codeFormatter.Format(code);
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(formattedCode);
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(formattedCode).ToStackSafeSyntaxTree();
 
             CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(
                 outputKind: OutputKind.DynamicallyLinkedLibrary,
