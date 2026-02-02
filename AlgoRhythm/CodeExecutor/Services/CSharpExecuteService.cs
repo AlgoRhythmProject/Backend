@@ -93,6 +93,15 @@ namespace CodeExecutor.Services
             }
         }
 
+        /// <summary>
+        /// Executes a set of code test requests and returns the results for each test case.
+        /// </summary>
+        /// <remarks>If the code fails to compile, the method returns a result for each request indicating
+        /// compilation errors. Each test is executed independently
+        /// <param name="requests">A list of <see cref="ExecuteCodeRequest"/> objects representing the code submissions and their associated
+        /// test case parameters to execute. Cannot be null or empty.</param>
+        /// <returns>A list of <see cref="TestResultDto"/> objects containing the outcome of each test case execution. If code
+        /// compilation fails, all results will indicate failure with associated errors.</returns>
         public async Task<List<TestResultDto>> RunTests(
             List<ExecuteCodeRequest> requests)
         {
@@ -119,9 +128,7 @@ namespace CodeExecutor.Services
                 })];
             }
 
-            List<TestResultDto> results = [];
-
-            foreach (var request in requests)
+            var tasks = requests.Select(async request =>
             {
                 using var console = new ConsoleOrchestrator();
                 var stopwatch = Stopwatch.StartNew();
@@ -130,18 +137,20 @@ namespace CodeExecutor.Services
                 {
                     using CancellationTokenSource cts = new();
 
-                    (bool? passed, object? returnValue) = await Task.Run(() =>
-                        new AssemblyExecutor().Execute(
-                            result.AssemblyStream,
-                            request.ExecutionClass,
-                            request.ExecutionMethod,
-                            request.Args,
-                            request.ExpectedValue), cts.Token)
+                    (bool? passed, object? returnValue) =
+                        await Task.Run(() =>
+                            new AssemblyExecutor().Execute(
+                                result.AssemblyStream,
+                                request.ExecutionClass,
+                                request.ExecutionMethod,
+                                request.Args,
+                                request.ExpectedValue),
+                            cts.Token)
                         .WaitAsync(request.Timeout);
 
                     stopwatch.Stop();
 
-                    results.Add(new TestResultDto()
+                    return new TestResultDto
                     {
                         TestCaseId = request.TestCaseId,
                         Passed = passed.GetValueOrDefault(),
@@ -150,43 +159,17 @@ namespace CodeExecutor.Services
                         StdOut = console.StdOut.ToString(),
                         StdErr = console.StdErr.ToString(),
                         ExitCode = 0,
-                        Points = Grade(passed, stopwatch.ElapsedMilliseconds, request.Timeout.TotalMilliseconds, request.MaxPoints),
-                    });
+                        Points = Grade(
+                            passed,
+                            stopwatch.ElapsedMilliseconds,
+                            request.Timeout.TotalMilliseconds,
+                            request.MaxPoints),
+                    };
                 }
-                catch (TargetInvocationException ex) when (ex.InnerException is InsufficientExecutionStackException)
+                catch (TargetInvocationException ex) 
                 {
                     stopwatch.Stop();
-                    results.Add(new TestResultDto()
-                    {
-                        TestCaseId = request.TestCaseId,
-                        Passed = false,
-                        Errors = [new("Possible stack overflow")],
-                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
-                        StdOut = console.StdOut.ToString(),
-                        StdErr = console.StdErr.ToString(),
-                        ExitCode = 1,
-                        Points = 0
-                    });
-                }
-                catch (TimeoutException)
-                {
-                    stopwatch.Stop();
-                    results.Add(new TestResultDto()
-                    {
-                        TestCaseId = request.TestCaseId,
-                        Passed = false,
-                        Errors = [new("Execution timeout")],
-                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
-                        StdOut = console.StdOut.ToString(),
-                        StdErr = console.StdErr.ToString(),
-                        ExitCode = 1,
-                        Points = 0
-                    });
-                }
-                catch (Exception ex)
-                {
-                    stopwatch.Stop();
-                    results.Add(new TestResultDto()
+                    return new TestResultDto
                     {
                         TestCaseId = request.TestCaseId,
                         Passed = false,
@@ -196,11 +179,41 @@ namespace CodeExecutor.Services
                         StdErr = console.StdErr.ToString(),
                         ExitCode = 1,
                         Points = 0
-                    });
+                    };
                 }
-            }
+                catch (TimeoutException)
+                {
+                    stopwatch.Stop();
+                    return new TestResultDto
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = false,
+                        Errors = [new("Execution timeout")],
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 1,
+                        Points = 0
+                    };
+                }
+                catch (Exception ex)
+                {
+                    stopwatch.Stop();
+                    return new TestResultDto
+                    {
+                        TestCaseId = request.TestCaseId,
+                        Passed = false,
+                        Errors = [new(ex.Message)],
+                        ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
+                        StdOut = console.StdOut.ToString(),
+                        StdErr = console.StdErr.ToString(),
+                        ExitCode = 1,
+                        Points = 0
+                    };
+                }
+            }).ToList();
 
-            return results;
+          return [.. (await Task.WhenAll(tasks))];
         }
 
         private int Grade(bool? passed, double elapsedMs, double expectedMs, int maxPoints = 10)
