@@ -1,6 +1,5 @@
 ﻿using AlgoRhythm.Shared.Dtos.CodeAnalysis;
 using CodeAnalyzer.Interfaces;
-using CodeAnalyzer.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.CSharp;
@@ -144,9 +143,7 @@ namespace CodeAnalyzer.Services
             var service = Microsoft.CodeAnalysis.Completion.CompletionService.GetService(document);
             if (service == null) return [];
 
-            if (service != null)
-            {
-                var result = await service.GetCompletionsAsync(document, position);
+            var result = await service.GetCompletionsAsync(document, position);
             return result?.ItemsList ?? [];
         }
 
