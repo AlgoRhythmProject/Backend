@@ -150,8 +150,6 @@ services:
     environment:
       FRONTEND_URL: ${FRONTEND_URL}
     restart: unless-stopped
-    networks:
-      - internal_net
     tmpfs:
       - /tmp:size=50M,mode=1777,noexec,nosuid,nodev
       - /app/temp:size=20M,mode=1777

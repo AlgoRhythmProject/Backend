@@ -109,8 +109,6 @@ services:
     image: ghcr.io/algorhythmproject/backend/code-analyzer:latest 
     cpus: 0.5              # limit CPU
     mem_limit: 256M        # limit pamieci
-    networks:
-      - internal_net
     pids_limit: 50
     read_only: true
     tmpfs:
