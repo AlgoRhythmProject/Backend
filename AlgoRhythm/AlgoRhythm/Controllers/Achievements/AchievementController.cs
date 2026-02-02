@@ -125,7 +125,6 @@ public class AchievementController : ControllerBase
         }
     }
 
-    // ==================== ADMIN ENDPOINTS ====================
 
     /// <summary>
     /// Create a new achievement (Admin only)
