@@ -2178,8 +2178,8 @@ public class Solution
         var test16_2 = new TestCase
         {
             ProgrammingTaskItem = task16,
-            InputJson = "{ \"nums\": [3,2,3,1,2,4,5,5,6], \"k\": 4 }",
-            ExpectedJson = "3",
+            InputJson = "{ \"nums\": [3,2,1], \"k\": 2 }",
+            ExpectedJson = "2",
             IsVisible = true
         };
 
@@ -2187,7 +2187,7 @@ public class Solution
         {
             ProgrammingTaskItem = task16,
             InputJson = "{ \"nums\": [7,10,4,3,20,15], \"k\": 3 }",
-            ExpectedJson = "1",
+            ExpectedJson = "7",
             IsVisible = true
         };
 
@@ -2202,7 +2202,7 @@ public class Solution
         var test16_5 = new TestCase
         {
             ProgrammingTaskItem = task16,
-            InputJson = "{ \"nums\": [5,5,5,5,5], \"k\": 3 }",
+            InputJson = "{ \"nums\": [5], \"k\": 1 }",
             ExpectedJson = "5",
             IsVisible = false
         };
@@ -2210,7 +2210,7 @@ public class Solution
         var test16_6 = new TestCase
         {
             ProgrammingTaskItem = task16,
-            InputJson = "{ \"nums\": [99,99], \"k\": 1 }",
+            InputJson = "{ \"nums\": [99], \"k\": 1 }",
             ExpectedJson = "99",
             IsVisible = false
         };
