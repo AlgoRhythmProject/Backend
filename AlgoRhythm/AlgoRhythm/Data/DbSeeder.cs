@@ -725,7 +725,7 @@ int Fibonacci(int n)
             Type = ContentType.Text
         };
 
-        // NEW CONTENT: Sorting Algorithms Lecture
+        // NEW CONTENT: Sorting Algorithms Lecture - Part 1
         var content3_3_part1 = new LectureText
         {
             Lecture = lec3_3,
@@ -747,8 +747,16 @@ int Fibonacci(int n)
 
 <h3>Non-Comparison Sorts</h3>
 <p>These algorithms exploit properties of the data (like integer ranges) to achieve linear time complexity in special cases.</p>
+<h2>Quick Sort</h2>",
+            Type = ContentType.Text,
+            Order = 0
+        };
 
-<h2>Quick Sort</h2>
+        // Part 2: QuickSort Algorithm
+        var content3_3_part2 = new LectureText
+        {
+            Lecture = lec3_3,
+            HtmlContent = @"
 <p>QuickSort is a highly efficient, divide-and-conquer sorting algorithm. It works by selecting a 'pivot' element and partitioning the array around it.</p>
 
 <h3>Algorithm Steps:</h3>
@@ -816,10 +824,10 @@ private void Swap(int[] arr, int i, int j)
 <li><strong>Cache-Friendly</strong>: Good locality of reference</li>
 </ul>",
             Type = ContentType.Text,
-            Order = 0
+            Order = 1
         };
 
-        // Placeholder for GIF - you'll add this later
+        // Placeholder for GIF
         var content3_3_gif = new LecturePhoto
         {
             Lecture = lec3_3,
@@ -827,10 +835,10 @@ private void Swap(int[] arr, int i, int j)
             Alt = "Animated visualization of QuickSort algorithm partitioning and sorting an array",
             Title = "QuickSort Visualization",
             Type = ContentType.Photo,
-            Order = 1
+            Order = 2
         };
 
-        var content3_3_part2 = new LectureText
+        var content3_3_part3 = new LectureText
         {
             Lecture = lec3_3,
             HtmlContent = @"<h2>Merge Sort</h2>
@@ -1501,30 +1509,132 @@ public class Solution
         var task16 = new ProgrammingTaskItem
         {
             Title = "Find Kth Smallest Element - Hoare's Algorithm",
-            Description = @"Find the kth smallest element in an unsorted array.
+            Description = @"<div class='problem-description'>
+  <section class='problem-statement'>
+    <p>Given an integer array <code>nums</code> and an integer <code>k</code>, return the <strong>kth smallest element</strong> in the array.</p>
+    
+    <p>Note that it is the kth smallest element in <strong>sorted order</strong>, not the kth distinct element.</p>
+    
+    <p>You must implement an algorithm that runs in <strong>O(n)</strong> average time complexity using <strong>Hoare's partition scheme</strong> (Quickselect algorithm).</p>
+  </section>
 
-**Problem:**
-Given an integer array nums and an integer k, return the kth smallest element in the array.
+  <section class='examples'>
+    <h3>Examples:</h3>
+    
+    <div class='example'>
+      <p><strong>Example 1:</strong></p>
+      <pre><strong>Input:</strong> nums = [3,2,1,5,6,4], k = 2
+<strong>Output:</strong> 2
+<strong>Explanation:</strong> The 2nd smallest element is 2</pre>
+    </div>
 
-Note that it is the kth smallest element in sorted order, not the kth distinct element.
+    <div class='example'>
+      <p><strong>Example 2:</strong></p>
+      <pre><strong>Input:</strong> nums = [3,2,3,1,2,4,5,5,6], k = 4
+<strong>Output:</strong> 3
+<strong>Explanation:</strong> After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3</pre>
+    </div>
 
+    <div class='example'>
+      <p><strong>Example 3:</strong></p>
+      <pre><strong>Input:</strong> nums = [7,10,4,3,20,15], k = 3
+<strong>Output:</strong> 7
+<strong>Explanation:</strong> The 3rd smallest element is 7</pre>
+    </div>
+  </section>
 
-**Examples:**
+  <section class='constraints'>
+    <h3>Constraints:</h3>
+    <ul>
+      <li>1 ≤ k ≤ nums.length ≤ 10<sup>5</sup></li>
+      <li>-10<sup>4</sup> ≤ nums[i] ≤ 10<sup>4</sup></li>
+    </ul>
+  </section>
 
-Example 1:
-Input: nums = [3,2,1,5,6,4], k = 2
-Output: 5
-Explanation: The 2nd smallest element is 2
+  <section class='requirements'>
+    <h3>Requirements:</h3>
+    <ul>
+      <li><strong>Time Complexity:</strong> O(n) average case, O(n²) worst case</li>
+      <li><strong>Space Complexity:</strong> O(1) auxiliary space</li>
+      <li><strong>Algorithm:</strong> Must use Hoare's partition scheme (Quickselect)</li>
+    </ul>
+  </section>
+</div>
 
-Example 2:
-Input: nums = [3,2,3,1,2,4,5,5,6], k = 4
-Output: 4
-Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
+<style>
+  .problem-description {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #ffffff;
+  }
 
-**Constraints:**
-- 1 <= k <= nums.length <= 10^5
-- -10^4 <= nums[i] <= 10^4
-- Time Complexity: O(n) average case, O(n²) worst case",
+  .problem-description h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+
+  .problem-description h3 {
+    font-size: 18px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    color: #ffffff;
+  }
+
+  .problem-description section {
+    margin-bottom: 24px;
+  }
+
+  .problem-description p {
+    margin-bottom: 12px;
+    color: #e0e0e0;
+  }
+
+  .problem-description code {
+    background-color: #2a2a2a;
+    color: #8b5cf6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+  }
+
+  .example {
+    background-color: #2a2a2a;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border-left: 3px solid #6942d5;
+  }
+
+  .example pre {
+    background-color: transparent;
+    margin: 8px 0 0 0;
+    padding: 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #e0e0e0;
+  }
+
+  .constraints ul,
+  .requirements ul {
+    list-style-type: disc;
+    margin-left: 24px;
+    margin-top: 8px;
+  }
+
+  .constraints li,
+  .requirements li {
+    margin-bottom: 8px;
+    color: #e0e0e0;
+  }
+
+  strong {
+    font-weight: 600;
+    color: #ffffff;
+  }
+</style>",
             Difficulty = Difficulty.Medium,
             IsPublished = true,
             TemplateCode = @"public class Solution 
@@ -1943,7 +2053,7 @@ Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
         var test11 = new TestCase
         {
             ProgrammingTaskItem = task11,
-            InputJson = "{ \"n\": 5, \"edges\": [[0,1],[0,2],[0,3],[1,4]] }",
+            InputJson = "{ \"n\": 5, \"edges\": [[0,1], [0,2], [0,3], [1,4]] }",
             ExpectedJson = "true",
             IsVisible = true
         };
@@ -1951,7 +2061,7 @@ Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
         var test11_2 = new TestCase
         {
             ProgrammingTaskItem = task11,
-            InputJson = "{ \"n\": 5, \"edges\": [[0,1],[1,2],[2,3],[1,3],[1,4]] }",
+            InputJson = "{ \"n\": 5, \"edges\": [[0,1], [1,2], [2,3], [1,3], [1,4]] }",
             ExpectedJson = "false",
             IsVisible = true
         };
@@ -2154,8 +2264,8 @@ Explanation: After sorting [1,2,2,3,3,4,5,5,6], the 4th smallest is 3
         // --- COURSE-TASK RELATIONS ---
         course1.TaskItems = new List<TaskItem> { task1, task2, task4, task5, task6, task13, task14 };
         course2.TaskItems = new List<TaskItem> { task3, task7, task9 };
-        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12, task16 };
-        course4.TaskItems = new List<TaskItem> { task15 };
+        course3.TaskItems = new List<TaskItem> { task8, task10, task11, task12, task15, task16 };
+        course4.TaskItems = new List<TaskItem> { };
 
         await context.SaveChangesAsync();
         Console.WriteLine("Course-Task relationships saved successfully");
