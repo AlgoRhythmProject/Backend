@@ -111,7 +111,8 @@ namespace AlgoRhythm.Extensions
         public static void ConfigureClients(this WebApplicationBuilder builder)
         {
             // Blob
-            string blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"]
+            string blobConnectionString = Environment.GetEnvironmentVariable("AZURE_CONNECTION_STRING") 
+                ?? builder.Configuration["AzureStorage:ConnectionString"]
                 ?? throw new InvalidOperationException("Azure Blob Storage connection string is not configured.");
 
             builder.Services.AddSingleton(_ => new BlobServiceClient(blobConnectionString));

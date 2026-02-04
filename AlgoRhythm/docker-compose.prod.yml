@@ -106,7 +106,7 @@ services:
   
   visualizer:
     container_name: visualizer
-    image: ghcr.io/algorhythmproject/backend/code-analyzer:latest 
+    image: ghcr.io/algorhythmproject/backend/visualizer:latest 
     cpus: 0.5              # limit CPU
     mem_limit: 256M        # limit pamieci
     pids_limit: 50
