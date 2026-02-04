@@ -82,7 +82,7 @@
     "Docker Compose Dev (LB)": {
       "commandName": "Executable",
       "executablePath": "docker-compose",
-      "commandLineArgs": "-f docker-compose.dev.yml up --scale executor=2",
+      "commandLineArgs": "-f docker-compose.dev.yml up  --build --scale executor=2",
       "workingDirectory": "$(SolutionDir)\\",
       "launchBrowser": true,
       "environmentVariables": {
