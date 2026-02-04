@@ -365,6 +365,204 @@ foreach (int num in numbers)
             Type = ContentType.Text
         };
 
+        var content1_4 = new LectureText
+        {
+            Lecture = lec1_4,
+            HtmlContent = @"<h1>Functions and Methods</h1>
+<p>Functions (also called methods in C#) are reusable blocks of code that perform specific tasks. They help organize code, reduce repetition, and make programs easier to understand and maintain.</p>
+
+<h2>Why Use Functions?</h2>
+<ul>
+<li><strong>Code Reusability</strong>: Write once, use many times</li>
+<li><strong>Modularity</strong>: Break complex problems into smaller pieces</li>
+<li><strong>Maintainability</strong>: Changes only need to be made in one place</li>
+<li><strong>Readability</strong>: Descriptive function names make code self-documenting</li>
+</ul>
+
+<h2>Function Anatomy</h2>
+<pre><code>// Return type  Name      Parameters
+   int         Sum       (int a, int b)
+{
+    // Function body
+    return a + b;
+}</code></pre>
+
+<h2>Basic Function Declaration</h2>
+<pre><code>// Function with no parameters
+public void SayHello()
+{
+    Console.WriteLine(""Hello, World!"");
+}
+
+// Function with parameters
+public int Add(int x, int y)
+{
+    return x + y;
+}
+
+// Function with no return value (void)
+public void PrintMessage(string message)
+{
+    Console.WriteLine(message);
+}</code></pre>
+
+<h2>Calling Functions</h2>
+<pre><code>// Call function without parameters
+SayHello();
+
+// Call function with parameters
+int result = Add(5, 3);
+Console.WriteLine(result); // Output: 8
+
+// Call void function
+PrintMessage(""Learning C#!"");</code></pre>
+
+<h2>Return Statements</h2>
+<p>Functions can return values to the caller:</p>
+<pre><code>public int GetMax(int a, int b)
+{
+    if (a > b)
+        return a;  // Exit function and return a
+    else
+        return b;  // Exit function and return b
+}
+
+public bool IsEven(int number)
+{
+    return number % 2 == 0;  // Return boolean expression
+}</code></pre>
+
+<h2>Function Parameters</h2>
+
+<h3>Value Parameters (Default)</h3>
+<p>Copies of values are passed to the function:</p>
+<pre><code>public void ModifyValue(int x)
+{
+    x = 100;  // Only modifies the local copy
+}
+
+int num = 5;
+ModifyValue(num);
+Console.WriteLine(num);  // Still 5</code></pre>
+
+<h3>Reference Parameters (ref)</h3>
+<p>Pass by reference allows modifying the original variable:</p>
+<pre><code>public void ModifyRef(ref int x)
+{
+    x = 100;  // Modifies the original variable
+}
+
+int num = 5;
+ModifyRef(ref num);
+Console.WriteLine(num);  // Now 100</code></pre>
+
+<h3>Output Parameters (out)</h3>
+<p>Used when a function needs to return multiple values:</p>
+<pre><code>public bool TryParse(string input, out int result)
+{
+    if (int.TryParse(input, out result))
+        return true;
+    return false;
+}
+
+if (TryParse(""123"", out int number))
+{
+    Console.WriteLine($""Parsed: {number}"");
+}</code></pre>
+
+<h2>Optional Parameters</h2>
+<p>Parameters can have default values:</p>
+<pre><code>public void Greet(string name = ""Guest"", string greeting = ""Hello"")
+{
+    Console.WriteLine($""{greeting}, {name}!"");
+}
+
+Greet();                           // Hello, Guest!
+Greet(""Alice"");                   // Hello, Alice!
+Greet(""Bob"", ""Hi"");              // Hi, Bob!</code></pre>
+
+<h2>Method Overloading</h2>
+<p>Multiple methods can have the same name with different parameters:</p>
+<pre><code>public int Calculate(int a, int b)
+{
+    return a + b;
+}
+
+public double Calculate(double a, double b)
+{
+    return a + b;
+}
+
+public int Calculate(int a, int b, int c)
+{
+    return a + b + c;
+}
+
+int result1 = Calculate(5, 3);           // Uses int version
+double result2 = Calculate(5.5, 3.2);    // Uses double version
+int result3 = Calculate(1, 2, 3);        // Uses three-parameter version</code></pre>
+
+<h2>Expression-Bodied Members</h2>
+<p>Concise syntax for simple functions:</p>
+<pre><code>// Traditional syntax
+public int Square(int x)
+{
+    return x * x;
+}
+
+// Expression-bodied syntax
+public int Square(int x) => x * x;
+
+public bool IsPositive(int x) => x > 0;
+public string GetFullName(string first, string last) => $""{first} {last}"";</code></pre>
+
+<h2>Recursive Functions</h2>
+<p>Functions that call themselves:</p>
+<pre><code>// Calculate factorial (n!)
+public int Factorial(int n)
+{
+    if (n <= 1)
+        return 1;  // Base case
+    return n * Factorial(n - 1);  // Recursive case
+}
+
+Console.WriteLine(Factorial(5));  // Output: 120 (5 * 4 * 3 * 2 * 1)</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Single Responsibility</strong>: Each function should do one thing well</li>
+<li><strong>Descriptive Names</strong>: Use clear, action-oriented names (e.g., CalculateTotal, ValidateInput)</li>
+<li><strong>Keep It Short</strong>: Functions should be easy to understand at a glance</li>
+<li><strong>Limit Parameters</strong>: Too many parameters make functions hard to use</li>
+<li><strong>Document Complex Logic</strong>: Add comments for non-obvious behavior</li>
+</ul>
+
+<h2>Common Patterns</h2>
+
+<h3>Validation Function</h3>
+<pre><code>public bool IsValidEmail(string email)
+{
+    return !string.IsNullOrEmpty(email) && 
+           email.Contains(""@"") && 
+           email.Contains(""."");
+}</code></pre>
+
+<h3>Transformation Function</h3>
+<pre><code>public string ToTitleCase(string text)
+{
+    if (string.IsNullOrEmpty(text))
+        return text;
+    return char.ToUpper(text[0]) + text.Substring(1).ToLower();
+}</code></pre>
+
+<h3>Helper Function</h3>
+<pre><code>public void PrintArray(int[] array)
+{
+    Console.WriteLine(""["" + string.Join("", "", array) + ""]"");
+}</code></pre>",
+            Type = ContentType.Text
+        };
+
         var content1_5 = new LectureText
         {
             Lecture = lec1_5,
@@ -560,6 +758,856 @@ bool isEmpty = stack.Count == 0;</code></pre>
     
     return stack.Count == 0;
 }</code></pre>",
+            Type = ContentType.Text
+        };
+
+        var content2_4 = new LectureText
+        {
+            Lecture = lec2_4,
+            HtmlContent = @"<h1>Queue Implementation</h1>
+<p>A queue is a linear data structure following the First In First Out (FIFO) principle. Think of it like a line of people waiting - the first person to join is the first person served.</p>
+
+<h2>Core Operations</h2>
+<ul>
+<li><strong>Enqueue</strong>: Add element to the back - O(1)</li>
+<li><strong>Dequeue</strong>: Remove element from the front - O(1)</li>
+<li><strong>Peek/Front</strong>: View front element - O(1)</li>
+<li><strong>IsEmpty</strong>: Check if queue is empty - O(1)</li>
+</ul>
+
+<h2>Real-World Analogies</h2>
+<ul>
+<li>People waiting in line at a store</li>
+<li>Print job queue</li>
+<li>Task scheduling in operating systems</li>
+<li>Message queues in distributed systems</li>
+<li>Call center customer service lines</li>
+</ul>
+
+<h2>Queue vs Stack</h2>
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Feature</th>
+<th>Queue (FIFO)</th>
+<th>Stack (LIFO)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Insertion</strong></td>
+<td>At the back (rear)</td>
+<td>At the top</td>
+</tr>
+<tr>
+<td><strong>Removal</strong></td>
+<td>From the front</td>
+<td>From the top</td>
+</tr>
+<tr>
+<td><strong>Order</strong></td>
+<td>First In First Out</td>
+<td>Last In First Out</td>
+</tr>
+<tr>
+<td><strong>Use Case</strong></td>
+<td>BFS, Scheduling</td>
+<td>DFS, Undo operations</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Implementation in C#</h2>
+
+<h3>Using Built-in Queue Class</h3>
+<pre><code>Queue<int> queue = new Queue<int>();
+
+// Enqueue elements (add to back)
+queue.Enqueue(1);
+queue.Enqueue(2);
+queue.Enqueue(3);
+
+// Peek at front
+int front = queue.Peek();  // Returns 1, doesn't remove
+
+// Dequeue element (remove from front)
+int removed = queue.Dequeue();  // Returns and removes 1
+
+// Check if empty
+bool isEmpty = queue.Count == 0;
+
+// Iterate through queue
+foreach (int item in queue)
+{
+    Console.WriteLine(item);
+}</code></pre>
+
+<h3>Array-Based Implementation</h3>
+<pre><code>public class ArrayQueue
+{
+    private int[] items;
+    private int front;
+    private int rear;
+    private int count;
+    private int capacity;
+    
+    public ArrayQueue(int capacity)
+    {
+        this.capacity = capacity;
+        items = new int[capacity];
+        front = 0;
+        rear = -1;
+        count = 0;
+    }
+    
+    public void Enqueue(int item)
+    {
+        if (count == capacity)
+            throw new InvalidOperationException(""Queue is full"");
+        
+        rear = (rear + 1) % capacity;  // Circular array
+        items[rear] = item;
+        count++;
+    }
+    
+    public int Dequeue()
+    {
+        if (count == 0)
+            throw new InvalidOperationException(""Queue is empty"");
+        
+        int item = items[front];
+        front = (front + 1) % capacity;  // Circular array
+        count--;
+        return item;
+    }
+    
+    public int Peek()
+    {
+        if (count == 0)
+            throw new InvalidOperationException(""Queue is empty"");
+        return items[front];
+    }
+    
+    public bool IsEmpty()
+    {
+        return count == 0;
+    }
+}</code></pre>
+
+<h3>Linked List-Based Implementation</h3>
+<pre><code>public class Node
+{
+    public int Data { get; set; }
+    public Node Next { get; set; }
+    
+    public Node(int data)
+    {
+        Data = data;
+        Next = null;
+    }
+}
+
+public class LinkedQueue
+{
+    private Node front;
+    private Node rear;
+    private int count;
+    
+    public LinkedQueue()
+    {
+        front = null;
+        rear = null;
+        count = 0;
+    }
+    
+    public void Enqueue(int item)
+    {
+        Node newNode = new Node(item);
+        
+        if (rear == null)
+        {
+            // Queue is empty
+            front = rear = newNode;
+        }
+        else
+        {
+            rear.Next = newNode;
+            rear = newNode;
+        }
+        count++;
+    }
+    
+    public int Dequeue()
+    {
+        if (front == null)
+            throw new InvalidOperationException(""Queue is empty"");
+        
+        int item = front.Data;
+        front = front.Next;
+        
+        if (front == null)
+            rear = null;  // Queue is now empty
+        
+        count--;
+        return item;
+    }
+    
+    public int Peek()
+    {
+        if (front == null)
+            throw new InvalidOperationException(""Queue is empty"");
+        return front.Data;
+    }
+    
+    public bool IsEmpty()
+    {
+        return front == null;
+    }
+}</code></pre>
+
+<h2>Common Use Cases</h2>
+
+<h3>1. Breadth-First Search (BFS)</h3>
+<pre><code>void BFS(int start, Dictionary<int, List<int>> graph)
+{
+    Queue<int> queue = new Queue<int>();
+    HashSet<int> visited = new HashSet<int>();
+    
+    queue.Enqueue(start);
+    visited.Add(start);
+    
+    while (queue.Count > 0)
+    {
+        int node = queue.Dequeue();
+        Console.WriteLine(node);
+        
+        foreach (int neighbor in graph[node])
+        {
+            if (!visited.Contains(neighbor))
+            {
+                visited.Add(neighbor);
+                queue.Enqueue(neighbor);
+            }
+        }
+    }
+}</code></pre>
+
+<h3>2. Level Order Tree Traversal</h3>
+<pre><code>void LevelOrder(TreeNode root)
+{
+    if (root == null) return;
+    
+    Queue<TreeNode> queue = new Queue<TreeNode>();
+    queue.Enqueue(root);
+    
+    while (queue.Count > 0)
+    {
+        TreeNode current = queue.Dequeue();
+        Console.WriteLine(current.Value);
+        
+        if (current.Left != null)
+            queue.Enqueue(current.Left);
+        if (current.Right != null)
+            queue.Enqueue(current.Right);
+    }
+}</code></pre>
+
+<h3>3. Task Scheduling</h3>
+<pre><code>public class TaskScheduler
+{
+    private Queue<Task> taskQueue = new Queue<Task>();
+    
+    public void AddTask(Task task)
+    {
+        taskQueue.Enqueue(task);
+    }
+    
+    public void ProcessTasks()
+    {
+        while (taskQueue.Count > 0)
+        {
+            Task task = taskQueue.Dequeue();
+            task.Execute();
+        }
+    }
+}</code></pre>
+
+<h2>Priority Queue</h2>
+<p>A variation where elements have priorities:</p>
+<pre><code>// C# 10+ has built-in PriorityQueue
+PriorityQueue<string, int> pq = new PriorityQueue<string, int>();
+
+pq.Enqueue(""Task 1"", 3);  // priority 3
+pq.Enqueue(""Task 2"", 1);  // priority 1 (highest)
+pq.Enqueue(""Task 3"", 2);  // priority 2
+
+// Dequeue returns highest priority first
+string task = pq.Dequeue();  // Returns ""Task 2""</code></pre>
+
+<h2>Circular Queue</h2>
+<p>Efficient use of array space by wrapping around:</p>
+<pre><code>public class CircularQueue
+{
+    private int[] items;
+    private int front, rear, size, capacity;
+    
+    public CircularQueue(int k)
+    {
+        capacity = k;
+        items = new int[k];
+        front = 0;
+        rear = -1;
+        size = 0;
+    }
+    
+    public bool Enqueue(int value)
+    {
+        if (size == capacity)
+            return false;
+        
+        rear = (rear + 1) % capacity;
+        items[rear] = value;
+        size++;
+        return true;
+    }
+    
+    public bool Dequeue()
+    {
+        if (size == 0)
+            return false;
+        
+        front = (front + 1) % capacity;
+        size--;
+        return true;
+    }
+}</code></pre>
+
+<h2>Double-Ended Queue (Deque)</h2>
+<p>Allows insertion and removal from both ends:</p>
+<pre><code>// Using LinkedList as deque
+LinkedList<int> deque = new LinkedList<int>();
+
+// Add to front
+deque.AddFirst(1);
+
+// Add to back
+deque.AddLast(2);
+
+// Remove from front
+int frontItem = deque.First.Value;
+deque.RemoveFirst();
+
+// Remove from back
+int backItem = deque.Last.Value;
+deque.RemoveLast();</code></pre>
+
+<h2>Time and Space Complexity</h2>
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Operation</th>
+<th>Time Complexity</th>
+<th>Space Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enqueue</td>
+<td>O(1)</td>
+<td rowspan=""4"">O(n)</td>
+</tr>
+<tr>
+<td>Dequeue</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>Peek</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>IsEmpty</td>
+<td>O(1)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Advantages and Disadvantages</h2>
+
+<h3>Advantages</h3>
+<ul>
+<li>Efficient O(1) insertion and deletion</li>
+<li>Fair ordering (FIFO)</li>
+<li>Simple to implement and understand</li>
+<li>Natural fit for many real-world scenarios</li>
+</ul>
+
+<h3>Disadvantages</h3>
+<ul>
+<li>No direct access to middle elements</li>
+<li>Array implementation requires fixed size or resizing</li>
+<li>Not efficient for searching</li>
+</ul>",
+            Type = ContentType.Text
+        };
+
+        var content2_5 = new LectureText
+        {
+            Lecture = lec2_5,
+            HtmlContent = @"<h1>Linked Lists Introduction</h1>
+<p>A linked list is a linear data structure where elements (nodes) are connected using pointers. Unlike arrays, linked list elements are not stored in contiguous memory locations.</p>
+
+<h2>Why Linked Lists?</h2>
+<ul>
+<li><strong>Dynamic Size</strong>: Can grow or shrink at runtime</li>
+<li><strong>Efficient Insertion/Deletion</strong>: O(1) at the beginning</li>
+<li><strong>No Memory Waste</strong>: Only allocate what you need</li>
+<li><strong>Flexible Structure</strong>: Easy to implement stacks, queues, graphs</li>
+</ul>
+
+<h2>Node Structure</h2>
+<p>Each node contains data and a reference to the next node:</p>
+<pre><code>public class Node
+{
+    public int Data { get; set; }
+    public Node Next { get; set; }
+    
+    public Node(int data)
+    {
+        Data = data;
+        Next = null;
+    }
+}</code></pre>
+
+<h2>Types of Linked Lists</h2>
+
+<h3>1. Singly Linked List</h3>
+<p>Each node points to the next node:</p>
+<pre><code>[Data|Next] → [Data|Next] → [Data|Next] → null</code></pre>
+
+<h3>2. Doubly Linked List</h3>
+<p>Each node points to both next and previous nodes:</p>
+<pre><code>null ← [Prev|Data|Next] ↔ [Prev|Data|Next] ↔ [Prev|Data|Next] → null</code></pre>
+
+<h3>3. Circular Linked List</h3>
+<p>Last node points back to the first node:</p>
+<pre><code>[Data|Next] → [Data|Next] → [Data|Next] ↰
+      ↑___________________________________|</code></pre>
+
+<h2>Singly Linked List Implementation</h2>
+
+<h3>Basic Structure</h3>
+<pre><code>public class LinkedList
+{
+    private Node head;
+    
+    public LinkedList()
+    {
+        head = null;
+    }
+    
+    // Check if list is empty
+    public bool IsEmpty()
+    {
+        return head == null;
+    }
+}</code></pre>
+
+<h3>Insert at Beginning</h3>
+<pre><code>public void InsertAtBeginning(int data)
+{
+    Node newNode = new Node(data);
+    newNode.Next = head;
+    head = newNode;
+}
+
+// Time Complexity: O(1)</code></pre>
+
+<h3>Insert at End</h3>
+<pre><code>public void InsertAtEnd(int data)
+{
+    Node newNode = new Node(data);
+    
+    if (head == null)
+    {
+        head = newNode;
+        return;
+    }
+    
+    Node current = head;
+    while (current.Next != null)
+    {
+        current = current.Next;
+    }
+    current.Next = newNode;
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Insert at Position</h3>
+<pre><code>public void InsertAt(int data, int position)
+{
+    if (position == 0)
+    {
+        InsertAtBeginning(data);
+        return;
+    }
+    
+    Node newNode = new Node(data);
+    Node current = head;
+    
+    for (int i = 0; i < position - 1 && current != null; i++)
+    {
+        current = current.Next;
+    }
+    
+    if (current == null)
+        throw new ArgumentException(""Invalid position"");
+    
+    newNode.Next = current.Next;
+    current.Next = newNode;
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Delete First Node</h3>
+<pre><code>public void DeleteFirst()
+{
+    if (head == null)
+        throw new InvalidOperationException(""List is empty"");
+    
+    head = head.Next;
+}
+
+// Time Complexity: O(1)</code></pre>
+
+<h3>Delete Last Node</h3>
+<pre><code>public void DeleteLast()
+{
+    if (head == null)
+        throw new InvalidOperationException(""List is empty"");
+    
+    if (head.Next == null)
+    {
+        head = null;
+        return;
+    }
+    
+    Node current = head;
+    while (current.Next.Next != null)
+    {
+        current = current.Next;
+    }
+    current.Next = null;
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Delete by Value</h3>
+<pre><code>public void Delete(int value)
+{
+    if (head == null)
+        return;
+    
+    // If head contains the value
+    if (head.Data == value)
+    {
+        head = head.Next;
+        return;
+    }
+    
+    Node current = head;
+    while (current.Next != null && current.Next.Data != value)
+    {
+        current = current.Next;
+    }
+    
+    if (current.Next != null)
+    {
+        current.Next = current.Next.Next;
+    }
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Search</h3>
+<pre><code>public bool Search(int value)
+{
+    Node current = head;
+    
+    while (current != null)
+    {
+        if (current.Data == value)
+            return true;
+        current = current.Next;
+    }
+    
+    return false;
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Display/Traverse</h3>
+<pre><code>public void Display()
+{
+    if (head == null)
+    {
+        Console.WriteLine(""List is empty"");
+        return;
+    }
+    
+    Node current = head;
+    while (current != null)
+    {
+        Console.Write(current.Data + "" → "");
+        current = current.Next;
+    }
+    Console.WriteLine(""null"");
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h3>Get Length</h3>
+<pre><code>public int Length()
+{
+    int count = 0;
+    Node current = head;
+    
+    while (current != null)
+    {
+        count++;
+        current = current.Next;
+    }
+    
+    return count;
+}
+
+// Time Complexity: O(n)</code></pre>
+
+<h2>Doubly Linked List</h2>
+
+<h3>Node Structure</h3>
+<pre><code>public class DoublyNode
+{
+    public int Data { get; set; }
+    public DoublyNode Next { get; set; }
+    public DoublyNode Prev { get; set; }
+    
+    public DoublyNode(int data)
+    {
+        Data = data;
+        Next = null;
+        Prev = null;
+    }
+}</code></pre>
+
+<h3>Insert at Beginning</h3>
+<pre><code>public void InsertAtBeginning(int data)
+{
+    DoublyNode newNode = new DoublyNode(data);
+    
+    if (head == null)
+    {
+        head = tail = newNode;
+        return;
+    }
+    
+    newNode.Next = head;
+    head.Prev = newNode;
+    head = newNode;
+}</code></pre>
+
+<h2>Common Linked List Problems</h2>
+
+<h3>Reverse a Linked List</h3>
+<pre><code>public void Reverse()
+{
+    Node prev = null;
+    Node current = head;
+    Node next = null;
+    
+    while (current != null)
+    {
+        next = current.Next;  // Store next
+        current.Next = prev;  // Reverse link
+        prev = current;       // Move prev forward
+        current = next;       // Move current forward
+    }
+    
+    head = prev;
+}
+
+// Time Complexity: O(n)
+// Space Complexity: O(1)</code></pre>
+
+<h3>Find Middle Element</h3>
+<pre><code>public int FindMiddle()
+{
+    if (head == null)
+        throw new InvalidOperationException(""List is empty"");
+    
+    Node slow = head;
+    Node fast = head;
+    
+    while (fast != null && fast.Next != null)
+    {
+        slow = slow.Next;
+        fast = fast.Next.Next;
+    }
+    
+    return slow.Data;
+}
+
+// Time Complexity: O(n)
+// Using two-pointer technique</code></pre>
+
+<h3>Detect Cycle</h3>
+<pre><code>public bool HasCycle()
+{
+    if (head == null)
+        return false;
+    
+    Node slow = head;
+    Node fast = head;
+    
+    while (fast != null && fast.Next != null)
+    {
+        slow = slow.Next;
+        fast = fast.Next.Next;
+        
+        if (slow == fast)
+            return true;
+    }
+    
+    return false;
+}
+
+// Floyd's Cycle Detection Algorithm
+// Time Complexity: O(n)</code></pre>
+
+<h3>Remove Duplicates (Sorted List)</h3>
+<pre><code>public void RemoveDuplicates()
+{
+    if (head == null)
+        return;
+    
+    Node current = head;
+    
+    while (current.Next != null)
+    {
+        if (current.Data == current.Next.Data)
+        {
+            current.Next = current.Next.Next;
+        }
+        else
+        {
+            current = current.Next;
+        }
+    }
+}</code></pre>
+
+<h2>Linked List vs Array</h2>
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Feature</th>
+<th>Array</th>
+<th>Linked List</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Size</strong></td>
+<td>Fixed (or expensive resize)</td>
+<td>Dynamic</td>
+</tr>
+<tr>
+<td><strong>Memory</strong></td>
+<td>Contiguous</td>
+<td>Non-contiguous</td>
+</tr>
+<tr>
+<td><strong>Access</strong></td>
+<td>O(1) random access</td>
+<td>O(n) sequential access</td>
+</tr>
+<tr>
+<td><strong>Insert/Delete Beginning</strong></td>
+<td>O(n)</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td><strong>Insert/Delete End</strong></td>
+<td>O(1)</td>
+<td>O(n) or O(1) with tail</td>
+</tr>
+<tr>
+<td><strong>Memory Overhead</strong></td>
+<td>No extra space</td>
+<td>Extra space for pointers</td>
+</tr>
+<tr>
+<td><strong>Cache Performance</strong></td>
+<td>Better (locality)</td>
+<td>Worse (scattered)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Time Complexity Summary</h2>
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Operation</th>
+<th>Time Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Access by index</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>Search</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>Insert at beginning</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>Insert at end (without tail)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>Insert at end (with tail)</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>Delete at beginning</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>Delete at end</td>
+<td>O(n)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>When to Use Linked Lists</h2>
+<ul>
+<li>Frequent insertions/deletions at the beginning</li>
+<li>Unknown or variable size of data</li>
+<li>Implementing other data structures (stacks, queues)</li>
+<li>When memory allocation needs to be dynamic</li>
+</ul>
+
+<h2>When NOT to Use Linked Lists</h2>
+<ul>
+<li>Need random access to elements</li>
+<li>Memory is limited (pointer overhead)</li>
+<li>Small, fixed-size collections</li>
+<li>Cache performance is critical</li>
+</ul>",
             Type = ContentType.Text
         };
 
@@ -1048,6 +2096,356 @@ private void Merge(int[] arr, int left, int mid, int right)
             Order = 2
         };
 
+        var content3_4 = new LectureText
+        {
+            Lecture = lec3_4,
+            HtmlContent = @"<h1>Divide and Conquer</h1>
+<p>Divide and Conquer is a powerful algorithmic paradigm that solves complex problems by breaking them into smaller, more manageable subproblems, solving them independently, and combining the results.</p>
+
+<h2>Core Strategy</h2>
+<p>The divide and conquer approach follows three main steps:</p>
+<ol>
+<li><strong>Divide</strong>: Break the problem into smaller subproblems of the same type</li>
+<li><strong>Conquer</strong>: Solve the subproblems recursively (base case when small enough)</li>
+<li><strong>Combine</strong>: Merge the solutions of subproblems into a solution for the original problem</li>
+</ol>
+
+<h2>Classic Example: Merge Sort</h2>
+<pre><code>public void MergeSort(int[] arr, int left, int right)
+{
+    if (left < right)
+    {
+        // DIVIDE: Find the middle point
+        int mid = left + (right - left) / 2;
+        
+        // CONQUER: Recursively sort both halves
+        MergeSort(arr, left, mid);
+        MergeSort(arr, mid + 1, right);
+        
+        // COMBINE: Merge the sorted halves
+        Merge(arr, left, mid, right);
+    }
+}
+
+private void Merge(int[] arr, int left, int mid, int right)
+{
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    int[] leftArr = new int[n1];
+    int[] rightArr = new int[n2];
+    
+    Array.Copy(arr, left, leftArr, 0, n1);
+    Array.Copy(arr, mid + 1, rightArr, 0, n2);
+    
+    int i = 0, j = 0, k = left;
+    
+    while (i < n1 && j < n2)
+    {
+        if (leftArr[i] <= rightArr[j])
+            arr[k++] = leftArr[i++];
+        else
+            arr[k++] = rightArr[j++];
+    }
+    
+    while (i < n1)
+        arr[k++] = leftArr[i++];
+    
+    while (j < n2)
+        arr[k++] = rightArr[j++];
+}
+
+// Time Complexity: O(n log n)
+// Space Complexity: O(n)</code></pre>
+
+<h2>When to Use Divide and Conquer</h2>
+<ul>
+<li><strong>Problem can be broken down</strong>: Subproblems are similar to the original</li>
+<li><strong>Optimal substructure</strong>: Optimal solution contains optimal solutions to subproblems</li>
+<li><strong>Non-overlapping subproblems</strong>: Subproblems are independent (unlike DP)</li>
+<li><strong>Recursive nature</strong>: Problem naturally lends itself to recursion</li>
+</ul>
+
+<h2>Binary Search</h2>
+<p>One of the simplest divide and conquer algorithms:</p>
+<pre><code>public int BinarySearch(int[] arr, int target)
+{
+    return BinarySearchHelper(arr, target, 0, arr.Length - 1);
+}
+
+private int BinarySearchHelper(int[] arr, int target, int left, int right)
+{
+    if (left > right)
+        return -1;  // Base case: not found
+    
+    // DIVIDE: Find middle
+    int mid = left + (right - left) / 2;
+    
+    // CONQUER: Check middle or recurse
+    if (arr[mid] == target)
+        return mid;
+    else if (arr[mid] > target)
+        return BinarySearchHelper(arr, target, left, mid - 1);
+    else
+        return BinarySearchHelper(arr, target, mid + 1, right);
+}
+
+// Time Complexity: O(log n)
+// Space Complexity: O(log n) due to recursion stack</code></pre>
+
+<h2>Quick Sort</h2>
+<p>Another classic divide and conquer sorting algorithm:</p>
+<pre><code>public void QuickSort(int[] arr, int low, int high)
+{
+    if (low < high)
+    {
+        // DIVIDE: Partition array and get pivot position
+        int pivotIndex = Partition(arr, low, high);
+        
+        // CONQUER: Recursively sort elements before and after partition
+        QuickSort(arr, low, pivotIndex - 1);
+        QuickSort(arr, pivotIndex + 1, high);
+        
+        // COMBINE: No explicit combine step (in-place sorting)
+    }
+}
+
+private int Partition(int[] arr, int low, int high)
+{
+    int pivot = arr[high];
+    int i = low - 1;
+    
+    for (int j = low; j < high; j++)
+    {
+        if (arr[j] < pivot)
+        {
+            i++;
+            Swap(arr, i, j);
+        }
+    }
+    
+    Swap(arr, i + 1, high);
+    return i + 1;
+}
+
+// Average Time Complexity: O(n log n)
+// Worst Time Complexity: O(n²)</code></pre>
+
+<h2>Maximum Subarray Problem</h2>
+<p>Find contiguous subarray with largest sum (Kadane's algorithm alternative):</p>
+<pre><code>public int MaxSubarraySum(int[] arr, int left, int right)
+{
+    // Base case: only one element
+    if (left == right)
+        return arr[left];
+    
+    // DIVIDE: Find middle
+    int mid = left + (right - left) / 2;
+    
+    // CONQUER: Find max in left and right halves
+    int leftMax = MaxSubarraySum(arr, left, mid);
+    int rightMax = MaxSubarraySum(arr, mid + 1, right);
+    
+    // COMBINE: Find max crossing the middle
+    int crossMax = MaxCrossingSum(arr, left, mid, right);
+    
+    return Math.Max(Math.Max(leftMax, rightMax), crossMax);
+}
+
+private int MaxCrossingSum(int[] arr, int left, int mid, int right)
+{
+    int sum = 0;
+    int leftSum = int.MinValue;
+    
+    for (int i = mid; i >= left; i--)
+    {
+        sum += arr[i];
+        if (sum > leftSum)
+            leftSum = sum;
+    }
+    
+    sum = 0;
+    int rightSum = int.MinValue;
+    
+    for (int i = mid + 1; i <= right; i++)
+    {
+        sum += arr[i];
+        if (sum > rightSum)
+            rightSum = sum;
+    }
+    
+    return leftSum + rightSum;
+}
+
+// Time Complexity: O(n log n)</code></pre>
+
+<h2>Closest Pair of Points</h2>
+<p>Find two closest points in a 2D plane:</p>
+<pre><code>public class Point
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+}
+
+public double ClosestPair(Point[] points)
+{
+    Array.Sort(points, (a, b) => a.X.CompareTo(b.X));
+    return ClosestPairHelper(points, 0, points.Length - 1);
+}
+
+private double ClosestPairHelper(Point[] points, int left, int right)
+{
+    // Base case: use brute force for small sets
+    if (right - left <= 3)
+        return BruteForce(points, left, right);
+    
+    // DIVIDE: Find middle
+    int mid = left + (right - left) / 2;
+    Point midPoint = points[mid];
+    
+    // CONQUER: Find minimum distances in left and right halves
+    double leftMin = ClosestPairHelper(points, left, mid);
+    double rightMin = ClosestPairHelper(points, mid + 1, right);
+    
+    double minDist = Math.Min(leftMin, rightMin);
+    
+    // COMBINE: Find minimum distance across middle
+    List<Point> strip = new List<Point>();
+    for (int i = left; i <= right; i++)
+    {
+        if (Math.Abs(points[i].X - midPoint.X) < minDist)
+            strip.Add(points[i]);
+    }
+    
+    return Math.Min(minDist, StripClosest(strip, minDist));
+}
+
+// Time Complexity: O(n log² n)</code></pre>
+
+<h2>Matrix Multiplication (Strassen's Algorithm)</h2>
+<p>Efficient matrix multiplication using divide and conquer:</p>
+<pre><code>// Standard matrix multiplication is O(n³)
+// Strassen's algorithm is O(n^2.807)
+
+public int[,] StrassenMultiply(int[,] A, int[,] B)
+{
+    int n = A.GetLength(0);
+    
+    // Base case
+    if (n == 1)
+    {
+        return new int[,] { { A[0,0] * B[0,0] } };
+    }
+    
+    // DIVIDE: Split matrices into quadrants
+    int[,] A11, A12, A21, A22;
+    int[,] B11, B12, B21, B22;
+    // ... splitting code ...
+    
+    // CONQUER: Compute 7 products recursively
+    int[,] M1 = StrassenMultiply(Add(A11, A22), Add(B11, B22));
+    int[,] M2 = StrassenMultiply(Add(A21, A22), B11);
+    // ... M3 through M7 ...
+    
+    // COMBINE: Compute result quadrants
+    int[,] C11 = Add(Subtract(Add(M1, M4), M5), M7);
+    int[,] C12 = Add(M3, M5);
+    int[,] C21 = Add(M2, M4);
+    int[,] C22 = Add(Subtract(Add(M1, M3), M2), M6);
+    
+    return Combine(C11, C12, C21, C22);
+}</code></pre>
+
+<h2>Master Theorem</h2>
+<p>Analyzes time complexity of divide and conquer algorithms:</p>
+
+<p>For recurrence: <strong>T(n) = aT(n/b) + f(n)</strong></p>
+
+<table border=""1"" style=""border-collapse: collapse; width: 100%;"">
+<thead>
+<tr>
+<th>Case</th>
+<th>Condition</th>
+<th>Time Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>f(n) = O(n<sup>c</sup>) where c < log<sub>b</sub>a</td>
+<td>Θ(n<sup>log<sub>b</sub>a</sup>)</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>f(n) = Θ(n<sup>c</sup>) where c = log<sub>b</sub>a</td>
+<td>Θ(n<sup>c</sup> log n)</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>f(n) = Ω(n<sup>c</sup>) where c > log<sub>b</sub>a</td>
+<td>Θ(f(n))</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Examples:</h3>
+<ul>
+<li><strong>Binary Search</strong>: T(n) = T(n/2) + O(1) → <em>O(log n)</em></li>
+<li><strong>Merge Sort</strong>: T(n) = 2T(n/2) + O(n) → <em>O(n log n)</em></li>
+<li><strong>Strassen</strong>: T(n) = 7T(n/2) + O(n²) → <em>O(n<sup>2.807</sup>)</em></li>
+</ul>
+
+<h2>Advantages</h2>
+<ul>
+<li><strong>Efficiency</strong>: Often achieves better time complexity than brute force</li>
+<li><strong>Parallelization</strong>: Independent subproblems can run in parallel</li>
+<li><strong>Cache-friendly</strong>: Smaller subproblems fit better in cache</li>
+<li><strong>Optimal solutions</strong>: Guarantees optimal results when applicable</li>
+</ul>
+
+<h2>Disadvantages</h2>
+<ul>
+<li><strong>Recursion overhead</strong>: Stack space and function call overhead</li>
+<li><strong>Not always optimal</strong>: Some problems better suited for other paradigms</li>
+<li><strong>Complex implementation</strong>: Can be harder to understand and debug</li>
+<li><strong>Memory usage</strong>: May require additional memory for combine step</li>
+</ul>
+
+<h2>Divide and Conquer vs Other Paradigms</h2>
+
+<h3>vs Dynamic Programming</h3>
+<ul>
+<li><strong>D&C</strong>: Non-overlapping subproblems</li>
+<li><strong>DP</strong>: Overlapping subproblems, uses memoization</li>
+</ul>
+
+<h3>vs Greedy Algorithms</h3>
+<ul>
+<li><strong>D&C</strong>: Examines all possibilities, guarantees optimal</li>
+<li><strong>Greedy</strong>: Makes locally optimal choices, may not be globally optimal</li>
+</ul>
+
+<h2>Common Applications</h2>
+<ul>
+<li>Sorting algorithms (Merge Sort, Quick Sort)</li>
+<li>Searching algorithms (Binary Search)</li>
+<li>Computational geometry (Closest pair, Convex hull)</li>
+<li>Matrix operations (Strassen's multiplication)</li>
+<li>Fast Fourier Transform (FFT)</li>
+<li>Integer multiplication (Karatsuba algorithm)</li>
+</ul>
+
+<h2>Tips for Designing D&C Algorithms</h2>
+<ol>
+<li>Identify how to divide the problem into smaller parts</li>
+<li>Determine the base case (when to stop dividing)</li>
+<li>Figure out how to combine solutions</li>
+<li>Analyze time complexity using recurrence relations</li>
+<li>Consider space complexity and recursion depth</li>
+</ol>",
+            Type = ContentType.Text
+        };
+
         var content4_1_text = new LectureText
         {
             Lecture = lec4_1,
@@ -1139,10 +2537,11 @@ private void Merge(int[] arr, int left, int mid, int right)
         };
 
         await context.LectureContents.AddRangeAsync(
-            content1_1, content1_2, content1_3, content1_5,
-            content2_1, content2_2, content2_3, content2_6,
+            content1_1, content1_2, content1_3, content1_4, content1_5,
+            content2_1, content2_2, content2_3, content2_4, content2_5, content2_6,
             content3_1, content3_2,
-            content3_3_part1, content3_3_gif, content3_3_part2,
+            content3_3_part1, content3_3_part2, content3_3_gif, content3_3_part3,
+            content3_4,
             content4_1_text, content4_1_text2
         );
         await context.SaveChangesAsync();
